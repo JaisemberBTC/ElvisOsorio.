@@ -1,58 +1,58 @@
 import { FaithScriptData, PrayerData, PrayerCandle, DailyDevotional, BlessingCard } from '../types';
 
 export const INITIAL_SCRIPT_DATA: FaithScriptData = {
-  title: "Cuando Sientas Que No Puedes Más | La Promesa de Isaías",
-  hook: "¿Sientes que tus fuerzas se han agotado hoy? Detente 30 segundos, esto es para ti.",
-  mainTheme: "Renovación sobrenatural de fuerzas y confianza inquebrantable en Dios",
+  title: "Hijo Mío, Ya No Llores Más | Jesús Te Habla al Corazón",
+  hook: "Hijo mío, si este video apareció en tu pantalla hoy, detén tu prisa... Necesitaba hablarte.",
+  mainTheme: "Jesucristo consolando tu corazón, secando tus lágrimas y renovando tus fuerzas",
   primaryBibleVerse: {
-    reference: "Isaías 40:29-31",
-    text: "Él da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas. Los que esperan a Jehová tendrán nuevas fuerzas; levantarán alas como las águilas."
+    reference: "Mateo 11:28",
+    text: "Venid a mí todos los que estáis trabajados y cargados, y yo os haré descansar."
   },
-  closingPrayer: "Señor, hoy deposito en tus manos mi fatiga. Recibo tu paz que sobrepasa todo entendimiento y declaro que me levantaré con nuevas alas. Amén.",
-  callToAction: "Escribe 'AMÉN' si recibes estas fuerzas hoy y compártelo con quien necesite aliento.",
-  musicMood: "Piano celestial cálido a 60 BPM con suaves cuerdas orquestales",
+  closingPrayer: "Jesús amado, tomo tu mano en este momento. Entrego mi cansancio, mis lágrimas y mis temores a tus pies. Recibo tu descanso sobrenatural y tu paz inagotable. Amén.",
+  callToAction: "Declara 'Amén Jesús, tomo tu mano' en los comentarios, guarda esta bendición y compártela con quien amas.",
+  musicMood: "Piano celestial en 432Hz con cuerdas suaves y atmósfera de paz divina a 56 BPM",
   scenes: [
     {
       sceneNumber: 1,
       durationSec: 8,
-      visualPrompt: "Close-up cinematográfico de una persona en silueta frente a una ventana al amanecer, rayos de luz dorada penetrando suavemente en la habitación.",
-      cameraMovement: "Zoom in lento y fluido hacia la luz del sol",
-      narrationText: "A veces el camino se vuelve tan pesado que parece imposible dar un paso más... [pausa]",
-      onScreenText: "CUANDO TUS FUERZAS SE AGOTAN",
-      atmosphere: "Luz dorada crepuscular con partículas de polvo flotando en paz"
+      visualPrompt: "Jesucristo resplandeciente con túnica blanca y luz dorada mirando a la cámara con infinita compasión y ternura paternal.",
+      cameraMovement: "Cámara lenta acercándose al rostro amoroso y luminoso de Jesús",
+      narrationText: "Hijo mío... sé cuántas veces has sonreído de día mientras en silencio tu corazón lloraba de noche. [pausa]",
+      onScreenText: "HE VISTO TUS LÁGRIMAS EN SILENCIO",
+      atmosphere: "Luz celestial dorada y resplandor sagrado"
     },
     {
       sceneNumber: 2,
-      durationSec: 12,
-      visualPrompt: "Vista panorámica de montañas majestuosas envueltas en niebla luminosa matutina, con un águila remontando el vuelo con gracia sobre las nubes.",
-      cameraMovement: "Paneo aéreo majestuoso siguiendo la trayectoria del vuelo hacia el cielo abierto",
-      narrationText: "Pero la Biblia dice: Él da esfuerzo al cansado y multiplica las fuerzas al que no tiene ningunas. No estás solo en esta batalla.",
-      onScreenText: "ÉL MULTIPLICA TUS FUERZAS",
-      atmosphere: "Cielo azul sereno y destellos celestiales"
+      durationSec: 10,
+      visualPrompt: "Jesús extendiendo sus manos llagadas de amor y bendición hacia ti, emanando rayos de luz de sanidad y paz.",
+      cameraMovement: "Paneo suave mostrando las manos protectoras de Cristo",
+      narrationText: "Hoy quiero que escuches mi voz: Yo no me he olvidado de ti. Cada lágrima tuya la guardé y cada oración la escuché.",
+      onScreenText: "YO NO ME HE OLVIDADO DE TI",
+      atmosphere: "Aura celestial y partículas de bendición"
     },
     {
       sceneNumber: 3,
-      durationSec: 14,
-      visualPrompt: "Manos unidas en oración suave sobre una mesa rústica, iluminadas por la llama cálida y titilante de una vela encendida.",
-      cameraMovement: "Movimiento orbital lento con desenfoque de fondo bokeh dorado",
-      narrationText: "Hoy Dios te dice: Descansa en mí. Mis brazos te sostienen y mis planes para ti siguen en pie. Respira su paz.",
-      onScreenText: "DESCANSAR EN DIOS",
-      atmosphere: "Calidez hogareña y presencia santa"
+      durationSec: 11,
+      visualPrompt: "Jesús calmando la tormenta en el mar, el cielo oscuro se abre en un amanecer de gloria y luz viva.",
+      cameraMovement: "Apertura cinematográfica de luz celestial sobre el agua serena",
+      narrationText: "Ven a mí si estás cansado. Yo calmo tus vientos, yo quito tu angustia y multiplico tus fuerzas.",
+      onScreenText: "YO CALMO TU TORMENTA HOY",
+      atmosphere: "Paz sobrenatural y gloria divina"
     },
     {
       sceneNumber: 4,
       durationSec: 11,
-      visualPrompt: "Texto bíblico resplandeciente en tipografía dorada elegante sobre un fondo de cielo estrellado y amanecer brillante.",
-      cameraMovement: "Cámara fija con leve respiración y destello de luz central",
-      narrationText: "Declara conmigo: 'Dios es mi fortaleza'. Escribe Amén y comparte este mensaje de esperanza.",
-      onScreenText: "ESCRIBE AMÉN • COMPARTE ESPERANZA",
-      atmosphere: "Victoria y adoración"
+      visualPrompt: "Jesucristo abrazando con amor infinito, coronado de luz y gloria celestial, mirándote con bendición eterna.",
+      cameraMovement: "Cámara lenta con resplandor dorado y destellos de victoria",
+      narrationText: "Recibe mi paz esta noche. Levántate con fe, porque grandes cosas haré en tu vida. Te amo con amor eterno.",
+      onScreenText: "DECLARA 'AMÉN JESÚS' • RECIBE TU PAZ",
+      atmosphere: "Gloria, amor incondicional y victoria"
     }
   ],
   socialMetadata: {
-    hashtags: ["#OracionDeLaNoche", "#DiosEsFiel", "#FeCristiana", "#VersiculoDelDia", "#PazDeDios", "#MotivacionEspiritual", "#JesusTeAma"],
-    caption: "🕊️ Si hoy te sientes sin fuerzas, recuerda que Dios no se cansa ni se fatiga. Tómate este minuto de oración y permite que Él renueve tu espíritu. 💬 Deja tu 'Amén' en los comentarios y bendice a alguien hoy compartiendo este video.",
-    pinnedComment: "🙏 ¿Por qué motivo te gustaría que oremos juntos hoy? Deja tu petición aquí abajo y nos uniremos en fe por ti."
+    hashtags: ["#JesusTeHabla", "#OracionDeFe", "#PazDeDios", "#JesusTeAma", "#DevocionalCristiano", "#FeEnDios", "#ShortsDeFe"],
+    caption: "🕊️ Jesús tiene un mensaje especial para tu corazón hoy: 'Hijo mío, no temas, yo estoy contigo'. Si recibes esta palabra de consuelo, escribe tu 'Amén' y compártelo con alguien que necesite sentir el abrazo de Dios hoy.",
+    pinnedComment: "❤️ Escribe aquí tu petición o declara 'Gracias Jesús por tu paz' para orar juntos por tu vida y tu familia."
   }
 };
 
@@ -190,6 +190,8 @@ export const BLESSING_TEMPLATES: BlessingCard[] = [
     verseReference: "Números 6:24-26",
     verseText: "Jehová te bendiga, y te guarde; Jehová haga resplandecer su rostro sobre ti, y tenga de ti misericordia.",
     shortPrayer: "Señor, bendice cada paso que dé hoy y guárdame de todo mal.",
+    themeCategory: "dawn",
+    imagePrompt: "Amanecer celestial dorado con rayos de gloria sobre un lago sereno",
     suggestedColors: {
       gradientStart: "#1c1917",
       gradientEnd: "#292524",
@@ -202,6 +204,8 @@ export const BLESSING_TEMPLATES: BlessingCard[] = [
     verseReference: "Josué 1:9",
     verseText: "Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo.",
     shortPrayer: "Padre, en ti pongo mi confianza inamovible hoy.",
+    themeCategory: "peace",
+    imagePrompt: "Jesús trayendo calma y paz sobre las aguas en la tormenta",
     suggestedColors: {
       gradientStart: "#0c1f2c",
       gradientEnd: "#164e63",

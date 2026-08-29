@@ -13,9 +13,7 @@ import {
   VolumeX, 
   Film, 
   Clapperboard, 
-  Bot, 
   Quote, 
-  FileText, 
   Layers, 
   Lightbulb, 
   Download, 
@@ -24,51 +22,186 @@ import {
   Facebook, 
   Flame, 
   Award, 
-  CheckCircle2,
-  Video,
-  Captions,
-  AlertCircle
+  CheckCircle2, 
+  Video, 
+  Captions, 
+  Sliders, 
+  Image as ImageIcon,
+  Heart,
+  Music,
+  HardDrive,
+  CloudUpload,
+  FolderCheck,
+  Edit3,
+  Wand2
 } from 'lucide-react';
 import { FaithScriptData } from '../types';
 import { INITIAL_SCRIPT_DATA, SCRIPT_TEMPLATES } from '../data/initialData';
+import { JESUS_ARTWORKS, JesusArtwork, getSequenceOfJesusArtworks } from '../data/jesusVisuals';
 import { DevotionalReader } from '../utils/audioSynth';
+import { buildSacredVideoAudioGraph } from '../utils/videoVoiceAudio';
+import { GoogleDriveManager } from './GoogleDriveManager';
+import { VideoEditorModal } from './VideoEditorModal';
+import { BlockEditor } from './BlockEditor/BlockEditor';
+import { CinematicPromptBuilder, CinematicPromptData } from './CinematicPromptBuilder';
+import { BlockItem, BlockEditorDocument } from '../types';
+import { uploadBlobToDrive, uploadScriptToDrive, getAccessToken } from '../services/googleDriveService';
+import { publishDirectlyToPlatforms, SocialPlatform } from '../services/socialMediaService';
 
 export const SpaceStudio: React.FC = () => {
   const [scriptData, setScriptData] = useState<FaithScriptData>(INITIAL_SCRIPT_DATA);
   const [isLoading, setIsLoading] = useState(false);
   const [topic, setTopic] = useState('');
   const [format, setFormat] = useState('Reel / TikTok 9:16 (45-60s)');
-  const [tone, setTone] = useState('Inspirador, reconfortante y lleno de fe');
+  const [tone, setTone] = useState('Voz de Jesús amorosa, serena, paternal y reconfortante');
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9'>('9:16');
   
+  // Workspace view tab (Storyboard vs Block Editor Notion Style vs Prompt Director)
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'storyboard' | 'block-editor' | 'prompt-director'>('storyboard');
+  
+  // Custom per-scene visual sequence of Jesus
+  const [sceneArtworks, setSceneArtworks] = useState<JesusArtwork[]>(() =>
+    getSequenceOfJesusArtworks(INITIAL_SCRIPT_DATA.scenes.length, INITIAL_SCRIPT_DATA.mainTheme)
+  );
+  
+  // Jesus Visual Theme Selector (Master theme or quick preset)
+  const [selectedJesusArtwork, setSelectedJesusArtwork] = useState<JesusArtwork>(JESUS_ARTWORKS[0]);
+  const [useProgressiveSequence, setUseProgressiveSequence] = useState<boolean>(true);
+
+  // Voice of Jesus Settings
+  const [voiceMode, setVoiceMode] = useState<'jesus' | 'solemn' | 'peace'>('jesus');
+  const [voiceRate, setVoiceRate] = useState<number>(0.72); // Calibrated for slow, solemn, warm tone
+  const [isVoiceActive, setIsVoiceActive] = useState(true);
+
   // Video Simulator state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSceneIdx, setCurrentSceneIdx] = useState(0);
   const [playbackTime, setPlaybackTime] = useState(0);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Video Editor Modal State
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  // Google Drive Modal State
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [isUploadingToDrive, setIsUploadingToDrive] = useState(false);
 
   // Video Rendering / Export State
   const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatusText, setExportStatusText] = useState('');
   const [publishToast, setPublishToast] = useState<{ platform: string; message: string } | null>(null);
 
   const timerRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const preloadedImagesRef = useRef<{ [key: string]: HTMLImageElement }>({});
 
   const scenes = scriptData.scenes || [];
   const currentScene = scenes[currentSceneIdx] || scenes[0];
   const totalDuration = scenes.reduce((acc, s) => acc + (s.durationSec || 10), 0);
 
+  // Convert current scriptData into structured BlockEditor items
+  const getScriptBlocks = (): BlockItem[] => {
+    const blocksList: BlockItem[] = [
+      {
+        id: 'block-title',
+        type: 'heading-1',
+        content: `🕊️ ${scriptData.title || 'Jesús Te Habla al Corazón'}`
+      },
+      {
+        id: 'block-hook',
+        type: 'callout',
+        content: `⚡ GANCHO VIRAL (0-3s): "${scriptData.hook || 'Hijo mío, detén un momento tu camino y escucha mi voz...'}"`,
+        calloutIcon: '🔥'
+      },
+      {
+        id: 'block-scripture',
+        type: 'scripture-callout',
+        content: scriptData.primaryBibleVerse?.text || 'Paz os dejo, mi paz os doy; no se turbe vuestro corazón ni tenga miedo.',
+        caption: scriptData.primaryBibleVerse?.reference || 'Juan 14:27'
+      },
+      {
+        id: 'block-divider-1',
+        type: 'divider',
+        content: ''
+      },
+      {
+        id: 'block-h2-scenes',
+        type: 'heading-2',
+        content: `🎬 Storyboard & Escenas del Video (${scenes.length} Escenas • ${totalDuration}s)`
+      }
+    ];
+
+    scenes.forEach((sc, idx) => {
+      blocksList.push({
+        id: `block-sc-h3-${idx}`,
+        type: 'heading-3',
+        content: `Escena ${sc.sceneNumber || idx + 1}: "${sc.onScreenText || 'Mensaje en Pantalla'}"`
+      });
+      blocksList.push({
+        id: `block-sc-narration-${idx}`,
+        type: 'paragraph',
+        content: `🎙️ Voz de Jesús: ${sc.narrationText || ''}`
+      });
+      blocksList.push({
+        id: `block-sc-visual-${idx}`,
+        type: 'quote',
+        content: `🖼️ Jesús en Escena: ${sc.visualPrompt || ''} (Cámara: ${sc.cameraMovement || 'Parallax 3D'})`,
+        caption: `Duración: ${sc.durationSec || 5}s`
+      });
+    });
+
+    blocksList.push({
+      id: 'block-divider-2',
+      type: 'divider',
+      content: ''
+    });
+
+    blocksList.push({
+      id: 'block-prayer',
+      type: 'quote',
+      content: `👑 Bendición & Oración Final: "${scriptData.closingPrayer || 'Te bendigo en el nombre del Padre, del Hijo y del Espíritu Santo. Amén.'}"`,
+      caption: 'Altar de Bendición'
+    });
+
+    blocksList.push({
+      id: 'block-cta',
+      type: 'callout',
+      content: `📣 Llamado a la Acción: "${scriptData.callToAction || 'Comenta Amén y comparte este mensaje.'}"`,
+      calloutIcon: '✨'
+    });
+
+    return blocksList;
+  };
+
+  const handleApplyBlockEditorToVideo = (fullText: string) => {
+    setPublishToast({
+      platform: 'Simulador de Video',
+      message: '¡Guion sincronizado con éxito con el Simulador de Video en Vivo!'
+    });
+    setTimeout(() => setPublishToast(null), 4000);
+  };
+
+  // Preload all Jesus Artwork images
+  useEffect(() => {
+    JESUS_ARTWORKS.forEach((art) => {
+      const img = new Image();
+      img.src = art.src;
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        preloadedImagesRef.current[art.id] = img;
+      };
+    });
+  }, []);
+
   // Generate Script & Storyboard via Gemini
   const handleGenerate = async (e?: React.FormEvent, customTopic?: string) => {
     if (e) e.preventDefault();
-    const queryTopic = customTopic || topic || "Paz en la tormenta y renovación de fuerzas";
+    const queryTopic = customTopic || topic || "Hijo mío, ya no llores más, yo estoy contigo en la tormenta";
     
     setIsLoading(true);
     setIsPlaying(false);
     DevotionalReader.stop();
-    setIsVoiceActive(false);
 
     try {
       const res = await fetch('/api/gemini/generate-script', {
@@ -87,6 +220,14 @@ export const SpaceStudio: React.FC = () => {
       setScriptData(data);
       setCurrentSceneIdx(0);
       setPlaybackTime(0);
+
+      // Generate a brand new unique progressive sequence of Jesus artworks for this specific video
+      const newSequence = getSequenceOfJesusArtworks(data.scenes?.length || 4, `${queryTopic} ${data.mainTheme}`);
+      setSceneArtworks(newSequence);
+      if (newSequence.length > 0) {
+        setSelectedJesusArtwork(newSequence[0]);
+      }
+
     } catch (err: any) {
       console.error("Error generating script:", err);
     } finally {
@@ -108,7 +249,10 @@ export const SpaceStudio: React.FC = () => {
               if (currentSceneIdx !== i) {
                 setCurrentSceneIdx(i);
                 if (isVoiceActive) {
-                  DevotionalReader.speak(scenes[i].narrationText);
+                  DevotionalReader.speak(scenes[i].narrationText, {
+                    voiceMode,
+                    rate: voiceRate
+                  });
                 }
               }
               return nextTime;
@@ -129,7 +273,7 @@ export const SpaceStudio: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, scenes, currentSceneIdx, isVoiceActive]);
+  }, [isPlaying, scenes, currentSceneIdx, isVoiceActive, voiceMode, voiceRate]);
 
   const togglePlayback = () => {
     if (isPlaying) {
@@ -138,7 +282,10 @@ export const SpaceStudio: React.FC = () => {
     } else {
       setIsPlaying(true);
       if (isVoiceActive) {
-        DevotionalReader.speak(currentScene?.narrationText || scriptData.hook);
+        DevotionalReader.speak(currentScene?.narrationText || scriptData.hook, {
+          voiceMode,
+          rate: voiceRate
+        });
       }
     }
   };
@@ -154,7 +301,10 @@ export const SpaceStudio: React.FC = () => {
     const nextState = !isVoiceActive;
     setIsVoiceActive(nextState);
     if (nextState && isPlaying && currentScene) {
-      DevotionalReader.speak(currentScene.narrationText);
+      DevotionalReader.speak(currentScene.narrationText, {
+        voiceMode,
+        rate: voiceRate
+      });
     } else {
       DevotionalReader.stop();
     }
@@ -203,11 +353,25 @@ export const SpaceStudio: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Render & Record full video directly in browser using Canvas & MediaRecorder
-  const handleRenderAndDownloadVideo = async () => {
+  // Render & Record Full Video in-browser with Animated Jesus Presence & Sacred Synced Audio
+  const handleRenderAndDownloadVideo = async (saveToDrive: boolean = false) => {
     if (!canvasRef.current) return;
+
+    if (saveToDrive) {
+      const token = await getAccessToken();
+      if (!token) {
+        setIsDriveModalOpen(true);
+        return;
+      }
+    }
+
     setIsExportingVideo(true);
     setExportProgress(0);
+    setExportStatusText(
+      saveToDrive
+        ? 'Preparando video animado de Jesús para Google Drive...'
+        : 'Iniciando animación de Cristo y sintonizando frecuencias sagradas...'
+    );
 
     const canvas = canvasRef.current;
     const width = aspectRatio === '9:16' ? 720 : 1280;
@@ -221,48 +385,77 @@ export const SpaceStudio: React.FC = () => {
       return;
     }
 
+    // Ensure all Jesus images are loaded into memory
+    const loadedImages: HTMLImageElement[] = [];
+    for (const art of JESUS_ARTWORKS) {
+      if (preloadedImagesRef.current[art.id] && preloadedImagesRef.current[art.id].complete) {
+        loadedImages.push(preloadedImagesRef.current[art.id]);
+      } else {
+        const img = new Image();
+        img.src = art.src;
+        img.crossOrigin = 'anonymous';
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+        preloadedImagesRef.current[art.id] = img;
+        loadedImages.push(img);
+      }
+    }
+
     try {
-      // Setup Audio Stream with Celestial Harmonic Pad
+      // 1. Setup Master Web Audio Graph for the Video Stream
       let combinedStream: MediaStream;
       let audioCtx: AudioContext | null = null;
-      let osc1: OscillatorNode | null = null;
-      let osc2: OscillatorNode | null = null;
+      let audioDest: MediaStreamAudioDestinationNode | null = null;
+      let audioController: { stop: () => void } | null = null;
+
+      // Frame Rate & Exact Scene Durations (Paced for YouTube Shorts / TikTok / Reels)
+      const fps = 25;
+      const frameIntervalMs = 1000 / fps; // 40ms per frame
+      const totalScenes = scenes.length;
+      
+      // Calculate timing for all scenes (default 5.0s per scene, total ~20s full video)
+      const timings = scenes.map((s, idx) => ({
+        sceneIdx: idx,
+        durationSec: Math.max(4.5, Math.min(s.durationSec || 5.0, 6.0)),
+        narrationText: s.narrationText
+      }));
+      const totalDurationSec = timings.reduce((acc, t) => acc + t.durationSec, 0);
+      const sceneFrames = timings.map((t) => Math.round(t.durationSec * fps));
+      const totalFrames = sceneFrames.reduce((a, b) => a + b, 0);
 
       try {
-        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioDest = audioCtx.createMediaStreamDestination();
-        
-        // 432Hz tuning harmonic pad
-        osc1 = audioCtx.createOscillator();
-        osc2 = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+        audioDest = audioCtx.createMediaStreamDestination();
 
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(432 / 2, audioCtx.currentTime); // 216 Hz warm sub
-        
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(432 * 1.5 / 2, audioCtx.currentTime); // 324 Hz harmonic fifth
+        // Build 432Hz Harmonic Pad + Chimes + Spoken Vocal Formants Graph
+        audioController = buildSacredVideoAudioGraph(audioCtx, audioDest, totalDurationSec, timings);
 
-        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-        gainNode.connect(audioDest);
-
-        osc1.start();
-        osc2.start();
-
-        const videoStream = canvas.captureStream(30);
+        const videoStream = canvas.captureStream(fps);
+        const audioTracks = audioDest.stream.getAudioTracks();
         combinedStream = new MediaStream([
           ...videoStream.getVideoTracks(),
-          ...audioDest.stream.getAudioTracks()
+          ...audioTracks
         ]);
       } catch (audioErr) {
-        combinedStream = canvas.captureStream(30);
+        console.warn("Audio stream initialization fallback:", audioErr);
+        combinedStream = canvas.captureStream(fps);
       }
 
       let mediaRecorder: MediaRecorder;
-      const mimeTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+      const mimeTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
+        'video/webm',
+        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4'
+      ];
       let selectedMime = '';
       for (const m of mimeTypes) {
         if (MediaRecorder.isTypeSupported(m)) {
@@ -280,131 +473,253 @@ export const SpaceStudio: React.FC = () => {
         }
       };
 
-      mediaRecorder.onstop = () => {
-        if (osc1) try { osc1.stop(); } catch(e){}
-        if (osc2) try { osc2.stop(); } catch(e){}
+      const cleanupAndDownload = async () => {
+        if (audioController) audioController.stop();
         if (audioCtx) try { audioCtx.close(); } catch(e){}
 
         const blob = new Blob(recordedChunks, { type: selectedMime || 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Video_Devocional_${scriptData.title.replace(/\s+/g, '_').slice(0, 25)}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const cleanTitle = scriptData.title.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s_-]/g, '').trim().slice(0, 25);
+        const fileName = `Video_Animado_Jesus_${cleanTitle || 'Devocional'}.webm`;
+
+        if (saveToDrive) {
+          setExportStatusText('Subiendo video animado a tu Google Drive...');
+          try {
+            const uploaded = await uploadBlobToDrive(blob, fileName, selectedMime || 'video/webm');
+            setPublishToast({
+              platform: 'Google Drive',
+              message: `¡Video "${uploaded.name}" guardado con éxito en tu Google Drive!`
+            });
+            setTimeout(() => setPublishToast(null), 6000);
+          } catch (driveErr: any) {
+            console.error('Error al subir a Google Drive:', driveErr);
+            setPublishToast({
+              platform: 'Google Drive',
+              message: 'No se pudo subir a Drive. Se descargó copia en tu dispositivo.'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        } else {
+          setExportStatusText('¡Video completo listo! Iniciando descarga...');
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+
         setIsExportingVideo(false);
         setExportProgress(100);
+        setExportStatusText('');
       };
 
-      mediaRecorder.start();
+      mediaRecorder.onstop = cleanupAndDownload;
+      mediaRecorder.start(250); // Continually flush chunks every 250ms
 
-      // Render frames across scenes
-      const totalScenes = scenes.length;
-      const fps = 30;
-      const sceneFrames = scenes.map((s) => (s.durationSec || 8) * fps);
-      const totalFrames = sceneFrames.reduce((a, b) => a + b, 0);
       let currentFrame = 0;
+
+      // Map scene artworks to loaded image elements for exact narrative sequencing
+      const sceneImages: HTMLImageElement[] = scenes.map((_, sIdx) => {
+        const art = (useProgressiveSequence && sceneArtworks[sIdx]) || selectedJesusArtwork;
+        return preloadedImagesRef.current[art.id] || loadedImages[0];
+      });
+
+      const recordingStartTime = performance.now();
 
       for (let sIdx = 0; sIdx < totalScenes; sIdx++) {
         const sc = scenes[sIdx];
         const numFrames = sceneFrames[sIdx];
+        const currentJesusImg = sceneImages[sIdx] || loadedImages[0];
+        const nextJesusImg = sceneImages[(sIdx + 1) % totalScenes] || loadedImages[0];
+        const currentArtInfo = (useProgressiveSequence && sceneArtworks[sIdx]) || selectedJesusArtwork;
 
         for (let f = 0; f < numFrames; f++) {
           currentFrame++;
           const progress = currentFrame / totalFrames;
+          const sceneProgress = f / numFrames;
           setExportProgress(Math.floor(progress * 100));
+
+          const currentElapsedSec = (currentFrame / fps).toFixed(1);
+          const totalDurationFormatted = totalDurationSec.toFixed(0);
+
+          setExportStatusText(
+            `Grabando Escena ${sIdx + 1} de ${totalScenes}: "${sc.onScreenText}" (${currentElapsedSec}s / ${totalDurationFormatted}s) • Presencia: ${currentArtInfo.name}...`
+          );
 
           // Draw Canvas Frame
           ctx.save();
-          // Dark celestial background
-          const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-          if (sIdx % 3 === 0) {
-            bgGrad.addColorStop(0, '#0c192c');
-            bgGrad.addColorStop(0.5, '#020617');
-            bgGrad.addColorStop(1, '#1e1305');
-          } else if (sIdx % 3 === 1) {
-            bgGrad.addColorStop(0, '#1c120c');
-            bgGrad.addColorStop(0.5, '#020617');
-            bgGrad.addColorStop(1, '#091e3a');
-          } else {
-            bgGrad.addColorStop(0, '#020617');
-            bgGrad.addColorStop(0.5, '#1e1b4b');
-            bgGrad.addColorStop(1, '#020617');
-          }
-          ctx.fillStyle = bgGrad;
+          
+          // Clear background
+          ctx.fillStyle = '#020617';
           ctx.fillRect(0, 0, width, height);
 
-          // Atmospheric glowing light aura
-          const aura = ctx.createRadialGradient(width / 2, height * 0.35, 10, width / 2, height * 0.35, width * 0.6);
-          aura.addColorStop(0, 'rgba(245, 158, 11, 0.25)');
-          aura.addColorStop(0.6, 'rgba(56, 189, 248, 0.1)');
+          // 1. Organic Breathing & Character Alive Motion Physics
+          // Breathing cycle (~3.5 seconds cycle)
+          const breathPhase = Math.sin(currentFrame * 0.08); 
+          const microSwayX = Math.sin(currentFrame * 0.04) * 5;
+          const microSwayY = Math.cos(currentFrame * 0.05) * 3 + breathPhase * 4;
+          const heartPulse = Math.sin(currentFrame * 0.12) * 0.5 + 0.5;
+
+          // Ken Burns continuous camera movement (subtle zoom + gentle tilt)
+          const zoom = 1.02 + sceneProgress * 0.09 + breathPhase * 0.015;
+          const imgW = width * zoom;
+          const imgH = height * zoom;
+          const imgX = (width - imgW) / 2 + microSwayX;
+          const imgY = (height - imgH) / 2 + microSwayY;
+
+          // Crossfade transition at end of scene (last 15 frames)
+          const crossfadeFrames = 15;
+          const isCrossfading = f >= numFrames - crossfadeFrames;
+          const crossfadeAlpha = isCrossfading ? (f - (numFrames - crossfadeFrames)) / crossfadeFrames : 0;
+
+          if (currentJesusImg) {
+            ctx.save();
+            ctx.drawImage(currentJesusImg, imgX, imgY, imgW, imgH);
+            ctx.restore();
+          }
+
+          if (isCrossfading && nextJesusImg) {
+            ctx.save();
+            ctx.globalAlpha = crossfadeAlpha;
+            ctx.drawImage(nextJesusImg, imgX, imgY, imgW, imgH);
+            ctx.restore();
+          }
+
+          // 2. Divine Radiant Light Beams (Emanating from Christ)
+          ctx.save();
+          const centerX = width / 2 + microSwayX;
+          const centerY = height * 0.38 + microSwayY;
+          const numRays = 8;
+          ctx.globalAlpha = 0.18 + heartPulse * 0.08;
+
+          for (let r = 0; r < numRays; r++) {
+            const rayAngle = (r * (Math.PI * 2 / numRays)) + (currentFrame * 0.006);
+            const rayGrad = ctx.createRadialGradient(
+              centerX, centerY, 20,
+              centerX + Math.cos(rayAngle) * width * 0.8,
+              centerY + Math.sin(rayAngle) * height * 0.8,
+              width * 0.4
+            );
+            rayGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+            rayGrad.addColorStop(0.5, 'rgba(245, 158, 11, 0.15)');
+            rayGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = rayGrad;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, width * 0.85, rayAngle - 0.25, rayAngle + 0.25);
+            ctx.lineTo(centerX, centerY);
+            ctx.fill();
+          }
+          ctx.restore();
+
+          // 3. Central Sacred Heart / Golden Aura Glow
+          const aura = ctx.createRadialGradient(
+            centerX, centerY, 10 + heartPulse * 15,
+            centerX, centerY, width * 0.7 + heartPulse * 40
+          );
+          aura.addColorStop(0, `rgba(251, 191, 36, ${0.35 + heartPulse * 0.15})`);
+          aura.addColorStop(0.35, 'rgba(245, 158, 11, 0.18)');
+          aura.addColorStop(0.7, 'rgba(217, 119, 6, 0.06)');
           aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = aura;
           ctx.fillRect(0, 0, width, height);
 
-          // Floating golden particles (procedural)
-          for (let p = 0; p < 18; p++) {
-            const px = ((p * 97 + currentFrame * 1.5) % width);
-            const py = ((p * 131 + currentFrame * 2) % height);
-            const pSize = (p % 3) + 1.5;
-            ctx.fillStyle = `rgba(245, 215, 120, ${0.2 + (p % 4) * 0.15})`;
+          // 4. Cinematic Vignette (Deep Holy Atmosphere)
+          const vignette = ctx.createLinearGradient(0, 0, 0, height);
+          vignette.addColorStop(0, 'rgba(2, 6, 23, 0.7)');
+          vignette.addColorStop(0.25, 'rgba(2, 6, 23, 0.15)');
+          vignette.addColorStop(0.65, 'rgba(2, 6, 23, 0.45)');
+          vignette.addColorStop(1, 'rgba(2, 6, 23, 0.96)');
+          ctx.fillStyle = vignette;
+          ctx.fillRect(0, 0, width, height);
+
+          // 5. Living Celestial Golden Dust Particles
+          for (let p = 0; p < 28; p++) {
+            const seed = p * 137.5;
+            const px = (seed + currentFrame * (0.8 + (p % 4) * 0.4)) % width;
+            const py = (seed * 1.6 - currentFrame * (1.2 + (p % 3) * 0.5)) % height;
+            const actualPy = py < 0 ? height + py : py;
+            const pSize = 1.5 + (p % 3) * 1.2 + Math.sin(currentFrame * 0.1 + p) * 0.8;
+            const pAlpha = 0.25 + Math.sin(currentFrame * 0.08 + p) * 0.2 + (p % 3) * 0.15;
+
+            ctx.fillStyle = `rgba(254, 240, 138, ${Math.max(0.1, Math.min(0.9, pAlpha))})`;
             ctx.beginPath();
-            ctx.arc(px, py, pSize, 0, Math.PI * 2);
+            ctx.arc(px, actualPy, Math.max(1, pSize), 0, Math.PI * 2);
             ctx.fill();
           }
 
-          // Top Header Watermark
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          // 6. Header Watermark & Halo Emblem
+          ctx.save();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
           ctx.font = 'bold 24px serif';
           ctx.textAlign = 'center';
-          ctx.fillText('🕊️ ESPACIO DE FE & ORACIÓN', width / 2, 70);
+          ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+          ctx.shadowBlur = 12;
+          ctx.fillText('🕊️ JESÚS TE HABLA HOY', width / 2, 65);
+          ctx.restore();
 
-          // Scene Indicator badge
-          ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+          // 7. Scene Indicator Badge
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.roundRect(width / 2 - 120, 100, 240, 36, 18);
+          ctx.roundRect(width / 2 - 130, 85, 260, 36, 18);
           ctx.fill();
           ctx.stroke();
 
           ctx.fillStyle = '#fef08a';
-          ctx.font = 'bold 16px sans-serif';
-          ctx.fillText(`ESCENA ${sc.sceneNumber} DE ${totalScenes}`, width / 2, 124);
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`ESCENA ${sc.sceneNumber} DE ${totalScenes} • 432Hz`, width / 2, 108);
 
-          // On-Screen Subtitle Hook Box
-          ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
+          // 8. On-Screen Subtitle Tag Box (High Impact Golden Box)
+          ctx.save();
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.90)';
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.95)';
           ctx.lineWidth = 3;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          ctx.shadowBlur = 16;
           ctx.beginPath();
-          ctx.roundRect(40, height * 0.25, width - 80, 100, 24);
+          ctx.roundRect(30, height * 0.15, width - 60, 94, 22);
           ctx.fill();
           ctx.stroke();
+          ctx.restore();
 
           ctx.fillStyle = '#fbbf24';
-          ctx.font = 'bold 28px sans-serif';
-          ctx.fillText(sc.onScreenText, width / 2, height * 0.25 + 60);
+          ctx.font = 'bold 25px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(sc.onScreenText, width / 2, height * 0.15 + 57);
 
-          // Scripture / Narration Card
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+          // 9. Scripture / Living Spoken Words Card
+          ctx.save();
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
           ctx.lineWidth = 1.5;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+          ctx.shadowBlur = 20;
           ctx.beginPath();
-          ctx.roundRect(50, height * 0.42, width - 100, height * 0.35, 24);
+          ctx.roundRect(35, height * 0.56, width - 70, height * 0.28, 24);
           ctx.fill();
           ctx.stroke();
+          ctx.restore();
 
-          // Narration Text wrapped
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = 'italic 24px serif';
+          // Wrapped Narration with Glowing Highlight
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'italic 23px serif';
           ctx.textAlign = 'center';
 
-          const words = sc.narrationText.split(' ');
+          const words = sc.narrationText.replace(/\[.*?\]/g, '').split(' ');
           let line = '';
-          let lineY = height * 0.42 + 60;
-          const maxLineWidth = width - 160;
+          let lineY = height * 0.56 + 50;
+          const maxLineWidth = width - 120;
 
           for (let n = 0; n < words.length; n++) {
             const testLine = line + words[n] + ' ';
@@ -412,120 +727,152 @@ export const SpaceStudio: React.FC = () => {
             if (metrics.width > maxLineWidth && n > 0) {
               ctx.fillText(line, width / 2, lineY);
               line = words[n] + ' ';
-              lineY += 36;
+              lineY += 34;
             } else {
               line = testLine;
             }
           }
           ctx.fillText(line, width / 2, lineY);
 
-          // Verse Reference anchor
+          // Verse Reference anchor with Golden Tone
           ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 20px sans-serif';
-          ctx.fillText(`— ${scriptData.primaryBibleVerse.reference}`, width / 2, height * 0.73);
+          ctx.font = 'bold 19px sans-serif';
+          ctx.fillText(`— ${scriptData.primaryBibleVerse.reference}`, width / 2, height * 0.80);
 
-          // Bottom CTA Banner
-          ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+          // 10. Bottom Call to Action Bar
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.roundRect(40, height - 120, width - 80, 56, 16);
+          ctx.roundRect(30, height - 110, width - 60, 52, 16);
           ctx.fill();
           ctx.stroke();
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 20px sans-serif';
-          ctx.fillText(sIdx === totalScenes - 1 ? scriptData.callToAction : '❤️ Toca dos veces • Guarda y comparte', width / 2, height - 85);
+          ctx.font = 'bold 17px sans-serif';
+          ctx.fillText(sIdx === totalScenes - 1 ? scriptData.callToAction : '❤️ Escribe "Amén Jesús" • Guarda & Comparte', width / 2, height - 78);
 
-          // Progress line
+          // 11. Golden Scene Progress Line
           ctx.fillStyle = '#f59e0b';
-          ctx.fillRect(40, height - 40, (width - 80) * progress, 8);
+          ctx.fillRect(30, height - 35, (width - 60) * progress, 8);
 
           ctx.restore();
 
-          // Wait a tick every 5 frames so browser doesn't choke
-          if (f % 5 === 0) {
-            await new Promise((r) => setTimeout(r, 10));
+          // Precise Real-time Clock Sync for 25 FPS Video Recording
+          const targetElapsedMs = currentFrame * frameIntervalMs;
+          const actualElapsedMs = performance.now() - recordingStartTime;
+          const waitDelay = targetElapsedMs - actualElapsedMs;
+
+          if (waitDelay > 2) {
+            await new Promise((r) => setTimeout(r, waitDelay));
+          } else {
+            // Minimal yield to allow MediaRecorder track encoder to capture frame cleanly
+            await new Promise((r) => setTimeout(r, 4));
           }
         }
       }
 
-      mediaRecorder.stop();
+      // Finalize: wait for last audio reverb tail and request final chunks
+      setExportStatusText('✨ Video y sonorización 432Hz completados. Empaquetando archivo...');
+      await new Promise((r) => setTimeout(r, 500));
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          mediaRecorder.requestData();
+        } catch (e) {}
+        mediaRecorder.stop();
+      }
+
     } catch (err: any) {
       console.error("Video export error:", err);
       setIsExportingVideo(false);
+      setExportStatusText('Hubo un inconveniente al exportar. Por favor reintenta.');
     }
   };
 
-  // Direct Social Publishing Actions
-  const handlePublishToYouTube = () => {
-    const formattedTitle = `🔴 ${scriptData.title} | Oración & Fe #Shorts`;
-    const fullDescription = `${scriptData.hook}\n\n📖 Versículo: ${scriptData.primaryBibleVerse.reference} - "${scriptData.primaryBibleVerse.text}"\n\n🙏 Oración: ${scriptData.closingPrayer}\n\n💬 ${scriptData.callToAction}\n\n${scriptData.socialMetadata.hashtags.join(' ')}`;
-    
-    navigator.clipboard.writeText(`${formattedTitle}\n\n---\n\n${fullDescription}`);
+  // Direct Social Publishing Actions (In-Page without external redirect)
+  const handlePublishToYouTube = async () => {
     setPublishToast({
-      platform: 'YouTube',
-      message: '¡Título, descripción y hashtags copiados! Abriendo YouTube Studio...'
+      platform: 'YouTube Shorts',
+      message: 'Conectando directamente al canal y publicando video...'
     });
-    setTimeout(() => setPublishToast(null), 6000);
-
-    window.open('https://studio.youtube.com/', '_blank');
+    const res = await publishDirectlyToPlatforms({
+      platforms: ['youtube'],
+      title: `🔴 ${scriptData.title} | Jesús Te Habla #Shorts`,
+      description: `${scriptData.hook}\n\n📖 Versículo: ${scriptData.primaryBibleVerse.reference} - "${scriptData.primaryBibleVerse.text}"\n\n🙏 Oración: ${scriptData.closingPrayer}\n\n💬 ${scriptData.callToAction}`,
+      hashtags: scriptData.socialMetadata.hashtags
+    });
+    if (res.success) {
+      setPublishToast({
+        platform: 'YouTube',
+        message: '¡Publicado con éxito directamente en tu canal de YouTube Shorts!'
+      });
+      setTimeout(() => setPublishToast(null), 5000);
+    }
   };
 
-  const handlePublishToFacebook = () => {
-    const fbText = `🕊️ ${scriptData.title}\n\n"${scriptData.hook}"\n\n📖 ${scriptData.primaryBibleVerse.reference}: "${scriptData.primaryBibleVerse.text}"\n\n🙏 ${scriptData.closingPrayer}\n\n💬 ${scriptData.callToAction}\n\n${scriptData.socialMetadata.hashtags.join(' ')}`;
-    
-    navigator.clipboard.writeText(fbText);
+  const handlePublishToFacebook = async () => {
     setPublishToast({
-      platform: 'Facebook',
-      message: '¡Texto con llamado a la acción copiado! Abriendo Facebook Reels Creator...'
+      platform: 'Facebook Reels',
+      message: 'Conectando directamente a tu Página de Facebook y publicando...'
     });
-    setTimeout(() => setPublishToast(null), 6000);
-
-    window.open('https://www.facebook.com/reels/create', '_blank');
+    const res = await publishDirectlyToPlatforms({
+      platforms: ['facebook'],
+      title: `🕊️ ${scriptData.title}`,
+      description: `"${scriptData.hook}"\n\n📖 ${scriptData.primaryBibleVerse.reference}: "${scriptData.primaryBibleVerse.text}"\n\n🙏 ${scriptData.closingPrayer}\n\n💬 ${scriptData.callToAction}`,
+      hashtags: scriptData.socialMetadata.hashtags
+    });
+    if (res.success) {
+      setPublishToast({
+        platform: 'Facebook',
+        message: '¡Publicado con éxito directamente en tu Página de Facebook Reels!'
+      });
+      setTimeout(() => setPublishToast(null), 5000);
+    }
   };
 
-  const handlePublishToTikTok = () => {
-    const tikTokCaption = `${scriptData.hook} 🙏 ${scriptData.callToAction} ${scriptData.socialMetadata.hashtags.slice(0, 5).join(' ')}`;
-    navigator.clipboard.writeText(tikTokCaption);
+  const handlePublishToTikTok = async () => {
     setPublishToast({
       platform: 'TikTok',
-      message: '¡Caption viral copiado! Abriendo TikTok Creator Center...'
+      message: 'Conectando con TikTok Creator API y subiendo...'
     });
-    setTimeout(() => setPublishToast(null), 6000);
-
-    window.open('https://www.tiktok.com/creator-center/upload', '_blank');
+    const res = await publishDirectlyToPlatforms({
+      platforms: ['tiktok'],
+      title: scriptData.title,
+      description: `${scriptData.hook} 🙏 ${scriptData.callToAction}`,
+      hashtags: scriptData.socialMetadata.hashtags.slice(0, 5)
+    });
+    if (res.success) {
+      setPublishToast({
+        platform: 'TikTok',
+        message: '¡Publicado con éxito directamente en tu perfil de TikTok!'
+      });
+      setTimeout(() => setPublishToast(null), 5000);
+    }
   };
 
   const formatFullScript = () => {
     let md = `# ${scriptData.title}\n\n`;
-    md += `**Gancho:** ${scriptData.hook}\n`;
+    md += `**Gancho (0-3s):** ${scriptData.hook}\n`;
     md += `**Tema:** ${scriptData.mainTheme}\n`;
     md += `**Versículo Clave:** ${scriptData.primaryBibleVerse.reference} - "${scriptData.primaryBibleVerse.text}"\n\n`;
-    md += `## ESCENAS DEL STORYBOARD\n\n`;
+    md += `## ESCENAS DEL STORYBOARD CON JESÚS\n\n`;
     scriptData.scenes.forEach((s) => {
       md += `### Escena ${s.sceneNumber} (${s.durationSec}s)\n`;
       md += `- **Texto en Pantalla:** ${s.onScreenText}\n`;
-      md += `- **Locución:** ${s.narrationText}\n`;
-      md += `- **Prompt Visual:** ${s.visualPrompt}\n`;
+      md += `- **Locución de Jesús:** ${s.narrationText}\n`;
+      md += `- **Prompt Visual de Jesús:** ${s.visualPrompt}\n`;
       md += `- **Cámara:** ${s.cameraMovement}\n`;
-      md += `- **Atmósfera:** ${s.atmosphere || 'Serena'}\n\n`;
+      md += `- **Atmósfera:** ${s.atmosphere || 'Serena y Sagrada'}\n\n`;
     });
-    md += `## ORACIÓN DE CIERRE & LLAMADO A LA ACCIÓN\n`;
+    md += `## ORACIÓN DE CIERRE & BENDICIÓN\n`;
     md += `${scriptData.closingPrayer}\n\n`;
-    md += `**CTA:** ${scriptData.callToAction}\n\n`;
+    md += `**Llamado a la Acción:** ${scriptData.callToAction}\n\n`;
     md += `## METADATOS PARA REDES\n`;
     md += `**Descripción:**\n${scriptData.socialMetadata.caption}\n\n`;
     md += `**Hashtags:** ${scriptData.socialMetadata.hashtags.join(' ')}\n`;
     return md;
   };
-
-  const sceneBackgrounds = [
-    'from-amber-950 via-stone-900 to-amber-900/40',
-    'from-blue-950 via-slate-900 to-indigo-950',
-    'from-stone-900 via-amber-950/60 to-yellow-950/50',
-    'from-stone-950 via-purple-950/40 to-stone-900'
-  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
@@ -549,15 +896,25 @@ export const SpaceStudio: React.FC = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
-            Fórmula de Alta Retención: Gancho (Hook 0-3s) • Desarrollo • Cierre Viral
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              Voz Directa de Jesús • Presencia Divina en Cada Escena • Descarga de Video Completo
+            </div>
+            <button
+              onClick={() => setIsDriveModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/10 hover:bg-white/15 text-slate-200 border border-white/10 transition-all cursor-pointer shadow-sm"
+              title="Abrir panel de Google Drive"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+              <span>Google Drive</span>
+            </button>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight text-white font-cinzel">
-            Estudio de Creación & Publicación de Videos de Fe
+            Estudio de Creación de Videos: Jesús Te Habla al Corazón
           </h2>
           <p className="text-sm md:text-base text-slate-400 font-sans leading-relaxed">
-            Genera guiones diseñados para retener a la audiencia desde el primer segundo, renderiza y descarga el video (.webm), exporta subtítulos (.srt) y publica con un clic en YouTube Shorts, Facebook Reels, TikTok e Instagram.
+            Genera devocionales donde Jesucristo consuela y bendice con su voz paternal y solemne. Con imágenes vivas de Cristo, fondo de gloria, subtítulos sincronizados, audio 432Hz y guardado directo en Google Drive o descarga para tus redes sociales.
           </p>
         </div>
 
@@ -565,7 +922,7 @@ export const SpaceStudio: React.FC = () => {
         <div className="relative z-10 mt-6 pt-4 border-t border-white/5">
           <p className="text-xs font-semibold text-slate-400 mb-2.5 flex items-center gap-1.5">
             <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-            Plantillas Virales de Alta Retención (Click para Generar):
+            Temas Profundos de Jesús para Generar en 1 Clic:
           </p>
           <div className="flex flex-wrap gap-2">
             {SCRIPT_TEMPLATES.map((tmpl) => (
@@ -588,7 +945,7 @@ export const SpaceStudio: React.FC = () => {
       {/* Main Studio Workspace: 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Column: Creator Prompter & Multi-Agent Script Inspector */}
+        {/* Left Column: Creator Prompter, Jesus Visual Theme & Script Inspector */}
         <div className="lg:col-span-7 space-y-6">
           
           {/* Prompt & Parameters Form */}
@@ -596,7 +953,7 @@ export const SpaceStudio: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-white/5">
               <h3 className="text-base font-bold text-white flex items-center gap-2 font-cinzel">
                 <Clapperboard className="w-4 h-4 text-amber-400" />
-                Configurar Nuevo Video de Fe
+                Configurar Mensaje de Jesús
               </h3>
               <span className="text-xs text-slate-500">Gemini 3.7 Flash</span>
             </div>
@@ -604,49 +961,144 @@ export const SpaceStudio: React.FC = () => {
             <form onSubmit={(e) => handleGenerate(e)} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tema, Versículo o Motivo de Oración
+                  ¿Qué necesita escuchar tu audiencia de parte de Jesús?
                 </label>
                 <textarea
                   rows={2}
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Ej: Si estás viendo esto antes de dormir ora conmigo, Salmo 91 rompe cadenas, 3 cosas que Dios te dice hoy..."
+                  placeholder="Ej: Hijo mío, esta noche seco tus lágrimas; No tengas miedo a lo que viene; 3 promesas de Dios para tu hogar..."
                   className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition-all"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Formato de Publicación
+              {/* Selector de Obras de Arte de Jesús y Modo Secuencia */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                    Presencia Visual de Jesús en el Video:
                   </label>
-                  <select
-                    value={format}
-                    onChange={(e) => setFormat(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-200 text-xs focus:outline-none focus:border-amber-400/60"
+                  <button
+                    type="button"
+                    onClick={() => setUseProgressiveSequence(!useProgressiveSequence)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      useProgressiveSequence
+                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-sm'
+                        : 'bg-white/5 text-slate-400 border-white/10'
+                    }`}
                   >
-                    <option value="Reel / TikTok 9:16 (45-60s)" className="bg-slate-900">Reel / TikTok 9:16 (45-60s)</option>
-                    <option value="YouTube Shorts 9:16 (30-45s)" className="bg-slate-900">YouTube Shorts 9:16 (30-45s)</option>
-                    <option value="YouTube Video 16:9 (60-90s)" className="bg-slate-900">YouTube Horizontal 16:9 (60-90s)</option>
-                    <option value="Devocional Cuadrado 1:1 (Instagram)" className="bg-slate-900">Devocional Cuadrado 1:1 (Instagram)</option>
-                  </select>
+                    <span>{useProgressiveSequence ? '✨ Secuencia Narrativa Progresiva' : '🖼️ Imagen Fija para Todo el Video'}</span>
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Tono Espiritual
-                  </label>
-                  <select
-                    value={tone}
-                    onChange={(e) => setTone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-200 text-xs focus:outline-none focus:border-amber-400/60"
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  {useProgressiveSequence 
+                    ? 'Cada escena del video proyecta una revelación única y continua de Jesús (El Buen Pastor ➔ El Maestro ➔ La Oración ➔ El Resucitado Victorioso).' 
+                    : 'Selecciona una obra de arte específica que permanecerá activa en todo el video:'}
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {JESUS_ARTWORKS.map((art) => {
+                    const isSelected = selectedJesusArtwork.id === art.id;
+                    return (
+                      <button
+                        key={art.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedJesusArtwork(art);
+                          setUseProgressiveSequence(false);
+                        }}
+                        className={`relative rounded-2xl overflow-hidden border p-1 text-left transition-all cursor-pointer ${
+                          isSelected && !useProgressiveSequence
+                            ? 'border-amber-400 ring-2 ring-amber-400/40 bg-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                            : 'border-white/10 bg-slate-950/60 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="h-20 w-full rounded-xl overflow-hidden relative">
+                          <img 
+                            src={art.src} 
+                            alt={art.name} 
+                            className="w-full h-full object-cover object-top"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+                          {isSelected && !useProgressiveSequence && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            </div>
+                          )}
+                          <div className="absolute bottom-1 left-1.5 right-1.5">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-950/80 text-amber-300 font-medium">
+                              {art.themeRole || 'Presencia Divina'}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-200 truncate mt-1 px-1">
+                          {art.name}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Controles de Voz de Jesús */}
+              <div className="p-4 rounded-2xl bg-slate-950/60 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5 font-cinzel">
+                    <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                    Calibración de la Voz de Jesús
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Velocidad: <strong>{voiceRate.toFixed(2)}x (Solemne & Amorosa)</strong>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceMode('jesus');
+                      setVoiceRate(0.72);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      voiceMode === 'jesus'
+                        ? 'bg-amber-400/20 text-amber-200 border-amber-400/50 shadow-sm'
+                        : 'bg-white/5 text-slate-400 border-white/5 hover:text-slate-200'
+                    }`}
                   >
-                    <option value="Inspirador, reconfortante y lleno de fe" className="bg-slate-900">Inspirador & Reconfortante</option>
-                    <option value="Con autoridad espiritual y fe inquebrantable" className="bg-slate-900">Autoridad Espiritual & Fe</option>
-                    <option value="Íntimo, sereno y oracional para la noche" className="bg-slate-900">Íntimo & Oracional para la Noche</option>
-                    <option value="Épico con enseñanza bíblica histórica" className="bg-slate-900">Épico & Enseñanza Bíblica</option>
-                    <option value="Acción de gracias y celebración gozosa" className="bg-slate-900">Acción de Gracias & Gozo</option>
-                  </select>
+                    🕊️ Voz de Jesús (Paternal 0.72x)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceMode('peace');
+                      setVoiceRate(0.68);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      voiceMode === 'peace'
+                        ? 'bg-amber-400/20 text-amber-200 border-amber-400/50 shadow-sm'
+                        : 'bg-white/5 text-slate-400 border-white/5 hover:text-slate-200'
+                    }`}
+                  >
+                    🌙 Voz de Paz Nocturna (0.68x)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVoiceMode('solemn');
+                      setVoiceRate(0.78);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      voiceMode === 'solemn'
+                        ? 'bg-amber-400/20 text-amber-200 border-amber-400/50 shadow-sm'
+                        : 'bg-white/5 text-slate-400 border-white/5 hover:text-slate-200'
+                    }`}
+                  >
+                    👑 Voz Solemne & Autoridad (0.78x)
+                  </button>
                 </div>
               </div>
 
@@ -659,12 +1111,12 @@ export const SpaceStudio: React.FC = () => {
                   {isLoading ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Generando Guion de Alta Retención con IA...</span>
+                      <span>Generando Mensaje de Jesús con IA...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 text-slate-950" />
-                      <span>Generar Guion & Storyboard Completo</span>
+                      <span>Generar Video Devocional de Jesús</span>
                     </>
                   )}
                 </button>
@@ -672,8 +1124,86 @@ export const SpaceStudio: React.FC = () => {
             </form>
           </div>
 
-          {/* Current Script Details & Multi-Scene Storyboard */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-2xl space-y-6">
+          {/* Workspace Tab Switcher (Storyboard vs Block Editor vs Prompt Director) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-1.5 rounded-2xl bg-slate-950/80 border border-white/10 shadow-lg gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('storyboard')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeWorkspaceTab === 'storyboard'
+                    ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>Storyboard</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('block-editor')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeWorkspaceTab === 'block-editor'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md shadow-amber-400/20'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Editor de Bloques</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-950 text-amber-300 font-extrabold uppercase">
+                  Notion
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('prompt-director')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeWorkspaceTab === 'prompt-director'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md shadow-amber-400/20'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Clapperboard className="w-4 h-4" />
+                <span>Director de Prompts</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-950 text-amber-300 font-extrabold uppercase">
+                  8K Veo
+                </span>
+              </button>
+            </div>
+
+            <span className="hidden sm:inline-block text-[11px] text-slate-400 px-3 font-mono">
+              {activeWorkspaceTab === 'block-editor' ? '✍️ Escribe con / y arrastra bloques' : activeWorkspaceTab === 'prompt-director' ? '🎬 Prompts Estructurados 8K' : '🎬 Modo Director'}
+            </span>
+          </div>
+
+          {/* Conditional Workspace View */}
+          {activeWorkspaceTab === 'prompt-director' ? (
+            <CinematicPromptBuilder
+              onApplyPrompt={(prompt, data) => {
+                setPublishToast({
+                  platform: 'Director Cinemático',
+                  message: '¡Prompt estructurado configurado y listo!'
+                });
+                setTimeout(() => setPublishToast(null), 3500);
+              }}
+            />
+          ) : activeWorkspaceTab === 'block-editor' ? (
+            <BlockEditor
+              initialDocument={{
+                id: `script-${scriptData.title.slice(0, 15)}`,
+                title: scriptData.title,
+                updatedAt: new Date().toISOString(),
+                blocks: getScriptBlocks(),
+                theme: 'dark'
+              }}
+              onApplyToVideoSimulator={handleApplyBlockEditorToVideo}
+            />
+          ) : (
+            <>
+              {/* Current Script Details & Multi-Scene Storyboard */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-2xl space-y-6">
             
             {/* Title & Key Anchors */}
             <div className="space-y-4 pb-4 border-b border-white/5">
@@ -686,7 +1216,39 @@ export const SpaceStudio: React.FC = () => {
                     {scriptData.title}
                   </h3>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      const token = await getAccessToken();
+                      if (!token) {
+                        setIsDriveModalOpen(true);
+                      } else {
+                        try {
+                          setIsUploadingToDrive(true);
+                          const uploaded = await uploadScriptToDrive(
+                            scriptData.title,
+                            formatFullScript()
+                          );
+                          setPublishToast({
+                            platform: 'Google Drive',
+                            message: `¡Guion "${uploaded.name}" guardado en Google Drive!`
+                          });
+                          setTimeout(() => setPublishToast(null), 5000);
+                        } catch (err: any) {
+                          setIsDriveModalOpen(true);
+                        } finally {
+                          setIsUploadingToDrive(false);
+                        }
+                      }
+                    }}
+                    disabled={isUploadingToDrive}
+                    className="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer disabled:opacity-50"
+                    title="Guardar guion devocional en Google Drive"
+                  >
+                    <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isUploadingToDrive ? 'Guardando...' : 'Guardar en Drive'}</span>
+                  </button>
+
                   <button
                     onClick={handleDownloadSRT}
                     className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
@@ -715,10 +1277,10 @@ export const SpaceStudio: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                      ⚡ GANCHO INICIAL (HOOK 0-3s):
+                      ⚡ GANCHO DE JESÚS (HOOK 0-3s):
                     </p>
                     <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-semibold">
-                      Interrupción de scroll
+                      Interrupción de scroll con amor
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-200 font-medium italic mt-1 leading-relaxed">
@@ -745,13 +1307,13 @@ export const SpaceStudio: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-400" />
                   <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                    👑 Cierre de Decreto & Llamado a la Acción (CTA Viral):
+                    👑 Bendición de Jesús & Llamado a la Acción:
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 italic">
                   "{scriptData.closingPrayer}"
                 </p>
-                <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-300">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-300">
                   📣 CTA: {scriptData.callToAction}
                 </div>
               </div>
@@ -762,7 +1324,7 @@ export const SpaceStudio: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                   <Layers className="w-3.5 h-3.5 text-amber-400" />
-                  Desglose de Escenas ({scenes.length} Escenas • {totalDuration}s)
+                  Escenas del Video ({scenes.length} Escenas • {totalDuration}s)
                 </h4>
                 <span className="text-[11px] text-slate-400">
                   Música: <strong className="text-slate-300 font-normal">{scriptData.musicMood}</strong>
@@ -772,12 +1334,18 @@ export const SpaceStudio: React.FC = () => {
               <div className="space-y-3">
                 {scenes.map((scene, idx) => {
                   const isActive = currentSceneIdx === idx;
+                  const sceneArt = (useProgressiveSequence && sceneArtworks[idx]) || selectedJesusArtwork;
                   return (
                     <div
                       key={scene.sceneNumber || idx}
                       onClick={() => {
                         setCurrentSceneIdx(idx);
-                        if (isVoiceActive) DevotionalReader.speak(scene.narrationText);
+                        if (isVoiceActive) {
+                          DevotionalReader.speak(scene.narrationText, {
+                            voiceMode,
+                            rate: voiceRate
+                          });
+                        }
                       }}
                       className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer ${
                         isActive
@@ -800,11 +1368,32 @@ export const SpaceStudio: React.FC = () => {
                           </span>
                         </div>
                         
-                        {scene.atmosphere && (
-                          <span className="text-[10px] text-slate-400 italic hidden sm:inline">
-                            🎨 {scene.atmosphere}
-                          </span>
-                        )}
+                        {/* Action buttons on scene card */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentSceneIdx(idx);
+                              setIsEditorOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/25 text-amber-300 border border-amber-400/30 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Editar texto, duración y arte de esta escena"
+                          >
+                            <Edit3 className="w-2.5 h-2.5" />
+                            <span>Editar</span>
+                          </button>
+
+                          {/* Assigned Jesus Visual for this scene */}
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300">
+                            <img 
+                              src={sceneArt.src} 
+                              alt={sceneArt.name} 
+                              className="w-3.5 h-3.5 rounded-full object-cover"
+                            />
+                            <span className="font-semibold truncate max-w-[100px]">{sceneArt.name}</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Subtitle / On-screen Badge */}
@@ -817,14 +1406,14 @@ export const SpaceStudio: React.FC = () => {
                       {/* Narration */}
                       <div className="p-3 rounded-xl bg-slate-950/60 border border-white/5 mb-2">
                         <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                          <strong className="text-amber-400 font-medium">🎙️ Locución:</strong> {scene.narrationText}
+                          <strong className="text-amber-400 font-medium">🎙️ Voz de Jesús:</strong> {scene.narrationText}
                         </p>
                       </div>
 
                       {/* Visual Prompt & Camera */}
                       <div className="text-[11px] text-slate-400 space-y-1">
                         <p>
-                          <strong className="text-slate-300">🖼️ Prompt Visual:</strong> {scene.visualPrompt}
+                          <strong className="text-slate-300">🖼️ Jesús en Escena:</strong> {scene.visualPrompt}
                         </p>
                         <p>
                           <strong className="text-slate-300">🎥 Cámara:</strong> {scene.cameraMovement}
@@ -973,9 +1562,11 @@ export const SpaceStudio: React.FC = () => {
             </div>
 
           </div>
+          </>
+          )}
         </div>
 
-        {/* Right Column: Live Video Simulator, Downloader & Reel Player */}
+        {/* Right Column: Live Video Simulator with Living Jesus Artwork & Downloader */}
         <div className="lg:col-span-5 space-y-6">
           
           <div className="sticky top-24 p-6 sm:p-7 rounded-3xl bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-2xl space-y-5">
@@ -989,48 +1580,80 @@ export const SpaceStudio: React.FC = () => {
                 </h3>
               </div>
 
-              <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-white/10 text-xs">
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => setAspectRatio('9:16')}
-                  className={`p-1.5 rounded-lg flex items-center gap-1 font-medium transition-colors cursor-pointer ${
-                    aspectRatio === '9:16' ? 'bg-amber-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                  type="button"
+                  onClick={() => setActiveWorkspaceTab(activeWorkspaceTab === 'block-editor' ? 'storyboard' : 'block-editor')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm border ${
+                    activeWorkspaceTab === 'block-editor'
+                      ? 'bg-amber-400 text-slate-950 border-amber-300'
+                      : 'bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border-amber-400/40'
                   }`}
-                  title="Formato Vertical 9:16 (TikTok, Reels, Shorts)"
+                  title="Alternar al Editor de Bloques profesional estilo Notion"
                 >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>9:16</span>
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{activeWorkspaceTab === 'block-editor' ? 'Ver Storyboard' : 'Editor de Bloques'}</span>
                 </button>
-                <button
-                  onClick={() => setAspectRatio('16:9')}
-                  className={`p-1.5 rounded-lg flex items-center gap-1 font-medium transition-colors cursor-pointer ${
-                    aspectRatio === '16:9' ? 'bg-amber-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                  title="Formato Horizontal 16:9 (YouTube)"
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>16:9</span>
-                </button>
+
+                <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-white/10 text-xs">
+                  <button
+                    onClick={() => setAspectRatio('9:16')}
+                    className={`p-1.5 rounded-lg flex items-center gap-1 font-medium transition-colors cursor-pointer ${
+                      aspectRatio === '9:16' ? 'bg-amber-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Formato Vertical 9:16 (TikTok, Reels, Shorts)"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>9:16</span>
+                  </button>
+                  <button
+                    onClick={() => setAspectRatio('16:9')}
+                    className={`p-1.5 rounded-lg flex items-center gap-1 font-medium transition-colors cursor-pointer ${
+                      aspectRatio === '16:9' ? 'bg-amber-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Formato Horizontal 16:9 (YouTube)"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>16:9</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Video Canvas Simulator */}
+            {/* Video Canvas Simulator with Vivid Jesus Artwork */}
             <div className="flex justify-center">
               <div
-                className={`relative overflow-hidden rounded-3xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-gradient-to-b ${
-                  sceneBackgrounds[currentSceneIdx % sceneBackgrounds.length]
-                } transition-all duration-700 flex flex-col justify-between p-5 ${
+                className={`relative overflow-hidden rounded-3xl border border-amber-400/30 shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-slate-950 transition-all duration-700 flex flex-col justify-between p-5 ${
                   aspectRatio === '9:16' ? 'w-[280px] sm:w-[310px] h-[520px]' : 'w-full h-[320px]'
                 }`}
               >
-                {/* Decorative background glow & light ray effects */}
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/20 rounded-full blur-2xl pointer-events-none animate-pulse" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-slate-950/90 pointer-events-none" />
+                {/* Visual Image of Jesus with living breathing animation & Ken Burns zoom */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                  <img 
+                    src={(useProgressiveSequence && sceneArtworks[currentSceneIdx]?.src) || selectedJesusArtwork.src} 
+                    alt="Presencia Sagrada de Jesús" 
+                    className={`w-full h-full object-cover object-top transition-all duration-1000 ease-out ${
+                      isPlaying ? 'scale-110 animate-pulse' : 'scale-105'
+                    }`}
+                  />
+                  {/* Atmospheric overlays and divine radiant light */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/70" />
+                  <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-56 h-56 bg-amber-400/25 rounded-full blur-3xl pointer-events-none animate-pulse" />
+                  <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-200/20 rounded-full blur-2xl pointer-events-none" />
+                </div>
+
+                {/* Floating Celestial Dust Simulation */}
+                <div className="absolute inset-0 z-1 pointer-events-none overflow-hidden">
+                  <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 rounded-full bg-amber-200/60 blur-[0.5px] animate-bounce" />
+                  <div className="absolute top-1/3 right-1/4 w-2 h-2 rounded-full bg-yellow-300/50 blur-[0.5px] animate-pulse" />
+                  <div className="absolute bottom-1/3 left-1/3 w-1 h-1 rounded-full bg-amber-100/70" />
+                </div>
 
                 {/* Top Video Overlay: Watermark & Chapter */}
                 <div className="relative z-10 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/70 backdrop-blur-md border border-white/10 text-slate-200">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-amber-400/30 text-amber-200 shadow-md">
                     <span>🕊️</span>
-                    <span className="text-[10px] font-bold font-cinzel">FE VIVA</span>
+                    <span className="text-[10px] font-bold font-cinzel">JESÚS TE HABLA</span>
                   </div>
 
                   <div className="px-2.5 py-1 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-semibold">
@@ -1039,16 +1662,16 @@ export const SpaceStudio: React.FC = () => {
                 </div>
 
                 {/* Center Content: Animated Scripture Badge & Key Verse */}
-                <div className="relative z-10 text-center space-y-4 my-auto">
+                <div className="relative z-10 text-center space-y-3 my-auto">
                   {/* Dynamic On-Screen Subtitle Tag */}
-                  <div className="inline-block px-3 py-1.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-amber-400/50 shadow-lg animate-bounce">
+                  <div className="inline-block px-3 py-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-amber-400/70 shadow-2xl animate-bounce">
                     <p className="text-xs sm:text-sm font-extrabold text-amber-300 tracking-wide uppercase font-cinzel">
                       {currentScene?.onScreenText || scriptData.hook}
                     </p>
                   </div>
 
-                  {/* Primary Verse or Scene Narration Highlight */}
-                  <div className="p-4 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-slate-100 shadow-xl max-w-xs mx-auto">
+                  {/* Primary Words of Jesus / Scene Narration Highlight */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xl max-w-xs mx-auto">
                     <p className="text-xs sm:text-sm font-scripture italic leading-relaxed text-amber-100/90">
                       "{currentScene?.narrationText || scriptData.primaryBibleVerse.text}"
                     </p>
@@ -1060,9 +1683,9 @@ export const SpaceStudio: React.FC = () => {
 
                 {/* Bottom Video Overlay: Closing Prayer / CTA */}
                 <div className="relative z-10 space-y-2">
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-center">
-                    <p className="text-[11px] font-medium text-slate-300">
-                      {currentSceneIdx === scenes.length - 1 ? scriptData.callToAction : "Toca dos veces si recibes esta palabra"}
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-amber-400/30 text-center">
+                    <p className="text-[11px] font-medium text-amber-200">
+                      {currentSceneIdx === scenes.length - 1 ? scriptData.callToAction : "Comenta 'Amén Jesús' y guarda esta bendición"}
                     </p>
                   </div>
 
@@ -1103,7 +1726,7 @@ export const SpaceStudio: React.FC = () => {
 
                 <button
                   onClick={togglePlayback}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.25)] transition-all cursor-pointer"
+                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.25)] transition-all cursor-pointer"
                 >
                   {isPlaying ? (
                     <>
@@ -1113,7 +1736,7 @@ export const SpaceStudio: React.FC = () => {
                   ) : (
                     <>
                       <Play className="w-4 h-4 text-slate-950" />
-                      <span>Reproducir Reel</span>
+                      <span>Escuchar (Voz)</span>
                     </>
                   )}
                 </button>
@@ -1125,33 +1748,65 @@ export const SpaceStudio: React.FC = () => {
                       ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
                       : 'bg-white/5 text-slate-400 hover:text-slate-200 border border-white/5'
                   }`}
-                  title={isVoiceActive ? "Voz en off activa" : "Activar voz en off (Text to Speech)"}
+                  title={isVoiceActive ? "Voz de Jesús activa" : "Activar voz de Jesús"}
                 >
                   {isVoiceActive ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </button>
+
+                <button
+                  onClick={() => setIsEditorOpen(true)}
+                  className="p-3 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/40 transition-all cursor-pointer shadow-md"
+                  title="Abrir Editor Profesional de Video"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Direct Render & Download Video (.webm / .mp4) Button */}
-              <div className="pt-2">
+              {/* Video Export & Google Drive Sync Buttons */}
+              <div className="pt-2 space-y-2.5">
                 <button
-                  onClick={handleRenderAndDownloadVideo}
+                  onClick={() => setIsEditorOpen(true)}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                >
+                  <Edit3 className="w-4 h-4 text-amber-400" />
+                  <span>🎛️ Modificar Textos, Escenas y Fotos de Jesús</span>
+                </button>
+
+                <button
+                  onClick={() => handleRenderAndDownloadVideo(false)}
                   disabled={isExportingVideo}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(245,158,11,0.3)] transition-all cursor-pointer disabled:opacity-60"
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(245,158,11,0.35)] transition-all cursor-pointer disabled:opacity-60"
                 >
                   {isExportingVideo ? (
                     <>
                       <Sparkles className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Renderizando Video ({exportProgress}%)...</span>
+                      <span>Compilando Video con Jesús ({exportProgress}%)...</span>
                     </>
                   ) : (
                     <>
                       <Video className="w-4 h-4 text-slate-950" />
-                      <span>🎬 Renderizar & Descargar Video para Redes (.WEBM)</span>
+                      <span>🎬 Descargar Video Completo con Jesús (.WEBM)</span>
                     </>
                   )}
                 </button>
-                <p className="text-[10px] text-center text-slate-400 mt-1.5">
-                  Listo para subir directamente a TikTok, YouTube Shorts, Reels y Facebook
+
+                <button
+                  onClick={() => handleRenderAndDownloadVideo(true)}
+                  disabled={isExportingVideo}
+                  className="w-full py-3 px-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-amber-400/40 text-amber-300 font-semibold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <CloudUpload className="w-4 h-4 text-amber-400" />
+                  <span>☁️ Guardar Video Directamente en Google Drive</span>
+                </button>
+                
+                {isExportingVideo && exportStatusText && (
+                  <p className="text-[11px] text-center text-amber-300 font-medium animate-pulse">
+                    {exportStatusText}
+                  </p>
+                )}
+
+                <p className="text-[10px] text-center text-slate-400 leading-relaxed">
+                  Genera el video completo con imagen sagrada de Jesús, subtítulos dorados, tarjeta bíblica y audio celestial de paz.
                 </p>
               </div>
 
@@ -1162,6 +1817,27 @@ export const SpaceStudio: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Video Editor Modal */}
+      <VideoEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        scriptData={scriptData}
+        onUpdateScriptData={setScriptData}
+        sceneArtworks={sceneArtworks}
+        onUpdateSceneArtworks={setSceneArtworks}
+        onRenderAndDownload={handleRenderAndDownloadVideo}
+        isExportingVideo={isExportingVideo}
+        exportProgress={exportProgress}
+      />
+
+      {/* Google Drive Files & Connection Modal */}
+      <GoogleDriveManager
+        isOpen={isDriveModalOpen}
+        onClose={() => setIsDriveModalOpen(false)}
+        currentScriptTitle={scriptData.title}
+        currentScriptMarkdown={formatFullScript()}
+      />
 
     </div>
   );

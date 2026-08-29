@@ -6,6 +6,7 @@ import { PrayerSanctuary } from './components/PrayerSanctuary';
 import { DailyDevotionalView } from './components/DailyDevotionalView';
 import { BiblicalCounselor } from './components/BiblicalCounselor';
 import { BlessingCardStudio } from './components/BlessingCardStudio';
+import { SocialMediaManager } from './components/SocialMediaManager';
 import { Flame, Heart, Sparkles, Radio } from 'lucide-react';
 
 export default function App() {
@@ -29,6 +30,11 @@ export default function App() {
           {/* Main Content Area */}
           <main className="pb-16 pt-2">
             {activeTab === 'studio' && <SpaceStudio />}
+            {activeTab === 'social-connect' && (
+              <SocialMediaManager 
+                onOpenVeoStudio={() => setActiveTab('studio')}
+              />
+            )}
             {activeTab === 'sanctuary' && <PrayerSanctuary />}
             {activeTab === 'devotional' && <DailyDevotionalView />}
             {activeTab === 'counselor' && <BiblicalCounselor />}

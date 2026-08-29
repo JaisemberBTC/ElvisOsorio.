@@ -268,7 +268,7 @@ class AmbientSoundEngine {
 
 export const ambientSound = new AmbientSoundEngine();
 
-// Speech Synthesis Reader
+// Speech Synthesis Reader - Calibrated for the Solemn & Loving Voice of Jesus
 export class DevotionalReader {
   private static synth: SpeechSynthesis | null = typeof window !== 'undefined' ? window.speechSynthesis : null;
   private static utterance: SpeechSynthesisUtterance | null = null;
@@ -279,6 +279,7 @@ export class DevotionalReader {
     options?: {
       rate?: number;
       pitch?: number;
+      voiceMode?: 'jesus' | 'solemn' | 'peace';
       onEnd?: () => void;
       onBoundary?: (charIndex: number) => void;
     }
@@ -286,22 +287,43 @@ export class DevotionalReader {
     if (!this.synth) return;
     this.stop();
 
-    // Clean brackets or directorial tags like [pausa]
-    const cleanText = text.replace(/\[.*?\]/g, ' ... ');
+    // Clean brackets or directorial tags and create gentle pauses
+    const cleanText = text
+      .replace(/\[pausa.*?\]/gi, ' ... ')
+      .replace(/\[.*?\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
     this.utterance = new SpeechSynthesisUtterance(cleanText);
     this.utterance.lang = 'es-ES';
-    this.utterance.rate = options?.rate || 0.88; // Gentle, reverent pace
-    this.utterance.pitch = options?.pitch || 1.0;
 
-    // Pick a natural Spanish voice if available
+    // Voice profiles: Slower, deeper, soothing, solemn
+    if (options?.voiceMode === 'jesus') {
+      this.utterance.rate = options.rate || 0.74; // Slow, calm, loving fatherly pace
+      this.utterance.pitch = options.pitch || 0.88; // Deeper resonant tone
+    } else if (options?.voiceMode === 'peace') {
+      this.utterance.rate = options.rate || 0.70; // Ultra meditative pace
+      this.utterance.pitch = options.pitch || 0.84;
+    } else {
+      this.utterance.rate = options?.rate || 0.76;
+      this.utterance.pitch = options?.pitch || 0.90;
+    }
+
+    // Pick best natural Spanish voice
     const voices = this.synth.getVoices();
-    const esVoice = voices.find(v => v.lang.startsWith('es') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Sabina') || v.name.includes('Alvaro') || v.name.includes('Jorge') || v.name.includes('Elena')));
+    const esVoice = voices.find(v => 
+      v.lang.startsWith('es') && (
+        v.name.includes('Jorge') || 
+        v.name.includes('Alvaro') || 
+        v.name.includes('Diego') || 
+        v.name.includes('Natural') || 
+        v.name.includes('Google') || 
+        v.name.includes('Castilian')
+      )
+    ) || voices.find(v => v.lang.startsWith('es'));
+
     if (esVoice) {
       this.utterance.voice = esVoice;
-    } else {
-      const anyEs = voices.find(v => v.lang.startsWith('es'));
-      if (anyEs) this.utterance.voice = anyEs;
     }
 
     this.utterance.onend = () => {

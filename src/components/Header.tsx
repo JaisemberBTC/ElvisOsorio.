@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   Volume2, 
@@ -9,10 +9,16 @@ import {
   HeartHandshake, 
   Image as ImageIcon,
   Bot,
-  Radio
+  Radio,
+  HardDrive,
+  Share2
 } from 'lucide-react';
 import { ActiveTab, AmbientTrack } from '../types';
 import { ambientSound } from '../utils/audioSynth';
+import { GoogleDriveManager } from './GoogleDriveManager';
+import { initAuth } from '../services/googleDriveService';
+import { getConnectedAccounts } from '../services/socialMediaService';
+import { User } from 'firebase/auth';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -23,6 +29,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<AmbientTrack>('sanctuary');
   const [volume, setVolume] = useState(0.35);
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [driveUser, setDriveUser] = useState<User | null>(null);
+  const [connectedSocialsCount, setConnectedSocialsCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = initAuth(
+      (u) => setDriveUser(u),
+      () => setDriveUser(null)
+    );
+    const accs = getConnectedAccounts();
+    setConnectedSocialsCount(accs.filter(a => a.isConnected).length);
+    return () => unsub();
+  }, [activeTab]);
 
   const tracks: { id: AmbientTrack; label: string; icon: string }[] = [
     { id: 'sanctuary', label: 'Altar Celestial', icon: '✨' },
@@ -141,6 +160,25 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
                 </div>
               )}
             </div>
+
+            {/* Google Drive Status & Connector Button */}
+            <button
+              onClick={() => setIsDriveModalOpen(true)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                driveUser
+                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                  : 'bg-white/5 hover:bg-white/10 border-white/5 text-slate-300 hover:text-white'
+              }`}
+              title="Administrar archivos en Google Drive"
+            >
+              <HardDrive className={`w-3.5 h-3.5 ${driveUser ? 'text-amber-400' : 'text-slate-400'}`} />
+              <span className="hidden sm:inline">
+                {driveUser ? 'Google Drive Activo' : 'Google Drive'}
+              </span>
+              {driveUser && (
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -160,6 +198,23 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               activeTab === 'studio' ? 'bg-amber-400 text-slate-950' : 'bg-amber-500/10 text-amber-400'
             }`}>
               Reels & Storyboard
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('social-connect')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'social-connect'
+                ? 'bg-amber-400/15 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <Share2 className="w-4 h-4 text-sky-400" />
+            <span>Redes Sociales (Conexión Directa)</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              activeTab === 'social-connect' ? 'bg-sky-400 text-slate-950' : 'bg-sky-500/10 text-sky-400'
+            }`}>
+              {connectedSocialsCount > 0 ? `${connectedSocialsCount} Conectadas` : 'Direct API'}
             </span>
           </button>
 
@@ -212,6 +267,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
           </button>
         </nav>
       </div>
+
+      <GoogleDriveManager
+        isOpen={isDriveModalOpen}
+        onClose={() => setIsDriveModalOpen(false)}
+      />
     </header>
   );
 };
