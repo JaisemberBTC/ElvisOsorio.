@@ -71,6 +71,23 @@ export interface DailyDevotional {
   keyTakeaways: string[];
   guidedPrayer: string;
   thoughtOfTheDay: string;
+  lastUpdated?: string;
+}
+
+export interface DevotionalSongVerse {
+  section: string;
+  lyrics: string;
+  chordsHint?: string;
+}
+
+export interface DevotionalSong {
+  songTitle: string;
+  musicalStyle: string;
+  keyAndTempo: string;
+  chordsProgression: string;
+  sections: DevotionalSongVerse[];
+  fullLyrics: string;
+  spiritualMessage: string;
 }
 
 export interface ChatMessage {
@@ -86,6 +103,8 @@ export interface BlessingCard {
   verseReference: string;
   verseText: string;
   shortPrayer: string;
+  suggestedRecipient?: string;
+  suggestedOccasion?: string;
   suggestedColors: {
     gradientStart: string;
     gradientEnd: string;
@@ -97,7 +116,60 @@ export interface BlessingCard {
   themeCategory?: 'dawn' | 'jesus' | 'cross' | 'dove' | 'olive' | 'healing' | 'night' | 'peace';
 }
 
-export type ActiveTab = 'studio' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'counselor' | 'card-creator';
+export type ActiveTab = 'studio' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
+
+// Google Flow Video Pipeline Architecture Types
+export type GoogleFlowNodeStatus = 'idle' | 'running' | 'completed' | 'error';
+
+export interface GoogleFlowScriptEngine {
+  title: string;
+  hook: string;
+  biblicalAnchor: {
+    verse: string;
+    text: string;
+  };
+  emotionalArc: string;
+  closingBlessing: string;
+  cta: string;
+}
+
+export interface GoogleFlowStoryboardScene {
+  id: string;
+  sceneNumber: number;
+  durationSec: number;
+  visualPrompt: string;
+  cameraMovement: string;
+  narrationText: string;
+  onScreenText: string;
+  lightingEffect?: string;
+  imageUrl?: string;
+}
+
+export interface GoogleFlowVoiceSynthesizer {
+  speaker: string;
+  tone: string;
+  ambientPad: string;
+  teleprompterPhrases: string[];
+}
+
+export interface GoogleFlowExportMetadata {
+  caption: string;
+  hashtags: string[];
+  googleDrivePackageName: string;
+}
+
+export interface GoogleFlowPipelineData {
+  flowId: string;
+  status: string;
+  createdAt: string;
+  format: '9:16' | '16:9' | '1:1';
+  targetDuration: number;
+  scriptEngine: GoogleFlowScriptEngine;
+  cinematicPrompts: string[];
+  storyboardScenes: GoogleFlowStoryboardScene[];
+  voiceSynthesizer: GoogleFlowVoiceSynthesizer;
+  exportMetadata: GoogleFlowExportMetadata;
+}
 
 // Block Editor Types (Notion / Medium Style)
 export type BlockType = 
@@ -175,7 +247,59 @@ export interface SocialPostRecord {
   postUrl?: string;
   viewsCount?: number;
   likesCount?: number;
+  sharesCount?: number;
+  commentsCount?: number;
+  retentionRate?: number; // e.g. 74.5%
+  hookRetentionPct?: number; // 0-3s retention
+  spiritualScore?: number; // 0-100
   error?: string;
+}
+
+export interface PlatformMetricsDetail {
+  platform: SocialPlatform;
+  totalViews: number;
+  avgRetentionRate: number;
+  avgEngagementRate: number;
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
+  totalSaves: number;
+  followersGrowth: number;
+  spiritualResonanceScore: number; // 0-100
+  bestTime: string;
+  retentionCurve: { second: number; retentionPct: number; stage: string }[];
+}
+
+export interface SocialCreationImprovement {
+  id: string;
+  suggestedTitle: string;
+  suggestedHookText: string;
+  voiceToneRecommended: string;
+  veoVisualPrompt: string;
+  cameraMovement: string;
+  biblicalAnchor: string;
+  recommendedDurationSec: number;
+  whyThisWorksBetter: string;
+  projectedRetentionPct: number;
+}
+
+export interface SocialAnalyticsReport {
+  timestamp: string;
+  overallHealthScore: number; // 0-100
+  executiveSummary: string;
+  spiritualResonanceAnalysis: string;
+  retentionDiagnosis: {
+    hookRating: 'Excelente' | 'Bueno' | 'Necesita Mejora';
+    hookRetentionPct: number;
+    bodyRetentionPct: number;
+    callToActionConversionPct: number;
+    diagnosisComment: string;
+  };
+  keyStrengths: string[];
+  criticalWeaknesses: string[];
+  nextCreationImprovements: SocialCreationImprovement[];
+  trendingSpiritualTopics: string[];
+  bestPostingSchedule: { platform: string; bestTime: string; bestDay: string; reason: string }[];
 }
 
 export type AmbientTrack = 'off' | 'harp' | 'rain' | 'bells' | 'wind' | 'sanctuary';
@@ -210,3 +334,38 @@ export interface VeoGeneratedClip {
   createdAt: string;
   durationSec: number;
 }
+
+// Google Ecosystem & Subscription Plan Types
+export type PlanTier = 'free' | 'pro' | 'unlimited';
+
+export interface PlanFeature {
+  id: string;
+  title: string;
+  description: string;
+  includedIn: PlanTier[];
+}
+
+export interface UserSubscription {
+  tier: PlanTier;
+  planName: string;
+  status: 'active' | 'trial' | 'free';
+  renewDate?: string;
+  geminiModel: 'gemini-3.7-flash' | 'gemini-3.7-pro';
+  flowPipelinesLimit: number;
+  driveSyncEnabled: boolean;
+  youtubeChannelsLimit: number;
+  veoCinematicEnabled: boolean;
+}
+
+export interface GoogleUserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  subscription: UserSubscription;
+  geminiConnected: boolean;
+  googleFlowConnected: boolean;
+  googleDriveConnected: boolean;
+  youtubeChannelsConnected: number;
+}
+

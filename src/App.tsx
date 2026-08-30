@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ActiveTab } from './types';
 import { Header } from './components/Header';
 import { SpaceStudio } from './components/SpaceStudio';
-import { PrayerSanctuary } from './components/PrayerSanctuary';
 import { DailyDevotionalView } from './components/DailyDevotionalView';
 import { BiblicalCounselor } from './components/BiblicalCounselor';
+import { GoogleFlowVideoCreator } from './components/GoogleFlowVideoCreator';
 import { BlessingCardStudio } from './components/BlessingCardStudio';
 import { SocialMediaManager } from './components/SocialMediaManager';
 import { Flame, Heart, Sparkles, Radio } from 'lucide-react';
@@ -35,9 +35,15 @@ export default function App() {
                 onOpenVeoStudio={() => setActiveTab('studio')}
               />
             )}
-            {activeTab === 'sanctuary' && <PrayerSanctuary />}
-            {activeTab === 'devotional' && <DailyDevotionalView />}
-            {activeTab === 'counselor' && <BiblicalCounselor />}
+            {activeTab === 'devotional' && (
+              <DailyDevotionalView 
+                onNavigateToCardStudio={() => setActiveTab('card-creator')}
+                onNavigateToVideoStudio={() => setActiveTab('studio')}
+              />
+            )}
+            {(activeTab === 'flow-video' || activeTab === 'counselor') && (
+              <GoogleFlowVideoCreator />
+            )}
             {activeTab === 'card-creator' && <BlessingCardStudio />}
           </main>
         </div>

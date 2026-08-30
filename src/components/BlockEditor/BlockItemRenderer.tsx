@@ -483,7 +483,7 @@ export const BlockItemRenderer: React.FC<BlockItemRendererProps> = ({
                 </div>
                 <input
                   type="text"
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="/sacred-assets/jesus-blessing.jpg o https://..."
                   onChange={(e) => {
                     if (e.target.value.trim().startsWith('http')) {
                       onUpdate(block.id, { imageUrl: e.target.value.trim() });
