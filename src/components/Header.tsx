@@ -16,7 +16,8 @@ import {
   LogIn,
   Zap,
   CheckCircle2,
-  Cpu
+  Cpu,
+  Film
 } from 'lucide-react';
 import { ActiveTab, AmbientTrack, GoogleUserProfile } from '../types';
 import { ambientSound } from '../utils/audioSynth';
@@ -302,19 +303,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
           </button>
 
           <button
-            onClick={() => setActiveTab('social-connect')}
+            onClick={() => setActiveTab('scene-generator')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'social-connect'
+              activeTab === 'scene-generator'
                 ? 'bg-amber-400/15 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
             }`}
           >
-            <Share2 className="w-4 h-4 text-sky-400" />
-            <span>Redes Sociales (Conexión Directa)</span>
+            <Film className="w-4 h-4 text-amber-400" />
+            <span>Generador de Escenas Cinematográficas</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              activeTab === 'social-connect' ? 'bg-sky-400 text-slate-950' : 'bg-sky-500/10 text-sky-400'
+              activeTab === 'scene-generator' ? 'bg-amber-400 text-slate-950' : 'bg-amber-500/20 text-amber-300'
             }`}>
-              {connectedSocialsCount > 0 ? `${connectedSocialsCount} Conectadas` : 'Direct API'}
+              4 Escenas & Guía
             </span>
           </button>
 
@@ -328,23 +329,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
           >
             <BookOpen className="w-4 h-4" />
             <span>Devocional Diario</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('flow-video')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'flow-video' || activeTab === 'counselor'
-                ? 'bg-gradient-to-r from-indigo-500/20 to-amber-500/20 text-amber-300 border border-indigo-400/50 shadow-[0_0_18px_rgba(99,102,241,0.3)] font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
-            }`}
-          >
-            <Workflow className="w-4 h-4 text-indigo-400" />
-            <span>Flow Creación de Video</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              activeTab === 'flow-video' || activeTab === 'counselor' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-indigo-500/10 text-indigo-300'
-            }`}>
-              Google Flow AI
-            </span>
           </button>
 
           <button

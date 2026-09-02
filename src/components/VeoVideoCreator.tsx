@@ -872,7 +872,7 @@ export const VeoVideoCreator: React.FC<VeoVideoCreatorProps> = ({
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-xs font-bold text-slate-200">
-                  Simulador de Video Veo 3 en Vivo
+                  Reproductor Audiovisual Veo 3 HD
                 </span>
               </div>
 

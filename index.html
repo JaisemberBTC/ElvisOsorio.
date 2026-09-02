@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Espacio de Fe y Oración AI | Estudio Devocional Inteligente</title>
     <meta name="description" content="Estudio de creación de contenido de fe, guiones para reels bíblicos, oraciones personalizadas, velas de intercesión y devocionales con IA." />
+    <script>
+      // Early interceptor for external browser extensions (e.g. MetaMask, Web3 wallet injection)
+      window.addEventListener('unhandledrejection', function (e) {
+        var msg = (e && e.reason && (e.reason.message || e.reason)) ? String(e.reason.message || e.reason) : '';
+        if (/metamask|ethereum|web3|wallet|chrome-extension|moz-extension/i.test(msg)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+      window.addEventListener('error', function (e) {
+        var msg = (e && e.message) ? String(e.message) : '';
+        if (/metamask|ethereum|web3|wallet|chrome-extension|moz-extension/i.test(msg)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">

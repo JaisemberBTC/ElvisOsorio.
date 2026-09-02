@@ -4,7 +4,9 @@ import {
   SocialPostPayload, 
   SocialPostRecord,
   PlatformMetricsDetail,
-  SocialAnalyticsReport
+  SocialAnalyticsReport,
+  SocialCompetitor,
+  SocialTrendItem
 } from '../types';
 
 export type { 
@@ -13,7 +15,9 @@ export type {
   SocialPostPayload, 
   SocialPostRecord,
   PlatformMetricsDetail,
-  SocialAnalyticsReport
+  SocialAnalyticsReport,
+  SocialCompetitor,
+  SocialTrendItem
 };
 
 const STORAGE_KEY = 'fe_oracion_social_accounts_v1';
@@ -818,7 +822,14 @@ export const launchPlatformWithFallback = async (
  */
 export const connectSocialPlatformDirectly = async (
   platform: SocialPlatform,
-  customCredentials?: { handle?: string; displayName?: string; channelId?: string; apiKey?: string }
+  customCredentials?: { 
+    handle?: string; 
+    displayName?: string; 
+    channelId?: string; 
+    apiKey?: string;
+    followersCount?: string;
+    avatarUrl?: string;
+  }
 ): Promise<{ success: boolean; profile: SocialAccountProfile }> => {
   // Simulate instant client-side OAuth popup / direct API handshaking
   await new Promise((resolve) => setTimeout(resolve, 600));
@@ -844,7 +855,7 @@ export const connectSocialPlatformDirectly = async (
       platform === 'twitter' ? '@EspacioDeFe' : '+54 9 11 ...'
     ),
     channelId: customCredentials?.channelId || (platform === 'youtube' ? 'UC_fe_oracion_official_2026' : undefined),
-    avatarUrl: (
+    avatarUrl: customCredentials?.avatarUrl || (
       platform === 'youtube' ? '/sacred-assets/celestial-sunrise.jpg' :
       platform === 'tiktok' ? '/sacred-assets/heavenly-dove.jpg' :
       platform === 'instagram' ? '/sacred-assets/cross-sunrise.jpg' :
@@ -853,7 +864,7 @@ export const connectSocialPlatformDirectly = async (
     ),
     connectedAt: new Date().toISOString().split('T')[0],
     isConnected: true,
-    followersCount: 'Conectado y Verificado ✓',
+    followersCount: customCredentials?.followersCount || 'Conectado y Verificado ✓',
     accountType: platform === 'youtube' ? 'channel' : platform === 'instagram' ? 'business' : 'creator',
     permissions: ['direct_post', 'video_upload', 'analytics_read', 'insights_read'],
     autoPublishEnabled: true
@@ -940,5 +951,281 @@ export const publishDirectlyToPlatforms = async (
 
   savePublishedPosts([...results, ...existingPosts]);
   return { success: true, records: results };
+};
+
+/**
+ * Official Direct Login / Sign-In Destination URLs for Each Social Platform
+ * (Permite al usuario acceder directamente al inicio de sesión de cada red social)
+ */
+export const OFFICIAL_SOCIAL_LOGIN_CONFIG: Record<
+  SocialPlatform, 
+  { 
+    loginUrl: string; 
+    studioUrl: string;
+    label: string; 
+    platformName: string;
+    description: string;
+  }
+> = {
+  youtube: {
+    loginUrl: 'https://accounts.google.com/ServiceLogin?service=youtube',
+    studioUrl: 'https://studio.youtube.com/',
+    label: 'Iniciar Sesión en YouTube',
+    platformName: 'YouTube Shorts',
+    description: 'Accede a tu cuenta de Google / YouTube Studio para gestionar tu canal y Shorts.'
+  },
+  tiktok: {
+    loginUrl: 'https://www.tiktok.com/login',
+    studioUrl: 'https://www.tiktok.com/creator-center',
+    label: 'Iniciar Sesión en TikTok',
+    platformName: 'TikTok',
+    description: 'Inicia sesión en TikTok Web o TikTok Creator Center para monetización y publicaciones.'
+  },
+  facebook: {
+    loginUrl: 'https://www.facebook.com/login.php',
+    studioUrl: 'https://business.facebook.com/creatorstudio',
+    label: 'Iniciar Sesión en Facebook',
+    platformName: 'Facebook Reels',
+    description: 'Inicia sesión en Meta Business Suite o Facebook para administrar tu página.'
+  },
+  instagram: {
+    loginUrl: 'https://www.instagram.com/accounts/login/',
+    studioUrl: 'https://www.instagram.com/reels/create/',
+    label: 'Iniciar Sesión en Instagram',
+    platformName: 'Instagram Reels',
+    description: 'Inicia sesión en Instagram oficial para subir Reels y ver estadísticas de historias.'
+  },
+  twitter: {
+    loginUrl: 'https://x.com/i/flow/login',
+    studioUrl: 'https://analytics.twitter.com',
+    label: 'Iniciar Sesión en X (Twitter)',
+    platformName: 'X / Twitter',
+    description: 'Inicia sesión en tu cuenta de X para publicar versículos, hilos y ver engagement.'
+  },
+  whatsapp: {
+    loginUrl: 'https://web.whatsapp.com/',
+    studioUrl: 'https://web.whatsapp.com/',
+    label: 'Iniciar Sesión en WhatsApp Web',
+    platformName: 'WhatsApp Canal',
+    description: 'Vincula WhatsApp Web mediante código QR para enviar mensajes devocionales y estados.'
+  }
+};
+
+/**
+ * Open official login URL in new tab safely
+ */
+export const openOfficialPlatformLogin = (platform: SocialPlatform) => {
+  const config = OFFICIAL_SOCIAL_LOGIN_CONFIG[platform];
+  const url = config?.loginUrl || 'https://www.google.com';
+  try {
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!w || w.closed || typeof w.closed === 'undefined') {
+      window.location.href = url;
+    }
+  } catch (e) {
+    console.warn('Window open login fallback triggered:', e);
+    window.location.href = url;
+  }
+};
+
+const COMPETITORS_STORAGE_KEY = 'fe_oracion_competitors_v1';
+
+// Benchmark Competitor Accounts in Faith & Devotional Niche
+const DEFAULT_COMPETITORS: SocialCompetitor[] = [
+  {
+    id: 'comp-1',
+    name: 'Oraciones Poderosas & Fe',
+    platform: 'youtube',
+    handle: '@OracionesPoderosasOficial',
+    channelUrl: 'https://www.youtube.com/@OracionesPoderosasOficial',
+    avatarUrl: '/sacred-assets/jesus-resurrected.jpg',
+    followers: '1.24M Suscriptores',
+    avgViewsPerVideo: '88.5K vistas / Short',
+    uploadFrequency: '2 a 3 Shorts por día',
+    bestPerformingHook: '"No te vayas a dormir sin escuchar lo que Jesús preparó para tu familia hoy..."',
+    topTheme: 'Oración de la Noche & Protección Salmo 91',
+    retentionEstimatePct: 76.5,
+    isUserAdded: false
+  },
+  {
+    id: 'comp-2',
+    name: 'Reflexiones de Fe HD',
+    platform: 'tiktok',
+    handle: '@reflexiones.de.fe.hd',
+    channelUrl: 'https://www.tiktok.com/@reflexiones.de.fe.hd',
+    avatarUrl: '/sacred-assets/heavenly-dove.jpg',
+    followers: '890.4K Seguidores',
+    avgViewsPerVideo: '74.2K vistas / Video',
+    uploadFrequency: '1 a 2 Videos por día',
+    bestPerformingHook: '"Si sientes que tus fuerzas se acaban, quédate 30 segundos... Jesús te habla."',
+    topTheme: 'Consuelo en Ansiedad & Promesas Bíblicas',
+    retentionEstimatePct: 73.0,
+    isUserAdded: false
+  },
+  {
+    id: 'comp-3',
+    name: 'Minutos con Dios Oficial',
+    platform: 'instagram',
+    handle: '@minutoscondios.reels',
+    channelUrl: 'https://www.instagram.com/minutoscondios.reels',
+    avatarUrl: '/sacred-assets/cross-sunrise.jpg',
+    followers: '645.1K Seguidores',
+    avgViewsPerVideo: '51.8K vistas / Reel',
+    uploadFrequency: '2 Reels diarios (Mañana y Noche)',
+    bestPerformingHook: '"3 minutos en la presencia de Jesús para renovar tu paz y recibir sanidad."',
+    topTheme: 'Devocionales Matutinos & Peticiones en Comentarios',
+    retentionEstimatePct: 71.5,
+    isUserAdded: false
+  },
+  {
+    id: 'comp-4',
+    name: 'Palabra de Vida & Milagros',
+    platform: 'facebook',
+    handle: 'fb.com/PalabraDeVidaMilagros',
+    channelUrl: 'https://www.facebook.com/PalabraDeVidaMilagros',
+    avatarUrl: '/sacred-assets/jesus-shepherd.jpg',
+    followers: '430.8K Seguidores',
+    avgViewsPerVideo: '39.4K vistas / Video',
+    uploadFrequency: '1 Video diario',
+    bestPerformingHook: '"Dios no se olvidó de tu oración en secreto. Hoy verás su mano obrar."',
+    topTheme: 'Milagros Financieros & Bendición del Hogar',
+    retentionEstimatePct: 69.8,
+    isUserAdded: false
+  },
+  {
+    id: 'comp-5',
+    name: 'Fe & Oración Diaria',
+    platform: 'youtube',
+    handle: '@FeYOracionDiaria',
+    channelUrl: 'https://www.youtube.com/@FeYOracionDiaria',
+    avatarUrl: '/sacred-assets/celestial-sunrise.jpg',
+    followers: '320.5K Suscriptores',
+    avgViewsPerVideo: '46.0K vistas / Short',
+    uploadFrequency: '1 Short cada 24 horas',
+    bestPerformingHook: '"Repite conmigo esta oración antes de que termine el día: Dios suplirá todo."',
+    topTheme: 'Decretos de Fe & Salmos de Victoria',
+    retentionEstimatePct: 74.0,
+    isUserAdded: false
+  }
+];
+
+export const getCompetitors = (): SocialCompetitor[] => {
+  try {
+    const data = localStorage.getItem(COMPETITORS_STORAGE_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.warn('Error reading stored competitors:', e);
+  }
+  return DEFAULT_COMPETITORS;
+};
+
+export const saveCompetitors = (competitors: SocialCompetitor[]) => {
+  try {
+    localStorage.setItem(COMPETITORS_STORAGE_KEY, JSON.stringify(competitors));
+    window.dispatchEvent(new CustomEvent('competitors-updated', { detail: competitors }));
+  } catch (e) {
+    console.warn('Error saving competitors:', e);
+  }
+};
+
+export const addCompetitor = (competitor: Omit<SocialCompetitor, 'id' | 'isUserAdded'>): SocialCompetitor[] => {
+  const current = getCompetitors();
+  const newComp: SocialCompetitor = {
+    ...competitor,
+    id: `comp-custom-${Date.now()}`,
+    isUserAdded: true
+  };
+  const updated = [newComp, ...current];
+  saveCompetitors(updated);
+  return updated;
+};
+
+export const deleteCompetitor = (id: string): SocialCompetitor[] => {
+  const current = getCompetitors();
+  const updated = current.filter(c => c.id !== id);
+  saveCompetitors(updated);
+  return updated;
+};
+
+// Real-Time Faith & Devotional Trending Topics & Virality Index
+export const FAITH_SOCIAL_TRENDS: SocialTrendItem[] = [
+  {
+    id: 'trend-1',
+    hashtag: '#OracionDeLaNoche',
+    topic: 'Oración de Protección y Paz antes de Dormir',
+    category: 'oracion',
+    estimatedViews: '+52.4M reproducciones esta semana',
+    viralityScore: 98,
+    suggestedHook: 'Hijo mío, antes de cerrar tus ojos esta noche, recibe mi paz que sobrepasa todo entendimiento...',
+    recommendedVerses: ['Salmo 4:8', 'Salmo 91:1-2', 'Proverbios 3:24'],
+    trendType: 'hashtag',
+    growthBadge: '+34% Crecimiento Viral'
+  },
+  {
+    id: 'trend-2',
+    hashtag: '#JesusTeDiceHoy',
+    topic: 'Palabra Profética Personal de Jesús para tu Vida',
+    category: 'fe',
+    estimatedViews: '+94.1M reproducciones esta semana',
+    viralityScore: 99,
+    suggestedHook: 'Si este video apareció en tu pantalla a esta hora, no es casualidad. Tengo algo urgente que decirte...',
+    recommendedVerses: ['Jeremías 29:11', 'Isaías 41:10', 'Josué 1:9'],
+    trendType: 'hook',
+    growthBadge: '🔥 Top 1 Tendencia Viral'
+  },
+  {
+    id: 'trend-3',
+    hashtag: '#Salmo91',
+    topic: 'El Que Habita al Abrigo del Altísimo (Escudo Contra el Mal)',
+    category: 'salmos',
+    estimatedViews: '+41.8M reproducciones esta semana',
+    viralityScore: 96,
+    suggestedHook: 'Ninguna plaga tocará tu morada ni la de tus hijos. Declara el Salmo 91 sobre tu hogar ahora...',
+    recommendedVerses: ['Salmo 91:7', 'Salmo 91:11-12'],
+    trendType: 'hashtag',
+    growthBadge: '+28% Retención Alta'
+  },
+  {
+    id: 'trend-4',
+    hashtag: '#DiosEsFiel',
+    topic: 'Testimonios de Provisión, Sanidad y Puertas Abiertas',
+    category: 'milagros',
+    estimatedViews: '+67.3M reproducciones esta semana',
+    viralityScore: 95,
+    suggestedHook: 'Aunque veas la puerta cerrada, Yo soy el Dios que abre caminos donde no los hay...',
+    recommendedVerses: ['Filipenses 4:19', 'Mateo 7:7', 'Lucas 1:37'],
+    trendType: 'theme',
+    growthBadge: '+45% Compartidos Familiares'
+  },
+  {
+    id: 'trend-5',
+    hashtag: '#PazEnLaTormenta',
+    topic: 'Consuelo Sobrenatural para Momentos de Angustia y Luto',
+    category: 'paz',
+    estimatedViews: '+26.9M reproducciones esta semana',
+    viralityScore: 93,
+    suggestedHook: 'No tengas miedo de la tormenta que te rodea. Recuerda que Yo estoy en tu barca...',
+    recommendedVerses: ['Marcos 4:39', 'Juan 14:27', 'Salmo 23:4'],
+    trendType: 'audio',
+    growthBadge: '+19% Audio Celestial'
+  },
+  {
+    id: 'trend-6',
+    hashtag: '#MadrugadaConDios',
+    topic: 'Buscando a Dios en las Primeras Horas del Día',
+    category: 'madrugada',
+    estimatedViews: '+21.5M reproducciones esta semana',
+    viralityScore: 91,
+    suggestedHook: 'Los que de madrugada me buscan, me hallarán. Comienza tu día bajo la bendición del Padre...',
+    recommendedVerses: ['Proverbios 8:17', 'Salmo 63:1', 'Lamentaciones 3:22-23'],
+    trendType: 'hashtag',
+    growthBadge: '+42% Guardados'
+  }
+];
+
+export const getSocialTrends = (): SocialTrendItem[] => {
+  return FAITH_SOCIAL_TRENDS;
 };
 

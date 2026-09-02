@@ -116,7 +116,102 @@ export interface BlessingCard {
   themeCategory?: 'dawn' | 'jesus' | 'cross' | 'dove' | 'olive' | 'healing' | 'night' | 'peace';
 }
 
-export type ActiveTab = 'studio' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
+export type ActiveTab = 'studio' | 'scene-generator' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
+
+// Devotional Scene Generator Types
+export interface StructuredPromptAnalysis {
+  title: string;
+  main_character: string;
+  identity_anchors: string[];
+  environment: string;
+  time_of_day: string;
+  visual_style: string;
+  lighting: string;
+  camera_style: string;
+  voiceover: string;
+  sound_design: string;
+  duration_seconds: number;
+  aspect_ratio: '9:16' | '16:9' | '1:1';
+  scenes: {
+    scene_number: number;
+    action: string;
+    camera_movement: string;
+    emotion: string;
+    duration_start: number;
+    duration_end: number;
+  }[];
+}
+
+export interface DevotionalSceneItem {
+  sceneNumber: number; // 1, 2, 3, 4
+  title: string;
+  role: 'presentacion' | 'acercamiento' | 'accion_emocional' | 'cierre';
+  durationSec: number;
+  durationStart?: number;
+  durationEnd?: number;
+  timeRange: string; // e.g. "0:00 - 0:02" or "0:00 - 0:10"
+  cameraMovement: string;
+  action: string;
+  emotion?: string;
+  environment: string;
+  composition: string;
+  lighting: string;
+  style: string;
+  structuredPrompt: string; // The exact prompt template
+  narrationSnippet: string;
+  onScreenText: string;
+  imageUrl?: string;
+  imageId?: string;
+  imageData?: string;
+  modelUsed?: string;
+  isVerifiedUnique?: boolean;
+  fileSizeKb?: number;
+  status?: 'pending' | 'generating' | 'completed' | 'error';
+  errorMessage?: string;
+}
+
+export interface DevotionalVideoProductionDoc {
+  videoTitle: string;
+  masterCharacterDescription: string;
+  identityAnchors?: string[];
+  timeOfDay?: string;
+  cameraStyle?: string;
+  aspectRatio: '9:16' | '16:9' | '1:1';
+  totalDurationSec: number;
+  environmentOverview: string;
+  cinematicStyleOverview: string;
+  scenes: DevotionalSceneItem[];
+  imageModelStatus?: {
+    hasPaidKey: boolean;
+    modelName: string;
+    note: string;
+    engineType: 'gemini' | 'neural' | 'direct';
+  };
+  timelineTable: {
+    timeframe: string;
+    sceneNumber: number;
+    visualAction: string;
+    cameraCut: string;
+    voiceSync: string;
+    audioCue: string;
+  }[];
+  voiceOverScript: {
+    text: string;
+    speakerTone: string;
+    pacingNotes: string;
+    isUserProvided: boolean;
+  };
+  audioDesign: {
+    ambientAtmosphere: string;
+    naturalElements: string[];
+    musicRecommendation: string;
+    frequencyHz: string;
+    voiceMusicBalance: string;
+  };
+  finalAnimationVideoPrompt: string;
+  structuredAnalysis?: StructuredPromptAnalysis;
+  createdAt: string;
+}
 
 // Google Flow Video Pipeline Architecture Types
 export type GoogleFlowNodeStatus = 'idle' | 'running' | 'completed' | 'error';
@@ -283,6 +378,35 @@ export interface SocialCreationImprovement {
   projectedRetentionPct: number;
 }
 
+export interface SocialCompetitor {
+  id: string;
+  name: string;
+  platform: SocialPlatform;
+  handle: string;
+  channelUrl: string;
+  avatarUrl: string;
+  followers: string;
+  avgViewsPerVideo: string;
+  uploadFrequency: string;
+  bestPerformingHook: string;
+  topTheme: string;
+  retentionEstimatePct: number;
+  isUserAdded?: boolean;
+}
+
+export interface SocialTrendItem {
+  id: string;
+  hashtag: string;
+  topic: string;
+  category: 'oracion' | 'salmos' | 'milagros' | 'paz' | 'fe' | 'madrugada';
+  estimatedViews: string;
+  viralityScore: number; // 0-100
+  suggestedHook: string;
+  recommendedVerses: string[];
+  trendType: 'hashtag' | 'audio' | 'hook' | 'theme';
+  growthBadge: string;
+}
+
 export interface SocialAnalyticsReport {
   timestamp: string;
   overallHealthScore: number; // 0-100
@@ -367,5 +491,27 @@ export interface GoogleUserProfile {
   googleFlowConnected: boolean;
   googleDriveConnected: boolean;
   youtubeChannelsConnected: number;
+}
+
+// Innovative Scroll-Stopping Hooks (Retention >70%)
+export type HookPsychologicalCategory = 
+  | 'urgencia_amor' 
+  | 'oracion_silenciosa' 
+  | 'confirmacion_profetica' 
+  | 'rompe_ansiedad' 
+  | 'proteccion_salmo91' 
+  | 'sanidad_milagro' 
+  | 'puertas_abiertas' 
+  | 'nocturno_paz';
+
+export interface InnovativeHookItem {
+  id: string;
+  category: HookPsychologicalCategory;
+  categoryLabel: string;
+  hookText: string;
+  onScreenText: string;
+  projectedScrollStopPct: number; // e.g. 78% to 94%
+  psychologicalTrigger: string;
+  recommendedVisual: string;
 }
 

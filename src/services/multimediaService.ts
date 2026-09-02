@@ -16,16 +16,16 @@ export interface GeneratedMediaAsset {
   createdAt: string;
 }
 
-// Sacred Imagery & Fallback Assets
+// Sacred Imagery & Fallback Assets matched consecutively with each scene stage
 export const SACRED_IMAGE_PRESETS = [
-  "/sacred-assets/jesus-blessing.jpg",
-  "/sacred-assets/jesus-shepherd.jpg",
-  "/sacred-assets/jesus-healing.jpg",
-  "/sacred-assets/jesus-resurrected.jpg",
-  "/sacred-assets/celestial-sunrise.jpg",
-  "/sacred-assets/cross-sunrise.jpg",
-  "/sacred-assets/heavenly-dove.jpg",
-  "/sacred-assets/jesus-night.jpg"
+  "/sacred-assets/jesus_divine_blessing_1787716123982.jpg", // Escena 1: Bendición Divina & Mirada de Amor
+  "/sacred-assets/jesus_peace_in_storm_1787716138284.jpg",  // Escena 2: Paz en la Tormenta & Calma Sobrenatural
+  "/sacred-assets/jesus_healing_light_1787716152719.jpg",   // Escena 3: Luz de Sanidad & Restauración
+  "/sacred-assets/jesus_resurrected_king_1787717534726.jpg",// Escena 4: Rey Resucitado & Victoria Eterna
+  "/sacred-assets/jesus_shepherd_love_1787717500827.jpg",   // Escena 5: Buen Pastor & Refugio
+  "/sacred-assets/jesus_sacred_prayer_1787717512349.jpg",   // Escena 6: Oración Sagrada & Fuego Santo
+  "/sacred-assets/jesus_teaching_wisdom_1787717523974.jpg", // Escena 7: Sabiduría y Verdad
+  "/sacred-assets/jesus_night_sanctuary_1787716164249.jpg"  // Escena 8: Santuario Nocturno
 ];
 
 export async function generateUniqueMultimediaForScenes(

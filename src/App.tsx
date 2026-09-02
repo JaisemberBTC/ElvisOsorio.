@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActiveTab } from './types';
 import { Header } from './components/Header';
 import { SpaceStudio } from './components/SpaceStudio';
 import { DailyDevotionalView } from './components/DailyDevotionalView';
+import { DevotionalSceneGenerator } from './components/DevotionalSceneGenerator';
 import { BiblicalCounselor } from './components/BiblicalCounselor';
 import { GoogleFlowVideoCreator } from './components/GoogleFlowVideoCreator';
 import { BlessingCardStudio } from './components/BlessingCardStudio';
@@ -30,19 +31,12 @@ export default function App() {
           {/* Main Content Area */}
           <main className="pb-16 pt-2">
             {activeTab === 'studio' && <SpaceStudio />}
-            {activeTab === 'social-connect' && (
-              <SocialMediaManager 
-                onOpenVeoStudio={() => setActiveTab('studio')}
-              />
-            )}
+            {activeTab === 'scene-generator' && <DevotionalSceneGenerator />}
             {activeTab === 'devotional' && (
               <DailyDevotionalView 
                 onNavigateToCardStudio={() => setActiveTab('card-creator')}
                 onNavigateToVideoStudio={() => setActiveTab('studio')}
               />
-            )}
-            {(activeTab === 'flow-video' || activeTab === 'counselor') && (
-              <GoogleFlowVideoCreator />
             )}
             {activeTab === 'card-creator' && <BlessingCardStudio />}
           </main>

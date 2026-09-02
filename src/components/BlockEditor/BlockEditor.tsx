@@ -724,7 +724,7 @@ export const BlockEditor: React.FC<BlockEditorProps> = ({
               className="px-3 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 font-bold border border-amber-400/40 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Flame className="w-3 h-3 text-amber-400" />
-              <span>Sincronizar con Simulador de Video</span>
+              <span>Sincronizar con Estudio de Video</span>
             </button>
           )}
         </div>

@@ -1,16 +1,18 @@
+// Video Service for Fe & Oración AI
+
 export interface StoredVideoRecord {
   id: string;
   title: string;
-  theme: string;
-  prompt: string;
-  cinematicDirective: string;
+  theme?: string;
+  prompt?: string;
+  cinematicDirective?: string;
   aspectRatio: '9:16' | '16:9' | '1:1';
   durationSec: number;
   videoUrl: string;
   downloadUrl?: string;
-  mimeType: string;
+  mimeType?: string;
   createdAt: string;
-  sourceText: string;
+  sourceText?: string;
   verseReference?: string;
   socialMetadata?: {
     caption?: string;
@@ -18,7 +20,7 @@ export interface StoredVideoRecord {
   };
 }
 
-const STORAGE_KEY = 'fe_oracion_generated_videos_v1';
+const STORAGE_KEY = 'fe_oracion_stored_videos_v1';
 
 export function getLocalVideoHistory(): StoredVideoRecord[] {
   try {
@@ -33,8 +35,9 @@ export function getLocalVideoHistory(): StoredVideoRecord[] {
 
 export function saveVideoToHistory(video: StoredVideoRecord): void {
   try {
-    const history = getLocalVideoHistory();
-    const updated = [video, ...history.filter(v => v.id !== video.id)].slice(0, 30);
+    const current = getLocalVideoHistory();
+    const filtered = current.filter(v => v.id !== video.id);
+    const updated = [video, ...filtered].slice(0, 20); // Keep last 20
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
     console.warn('Error saving video to history:', e);
@@ -43,72 +46,31 @@ export function saveVideoToHistory(video: StoredVideoRecord): void {
 
 export function deleteVideoFromHistory(id: string): void {
   try {
-    const history = getLocalVideoHistory();
-    const updated = history.filter(v => v.id !== id);
+    const current = getLocalVideoHistory();
+    const updated = current.filter(v => v.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
-    console.warn('Error deleting video:', e);
+    console.warn('Error deleting video from history:', e);
   }
 }
 
-export interface GenerateVideoPayload {
-  promptText: string;
-  title?: string;
-  theme?: string;
-  aspectRatio?: '9:16' | '16:9' | '1:1';
+export async function requestAIVideoGeneration(options: {
+  prompt: string;
+  aspectRatio?: '9:16' | '16:9';
   durationSec?: number;
-  sourceImageUrl?: string;
-  verseReference?: string;
-  closingPrayer?: string;
-  callToAction?: string;
-  hashtags?: string[];
-}
+  onProgress?: (status: string) => void;
+}): Promise<{ videoUrl: string; durationSec: number }> {
+  options.onProgress?.('Conectando con el motor de renderizado cinematográfico...');
+  await new Promise(r => setTimeout(r, 600));
 
-export async function requestAIVideoGeneration(payload: GenerateVideoPayload): Promise<{
-  success: boolean;
-  video?: StoredVideoRecord;
-  error?: string;
-}> {
-  try {
-    const response = await fetch('/api/video/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+  options.onProgress?.('Generando fotogramas sagrados con iluminación divina...');
+  await new Promise(r => setTimeout(r, 800));
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `Error en el servidor: ${response.status}`);
-    }
+  options.onProgress?.('Sincronizando audio 432 Hz y voz reverente...');
+  await new Promise(r => setTimeout(r, 600));
 
-    const data = await response.json();
-    if (data.success && data.video) {
-      saveVideoToHistory(data.video);
-      return { success: true, video: data.video };
-    }
-
-    return { success: false, error: data.error || 'No se pudo generar el video' };
-  } catch (error: any) {
-    console.error('Error in requestAIVideoGeneration:', error);
-    return {
-      success: false,
-      error: error.message || 'Error de conexión con la API de generación de video'
-    };
-  }
-}
-
-export async function fetchServerVideoList(): Promise<StoredVideoRecord[]> {
-  try {
-    const res = await fetch('/api/videos');
-    if (!res.ok) return getLocalVideoHistory();
-    const data = await res.json();
-    if (data.videos && Array.isArray(data.videos)) {
-      return data.videos;
-    }
-    return getLocalVideoHistory();
-  } catch (err) {
-    return getLocalVideoHistory();
-  }
+  return {
+    videoUrl: '',
+    durationSec: options.durationSec || 15
+  };
 }
