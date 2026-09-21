@@ -19,7 +19,7 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Enable complete CORS and Range streaming headers for Cloud Storage & Video Delivery
 app.use((req, res, next) => {
