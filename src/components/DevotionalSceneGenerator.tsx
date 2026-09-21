@@ -29,6 +29,7 @@ import JSZip from 'jszip';
 import { DevotionalVideoProductionDoc, DevotionalSceneItem } from '../types';
 import { imageGenerationService } from '../services/imageGenerationService';
 import { devotionalStorageService, SavedDevotionalProject } from '../services/devotionalStorageService';
+import { applyScenographySkill, SCENOGRAPHY_SKILL_NAME, SCENOGRAPHY_SKILL_SUMMARY } from '../skills/scenographySkill';
 
 type PipelineStep = 
   | 'idle' 
@@ -141,11 +142,13 @@ export const DevotionalSceneGenerator: React.FC = () => {
 
   // Main Generation Handler with direct call to /api/generate-scenes
   const handleGenerateScenes = async (customPromptToRun?: string) => {
-    const effectivePrompt = (typeof customPromptToRun === 'string' ? customPromptToRun : userPrompt).trim();
-    if (!effectivePrompt) {
+    const rawPrompt = (typeof customPromptToRun === 'string' ? customPromptToRun : userPrompt).trim();
+    if (!rawPrompt) {
       setErrorMsg("Por favor, escribe una descripción en 'Describe tu video'.");
       return;
     }
+
+    const effectivePrompt = applyScenographySkill(rawPrompt);
 
     if (customPromptToRun && typeof customPromptToRun === 'string') {
       setUserPrompt(customPromptToRun);
@@ -456,13 +459,13 @@ ${doc.finalAnimationVideoPrompt}
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-400/15 text-amber-300 border border-amber-400/30">
               <Clapperboard className="w-3.5 h-3.5 text-amber-400" />
-              <span>Generador de Escenas Cinematográficas</span>
+              <span>{SCENOGRAPHY_SKILL_NAME}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight font-cinzel">
-              Generador de escenas para video
+              Del guion al escenario cinematográfico
             </h1>
             <p className="text-sm sm:text-base text-stone-300 max-w-3xl leading-relaxed">
-              Escribe el prompt de tu video devocional para generar automáticamente <strong className="text-amber-300">cuatro imágenes consecutivas</strong> con idéntica identidad visual, tabla de tiempos cada 2–3s, prompts de animación y guía de edición completa.
+              Escribe tu guion o idea y la habilidad convertirá cada escena en una propuesta de espacio, objetos narrativos, luz, cámara y continuidad visual, lista para generar imágenes consecutivas y una guía de edición.
             </p>
           </div>
 
@@ -576,6 +579,26 @@ ${doc.finalAnimationVideoPrompt}
               placeholder="Ej: Jesús junto a una ventana al amanecer en un santuario rústico de piedra con luz dorada. Ora con profunda serenidad y mira hacia afuera con compasión..."
               className="w-full px-4 py-3.5 rounded-2xl bg-stone-950/80 border border-stone-700 text-stone-100 placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-inner leading-relaxed"
             />
+
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-950/20 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-xl bg-cyan-400/15 p-2 text-cyan-300">
+                  <Clapperboard className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-200">Habilidad integrada</span>
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">Activa</span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-stone-300">El generador aplicará automáticamente estas reglas a tu guion:</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {SCENOGRAPHY_SKILL_SUMMARY.map((item) => (
+                      <span key={item} className="rounded-lg border border-stone-700 bg-stone-950/70 px-2 py-1 text-[10px] text-stone-300">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Inspiration Pills & Mandatory Verification Tests */}
