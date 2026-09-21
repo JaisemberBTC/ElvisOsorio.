@@ -13,6 +13,11 @@ import {
   Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { 
+  MANDATORY_VISUAL_EDITING_INSTRUCTION, 
+  OFFICIAL_DEFAULT_JESUS_DIALOGUE, 
+  OFFICIAL_CAMERA_MOVEMENT 
+} from '../services/videoGenerator';
 
 export interface CinematicPromptData {
   subjectDescription: string;
@@ -28,6 +33,14 @@ interface CinematicPromptBuilderProps {
 }
 
 const PRESET_DIRECTIVES = [
+  {
+    label: '⭐ Dale Vida al Personaje (10s Oficial)',
+    subject: 'Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas: Duración: 10 segundos (movimiento continuo sin interrupciones)',
+    camera: OFFICIAL_CAMERA_MOVEMENT,
+    lighting: 'Luz celestial envolvente con resplandor dorado divino y unción sobrenatural',
+    audio: `Diálogo de 10 segundos en español con la compasiva voz de Jesús: "${OFFICIAL_DEFAULT_JESUS_DIALOGUE}"`,
+    style: MANDATORY_VISUAL_EDITING_INSTRUCTION
+  },
   {
     label: 'Jesús en Bendición Soberana',
     subject: 'Jesús con túnica blanca radiante y manto de lino, mirada de amor compasivo y manos extendidas bendiciendo',
@@ -128,6 +141,40 @@ export const CinematicPromptBuilder: React.FC<CinematicPromptBuilderProps> = ({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Official 10s Jesus Voice Prompt Quick Banner */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/30 flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Prompt Oficial: Dale vida al personaje de las imágenes (10s con Voz de Jesús)</span>
+          </div>
+          <p className="text-[11px] text-slate-300">
+            Zoom lento y continuo de 10s · Cortes dinámicos cada 2 o 3 segundos · Listo para Veo, Kling, Sora o Runway.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const officialPrompt = `Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas: 
+Duración: 10 segundos (movimiento continuo sin interrupciones).
+
+Movimiento de cámara: ${OFFICIAL_CAMERA_MOVEMENT}
+
+
+Diálogo de 10 segundos en español con la compasiva voz de Jesús: "${OFFICIAL_DEFAULT_JESUS_DIALOGUE}"
+
+${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+            navigator.clipboard.writeText(officialPrompt);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-slate-950" /> : <Copy className="w-3.5 h-3.5" />}
+          <span>Copiar Prompt Oficial 10s</span>
+        </button>
       </div>
 
       {/* Inputs Form */}

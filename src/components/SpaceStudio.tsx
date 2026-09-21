@@ -48,10 +48,11 @@ import {
   Users,
   LogIn,
   Clock,
-  Undo2
+  Undo2,
+  Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { FaithScriptData, SocialTrendItem } from '../types';
+import { FaithScriptData, SocialTrendItem, PackagingVariant, EduSerranoPackagingData } from '../types';
 import { INITIAL_SCRIPT_DATA, SCRIPT_TEMPLATES } from '../data/initialData';
 import { JESUS_ARTWORKS, JesusArtwork, getSequenceOfJesusArtworks } from '../data/jesusVisuals';
 import { DevotionalReader } from '../utils/audioSynth';
@@ -60,6 +61,7 @@ import { GoogleDriveManager } from './GoogleDriveManager';
 import { VideoEditorModal } from './VideoEditorModal';
 import { BlockEditor } from './BlockEditor/BlockEditor';
 import { CinematicPromptBuilder, CinematicPromptData } from './CinematicPromptBuilder';
+import { PackagingStrategyStudio } from './PackagingStrategyStudio';
 import { BlockItem, BlockEditorDocument } from '../types';
 import { uploadBlobToDrive, uploadScriptToDrive, getAccessToken } from '../services/googleDriveService';
 import { DynamicMultimediaStudio } from './DynamicMultimediaStudio';
@@ -88,7 +90,8 @@ import {
   getThematicSacredImageForScene,
   downloadImageFile,
   downloadVideoFile,
-  generateCinematicEnglishVideoPrompt
+  generateCinematicEnglishVideoPrompt,
+  generateMasterVideoPrompt
 } from '../services/videoGenerator';
 import { 
   publishDirectlyToPlatforms, 
@@ -215,8 +218,8 @@ export const SpaceStudio: React.FC = () => {
   const [autoChangeThemeOnTime, setAutoChangeThemeOnTime] = useState<boolean>(true);
   const [previousCustomTopic, setPreviousCustomTopic] = useState<string | null>(null);
   
-  // Workspace view tab (Storyboard vs Block Editor Notion Style vs Prompt Director)
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'storyboard' | 'block-editor' | 'prompt-director'>('storyboard');
+  // Workspace view tab (Storyboard vs Block Editor Notion Style vs Prompt Director vs Packaging YouTube Pro)
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'storyboard' | 'block-editor' | 'prompt-director' | 'packaging-strategy'>('storyboard');
   
   // Custom per-scene visual sequence of Jesus
   const [sceneArtworks, setSceneArtworks] = useState<JesusArtwork[]>(() =>
@@ -299,6 +302,18 @@ export const SpaceStudio: React.FC = () => {
   const [isHookModalOpen, setIsHookModalOpen] = useState(false);
   const [selectedPlatformForAdd, setSelectedPlatformForAdd] = useState<SocialPlatform | null>(null);
   const [selectedAccountForEdit, setSelectedAccountForEdit] = useState<SocialAccountProfile | null>(null);
+
+  // Vaca Morada & Retención Viral State
+  const [viralBannerText, setViralBannerText] = useState<string>(
+    scriptData.banner_hook_superior || "🔴 CONSEJO PARA HACERTE VIRAL EN TU FE"
+  );
+  const [isViralFormulaActive, setIsViralFormulaActive] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (scriptData.banner_hook_superior) {
+      setViralBannerText(scriptData.banner_hook_superior);
+    }
+  }, [scriptData.banner_hook_superior]);
 
   const handleApplyInnovativeHook = (newHookText: string, onScreenText?: string) => {
     setScriptData(prev => {
@@ -643,13 +658,21 @@ export const SpaceStudio: React.FC = () => {
           topic: queryTopic,
           format,
           tone,
-          durationSeconds: durationSeconds
+          durationSeconds: durationSeconds,
+          banner_hook_superior: viralBannerText,
+          modo_viral: isViralFormulaActive ? 'vaca_morada' : 'clasico'
         })
       });
 
       if (!res.ok) throw new Error('Error al conectar con el estudio de IA');
       const data = await res.json();
+      if (!data.banner_hook_superior) {
+        data.banner_hook_superior = viralBannerText || "🔴 CONSEJO PARA HACERTE VIRAL EN TU FE";
+      }
       setScriptData(data);
+      if (data.banner_hook_superior) {
+        setViralBannerText(data.banner_hook_superior);
+      }
       setCurrentSceneIdx(0);
       setPlaybackTime(0);
 
@@ -706,6 +729,71 @@ export const SpaceStudio: React.FC = () => {
     } finally {
       setIsGeneratingMediaAssets(false);
       setMediaAssetStep('');
+    }
+  };
+
+  // 📦 Edu Serrano Packaging Variant Application (Syncs Title, Hook, Scene 1 Text & Caption)
+  const handleApplyPackagingVariant = (variant: PackagingVariant) => {
+    setScriptData(prev => {
+      const updatedScenes = [...(prev.scenes || [])];
+      if (updatedScenes.length > 0) {
+        updatedScenes[0] = {
+          ...updatedScenes[0],
+          narrationText: `${variant.firstTwoSecondsHook} ${(updatedScenes[0].narrationText || '').replace(prev.hook, '')}`.trim(),
+          onScreenText: variant.thumbnailOverlayText || updatedScenes[0].onScreenText
+        };
+      }
+      return {
+        ...prev,
+        title: variant.title,
+        hook: variant.firstTwoSecondsHook,
+        scenes: updatedScenes,
+        socialMetadata: {
+          ...prev.socialMetadata,
+          caption: `✨ ${variant.title}\n\n${variant.firstTwoSecondsHook}\n\n📖 ${prev.primaryBibleVerse?.reference}: "${prev.primaryBibleVerse?.text}"\n\n🙏 ${prev.closingPrayer}\n\n💬 ${prev.callToAction}\n\n${prev.socialMetadata?.hashtags?.join(' ') || ''}`
+        },
+        packaging: prev.packaging ? {
+          ...prev.packaging,
+          primaryTitle: variant.title,
+          thumbnailOverlayText: variant.thumbnailOverlayText,
+          firstTwoSecondsHook: variant.firstTwoSecondsHook
+        } : undefined
+      };
+    });
+    setTopic(variant.title);
+    setPublishToast({
+      platform: '📦 Packaging YouTube Pro',
+      message: `¡Variante aplicada con éxito! Título y gancho de 2s actualizados.`
+    });
+    setTimeout(() => setPublishToast(null), 3500);
+  };
+
+  // 🤖 Request 3 New High-CTR AI Packaging Variants via backend endpoint
+  const handleRequestGenerateAiPackaging = async () => {
+    try {
+      const res = await fetch('/api/gemini/generate-packaging-ab', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: topic || scriptData.title,
+          currentTitle: scriptData.title,
+          mainTheme: scriptData.mainTheme
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setScriptData(prev => ({
+          ...prev,
+          packaging: data
+        }));
+        setPublishToast({
+          platform: 'IA YouTube Pro',
+          message: '¡3 nuevas variantes A/B generadas según la estrategia de Edu Serrano!'
+        });
+        setTimeout(() => setPublishToast(null), 3500);
+      }
+    } catch (err) {
+      console.warn("Could not generate AI packaging:", err);
     }
   };
 
@@ -1296,31 +1384,59 @@ export const SpaceStudio: React.FC = () => {
             ctx.fill();
           }
 
-          // 6. Header Watermark & Halo Emblem
+          // 6. 🔴 FÓRMULA VACA MORADA: CAJA ROJA SUPERIOR VIRAL
+          const hasRedBanner = isViralFormulaActive && (scriptData.banner_hook_superior || viralBannerText);
+          const bannerText = (scriptData.banner_hook_superior || viralBannerText || '').toUpperCase();
+          
+          if (hasRedBanner && bannerText) {
+            ctx.save();
+            ctx.fillStyle = '#dc2626'; // Red 600
+            ctx.strokeStyle = '#f87171'; // Red 400
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(220, 38, 38, 0.8)';
+            ctx.shadowBlur = 18;
+            ctx.beginPath();
+            ctx.roundRect(24, 20, width - 48, 52, 14);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(bannerText, width / 2, 53);
+            ctx.restore();
+          }
+
+          // 7. Header Watermark & Halo Emblem
+          const headerY = hasRedBanner ? 98 : 65;
           ctx.save();
           ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-          ctx.font = 'bold 24px serif';
+          ctx.font = 'bold 22px serif';
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
           ctx.shadowBlur = 12;
-          ctx.fillText('🕊️ JESÚS TE HABLA HOY', width / 2, 65);
+          ctx.fillText('🕊️ JESÚS TE HABLA HOY', width / 2, headerY);
           ctx.restore();
 
-          // 7. Scene Indicator Badge
+          // 8. Scene Indicator Badge
+          const sceneBadgeY = hasRedBanner ? 120 : 85;
           ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
           ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.roundRect(width / 2 - 130, 85, 260, 36, 18);
+          ctx.roundRect(width / 2 - 130, sceneBadgeY, 260, 34, 17);
           ctx.fill();
           ctx.stroke();
 
           ctx.fillStyle = '#fef08a';
-          ctx.font = 'bold 14px sans-serif';
+          ctx.font = 'bold 13px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(`ESCENA ${sc.sceneNumber} DE ${totalScenes} • 432Hz`, width / 2, 108);
+          ctx.fillText(`ESCENA ${sc.sceneNumber} DE ${totalScenes} • 432Hz`, width / 2, sceneBadgeY + 22);
 
-          // 8. On-Screen Subtitle Tag Box (High Impact Golden Box)
+          // 9. On-Screen Subtitle Tag Box (High Impact Golden Box)
+          const subtitleBoxY = hasRedBanner ? height * 0.17 : height * 0.15;
           ctx.save();
           ctx.fillStyle = 'rgba(2, 6, 23, 0.90)';
           ctx.strokeStyle = 'rgba(245, 158, 11, 0.95)';
@@ -1328,7 +1444,7 @@ export const SpaceStudio: React.FC = () => {
           ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
           ctx.shadowBlur = 16;
           ctx.beginPath();
-          ctx.roundRect(30, height * 0.15, width - 60, 94, 22);
+          ctx.roundRect(30, subtitleBoxY, width - 60, 94, 22);
           ctx.fill();
           ctx.stroke();
           ctx.restore();
@@ -1336,7 +1452,7 @@ export const SpaceStudio: React.FC = () => {
           ctx.fillStyle = '#fbbf24';
           ctx.font = 'bold 25px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(sc.onScreenText, width / 2, height * 0.15 + 57);
+          ctx.fillText(sc.onScreenText, width / 2, subtitleBoxY + 57);
 
           // 9. Scripture / Living Spoken Words Card
           ctx.save();
@@ -1856,6 +1972,91 @@ export const SpaceStudio: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* 🔴 FÓRMULA VACA MORADA & RETENCIÓN VIRAL (ESTRATEGIA ANTI-ESTANCAMIENTO) */}
+                <div className="mt-3 p-4 rounded-2xl bg-gradient-to-r from-red-950/60 via-slate-950 to-red-950/40 border-2 border-red-500/60 shadow-xl space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-3 w-3 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-black text-red-200 uppercase tracking-wider font-cinzel flex items-center gap-1.5">
+                          🦄 Fórmula "Vaca Morada" & Retención Viral (TikTok • Reels • Shorts)
+                        </h4>
+                        <p className="text-[10px] text-slate-300">
+                          Regla Anti-Estancamiento: Detención inmediata del scroll en 3s con gancho visual y psicológico superior
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] text-red-300 font-bold flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isViralFormulaActive}
+                          onChange={(e) => setIsViralFormulaActive(e.target.checked)}
+                          className="rounded text-red-500 focus:ring-red-400"
+                        />
+                        <span>Activar Vaca Morada</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Red Box Banner Input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-red-300 flex items-center gap-1.5">
+                      <span>🔴 Caja Roja Superior de Alto Impacto (Hook Visual):</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={viralBannerText}
+                        onChange={(e) => setViralBannerText(e.target.value)}
+                        placeholder="🔴 FRASE EN MAYÚSCULAS QUE CONGELA EL SCROLL..."
+                        className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-red-500/50 text-white font-bold text-xs focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                      />
+                    </div>
+
+                    {/* Presets */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[
+                        "🔴 CONSEJO PARA HACERTE VIRAL EN TU FE",
+                        "🔴 NO PASES ESTE VIDEO SI TE SIENTES CANSADO",
+                        "🔴 JESÚS VIO LO QUE LLORASTE EN SILENCIO",
+                        "🔴 3 SEGUNDOS QUE CAMBIARÁN TU FE HOY",
+                        "🔴 MENSAJE URGENTE DE JESÚS PARA TI"
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setViralBannerText(preset)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                            viralBannerText === preset
+                              ? 'bg-red-600 text-white border-red-400 shadow-sm'
+                              : 'bg-red-950/40 hover:bg-red-900/50 text-red-200 border-red-500/30'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3-Shot Directive Indicator */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-red-500/20 text-[10px] text-slate-300">
+                    <span className="font-bold text-amber-300 flex items-center gap-1">
+                      <Film className="w-3 h-3 text-amber-400" />
+                      Alternancia Dinámica de 3 Tomas:
+                    </span>
+                    <span className="bg-slate-900 px-2 py-0.5 rounded border border-white/10 text-amber-200 font-mono">1. Plano General</span>
+                    <span className="text-red-400">➔</span>
+                    <span className="bg-slate-900 px-2 py-0.5 rounded border border-white/10 text-amber-200 font-mono">2. Primer Plano</span>
+                    <span className="text-red-400">➔</span>
+                    <span className="bg-slate-900 px-2 py-0.5 rounded border border-white/10 text-amber-200 font-mono">3. Manos de Bendición</span>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
@@ -1932,15 +2133,46 @@ export const SpaceStudio: React.FC = () => {
                   8K Veo
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceTab('packaging-strategy')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeWorkspaceTab === 'packaging-strategy'
+                    ? 'bg-gradient-to-r from-red-600 via-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Youtube className="w-4 h-4 text-red-500 fill-red-500" />
+                <span>Packaging YouTube Pro</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-950 text-emerald-400 font-extrabold uppercase border border-emerald-500/30">
+                  {scriptData.packaging?.packagingScore || 98}/100
+                </span>
+              </button>
             </div>
 
             <span className="hidden sm:inline-block text-[11px] text-slate-400 px-3 font-mono">
-              {activeWorkspaceTab === 'block-editor' ? '✍️ Escribe con / y arrastra bloques' : activeWorkspaceTab === 'prompt-director' ? '🎬 Prompts Estructurados 8K' : '🎬 Modo Director'}
+              {activeWorkspaceTab === 'packaging-strategy' ? '📦 Estrategia Edu Serrano Activa' : activeWorkspaceTab === 'block-editor' ? '✍️ Escribe con / y arrastra bloques' : activeWorkspaceTab === 'prompt-director' ? '🎬 Prompts Estructurados 8K' : '🎬 Modo Director'}
             </span>
           </div>
 
           {/* Conditional Workspace View */}
-          {activeWorkspaceTab === 'prompt-director' ? (
+          {activeWorkspaceTab === 'packaging-strategy' ? (
+            <PackagingStrategyStudio
+              packagingData={scriptData.packaging}
+              scriptTitle={scriptData.title}
+              scriptHook={scriptData.hook}
+              mainTheme={scriptData.mainTheme}
+              scenesCount={scriptData.scenes.length}
+              durationSeconds={durationSeconds}
+              currentThumbnailUrl={sceneArtworks[0]?.imageUrl || SACRED_IMAGE_PRESETS[0]}
+              onApplyPackaging={handleApplyPackagingVariant}
+              onUpdatePackagingData={(newData) => {
+                setScriptData(prev => ({ ...prev, packaging: newData }));
+              }}
+              onRequestGenerateAiPackaging={handleRequestGenerateAiPackaging}
+            />
+          ) : activeWorkspaceTab === 'prompt-director' ? (
             <CinematicPromptBuilder
               onApplyPrompt={(prompt, data) => {
                 setPublishToast({
@@ -2030,6 +2262,63 @@ export const SpaceStudio: React.FC = () => {
                 </div>
               </div>
 
+              {/* 🔴 FÓRMULA VACA MORADA: CAJA ROJA SUPERIOR VIRAL */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-red-950/80 via-red-900/50 to-slate-950 border-2 border-red-500/80 shadow-2xl space-y-3 relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                    <div>
+                      <span className="text-[11px] font-black text-red-300 uppercase tracking-wider font-cinzel flex items-center gap-1.5">
+                        🔴 CAJA ROJA SUPERIOR VIRAL (FÓRMULA VACA MORADA)
+                      </span>
+                      <p className="text-[10px] text-slate-300">
+                        Estrategia de retención extrema: Frena el scroll en el primer medio segundo en TikTok, Reels y Shorts
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(scriptData.banner_hook_superior || viralBannerText, 'red-banner-copy')}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5 transition-colors cursor-pointer border border-white/15"
+                      title="Copiar texto de la caja roja para CapCut o editor de video"
+                    >
+                      {copiedKey === 'red-banner-copy' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedKey === 'red-banner-copy' ? '¡Copiado!' : 'Copiar Caja Roja'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Red Box Banner Display */}
+                <div className="p-3.5 bg-red-600 rounded-2xl shadow-lg text-center flex items-center justify-center border border-red-400/60">
+                  <p className="text-sm sm:text-base font-black text-white tracking-wider uppercase drop-shadow-md">
+                    {scriptData.banner_hook_superior || viralBannerText}
+                  </p>
+                </div>
+
+                {/* 3-Shot Strategy Badges */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-red-500/30 text-[11px] text-red-200">
+                  <span className="font-bold text-amber-300 flex items-center gap-1">
+                    🎬 Alternancia de 3 Tomas:
+                  </span>
+                  <span className="bg-red-950/90 px-2 py-0.5 rounded-md border border-red-500/30 text-amber-200 font-mono">
+                    1. Plano General (0-3.3s)
+                  </span>
+                  <span className="text-red-400 font-bold">➔</span>
+                  <span className="bg-red-950/90 px-2 py-0.5 rounded-md border border-red-500/30 text-amber-200 font-mono">
+                    2. Primer Plano a los Ojos (3.3-6.6s)
+                  </span>
+                  <span className="text-red-400 font-bold">➔</span>
+                  <span className="bg-red-950/90 px-2 py-0.5 rounded-md border border-red-500/30 text-amber-200 font-mono">
+                    3. Manos de Bendición (6.6-10s)
+                  </span>
+                </div>
+              </div>
+
               {/* Hook Card (0-3s) with Innovative Scroll-Stopping Controls */}
               <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-amber-500/5 border border-amber-500/40 shadow-xl space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2073,6 +2362,54 @@ export const SpaceStudio: React.FC = () => {
                   <p className="text-xs sm:text-sm text-slate-100 font-serif italic leading-relaxed">
                     "{scriptData.hook}"
                   </p>
+                </div>
+
+                {/* Edu Serrano YouTube Packaging & Anti-Error Snapshot */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-950 to-amber-950/40 border border-amber-500/25 shadow-lg space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-500/30 flex items-center gap-1">
+                        <Youtube className="w-3 h-3 fill-red-500 text-red-500" />
+                        <span>Packaging YouTube Pro (Edu Serrano)</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        Score {scriptData.packaging?.packagingScore || 98}/100
+                      </span>
+                      <span className="text-[11px] text-amber-300 font-semibold">
+                        CTR Estimado: <strong>~{scriptData.packaging?.variants?.[0]?.expectedCtrPercentage || 14.8}%</strong>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveWorkspaceTab('packaging-strategy')}
+                      className="px-3 py-1 rounded-xl text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Abrir Simulador A/B & Anti-Error</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                    <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Texto Miniatura (1 Punto Focal):</span>
+                      <p className="font-black text-amber-300 uppercase tracking-wider">
+                        "{scriptData.packaging?.thumbnailOverlayText || 'ÉL ESTÁ CONTIGO'}"
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Fórmula de Título:</span>
+                      <p className="font-semibold text-white truncate">
+                        {scriptData.packaging?.variants?.[0]?.titleFormula || 'Curiosidad + Alivio Inmediato'}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black/60 border border-white/5 space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Gancho 0-2s (Cero saludos):</span>
+                      <p className="font-medium text-slate-200 truncate">
+                        "{scriptData.packaging?.firstTwoSecondsHook || scriptData.hook}"
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2123,23 +2460,23 @@ export const SpaceStudio: React.FC = () => {
                   type="button"
                   onClick={() => {
                     const allPromptsText = scenes.map((sc, i) => {
-                      const p = generateCinematicEnglishVideoPrompt(sc, i);
-                      return `=== PROMPT ESCENA ${i + 1} (DURACIÓN: ${sc.durationSec || 10}s) ===\n${p}\n\nDIÁLOGO DE JESÚS (ESPAÑOL - 10s):\n"${sc.narrationText}"\n`;
+                      const p = generateMasterVideoPrompt(sc, i);
+                      return `=== PROMPT OFICIAL ESCENA ${i + 1} (DURACIÓN: ${sc.durationSec || 10}s) ===\n${p}\n`;
                     }).join('\n----------------------------------------\n\n');
                     handleCopy(allPromptsText, 'all-4-prompts');
                   }}
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-                  title="Copiar los 4 prompts y diálogos de 10 segundos listos para Kling, Veo, Sora o Runway"
+                  title="Copiar los prompts de 10 segundos para dar vida a las imágenes con la voz compasiva de Jesús y cortes cada 2 o 3s"
                 >
                   {copiedKey === 'all-4-prompts' ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-slate-950" />
-                      <span>¡Los 4 Prompts Copiados!</span>
+                      <span>¡Los {scenes.length} Prompts Copiados!</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar los 4 Prompts (10s c/u)</span>
+                      <span>Copiar los {scenes.length} Prompts (10s c/u)</span>
                     </>
                   )}
                 </button>
@@ -2228,10 +2565,15 @@ export const SpaceStudio: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Subtitle / On-screen Badge */}
-                      <div className="mb-2.5">
+                      {/* Subtitle / On-screen Badge & 3-Shot Alternation */}
+                      <div className="mb-2.5 flex flex-wrap items-center gap-2">
                         <span className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20">
                           Texto en Pantalla: "{scene.onScreenText}"
+                        </span>
+
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-950/70 text-red-200 border border-red-500/40">
+                          <Film className="w-3 h-3 text-red-400" />
+                          <span>3 Tomas: General (0-3.3s) ➔ Primer Plano (3.3-6.6s) ➔ Manos (6.6-10s)</span>
                         </span>
                       </div>
 
@@ -2261,28 +2603,28 @@ export const SpaceStudio: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Ultra-Precise Cinematic Video AI Prompt (in English, with Spanish Voice of Jesus) */}
+                      {/* Ultra-Precise Video AI Prompt: Dé Vida al Personaje de la Imagen (10s con Voz de Jesús) */}
                       {(() => {
-                        const englishPrompt = generateCinematicEnglishVideoPrompt(scene, idx);
+                        const masterPrompt = generateMasterVideoPrompt(scene, idx);
                         return (
                           <div className="p-3 rounded-xl bg-slate-950/90 border border-amber-400/30 mb-2.5 space-y-2">
                             <div className="flex items-center justify-between text-[11px]">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                                <span className="text-amber-300 font-bold">Prompt para Dar Vida a la Imagen (English High-Precision):</span>
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-                                  8K + Veo / Sora / Kling
+                                <span className="text-amber-300 font-bold">Prompt para Dar Vida al Personaje (10s Continuo):</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                                  Zoom Lento · Cortes 2-3s
                                 </span>
                               </div>
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleCopy(englishPrompt, `english-prompt-${idx}`);
+                                  handleCopy(masterPrompt, `master-prompt-${idx}`);
                                 }}
                                 className="text-[10px] text-amber-400 hover:text-amber-200 font-semibold underline flex items-center gap-1 cursor-pointer"
                               >
-                                {copiedKey === `english-prompt-${idx}` ? (
+                                {copiedKey === `master-prompt-${idx}` ? (
                                   <>
                                     <Check className="w-2.5 h-2.5 text-emerald-400" />
                                     <span className="text-emerald-400">¡Copiado!</span>
@@ -2297,12 +2639,12 @@ export const SpaceStudio: React.FC = () => {
                             </div>
 
                             <p className="text-[11px] text-slate-300 font-mono leading-relaxed bg-black/40 p-2.5 rounded-lg border border-white/5 whitespace-pre-wrap select-all">
-                              {englishPrompt}
+                              {masterPrompt}
                             </p>
 
                             <div className="text-[10px] text-slate-400 flex items-center justify-between">
-                              <span>🎥 <strong>Cámara:</strong> {scene.cameraMovement || 'Primer plano orbital fluido'}</span>
-                              <span className="text-amber-300/90 font-mono">Guion de voz: Español</span>
+                              <span>🎥 <strong>Cámara:</strong> {scene.cameraMovement || 'Primer plano con zoom lento y continuo durante 10s'}</span>
+                              <span className="text-amber-300/90 font-mono">Voz: Jesús (Español 10s)</span>
                             </div>
                           </div>
                         );

@@ -1,31 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
-  Volume2, 
-  VolumeX, 
   BookOpen, 
-  Video, 
-  HeartHandshake, 
   Image as ImageIcon,
-  Bot,
-  Radio,
-  HardDrive,
-  Share2,
-  Workflow,
-  Crown,
-  LogIn,
-  Zap,
-  CheckCircle2,
-  Cpu,
-  Film
+  Crown
 } from 'lucide-react';
-import { ActiveTab, AmbientTrack, GoogleUserProfile } from '../types';
-import { ambientSound } from '../utils/audioSynth';
+import { ActiveTab, GoogleUserProfile } from '../types';
 import { GoogleDriveManager } from './GoogleDriveManager';
 import { GoogleAuthModal } from './GoogleAuthModal';
 import { subscribeToGoogleAuth, buildGoogleUserProfile } from '../services/googleAccountService';
 import { getConnectedAccounts } from '../services/socialMediaService';
-import { User } from 'firebase/auth';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -33,13 +17,10 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<AmbientTrack>('sanctuary');
-  const [volume, setVolume] = useState(0.35);
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [googleProfile, setGoogleProfile] = useState<GoogleUserProfile>(buildGoogleUserProfile(null));
-  const [connectedSocialsCount, setConnectedSocialsCount] = useState(0);
+  const [, setConnectedSocialsCount] = useState(0);
 
   useEffect(() => {
     const refreshSocials = () => {
@@ -68,44 +49,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
     };
   }, []);
 
-
-  const tracks: { id: AmbientTrack; label: string; icon: string }[] = [
-    { id: 'sanctuary', label: 'Altar Celestial', icon: '✨' },
-    { id: 'harp', label: 'Arpa de Paz', icon: '🎵' },
-    { id: 'rain', label: 'Lluvia de Gracia', icon: '🌧️' },
-    { id: 'bells', label: 'Campanas Sacras', icon: '🔔' },
-    { id: 'wind', label: 'Brisa del Monte', icon: '🍃' },
-  ];
-
-  const toggleAudio = () => {
-    if (isPlayingAudio) {
-      ambientSound.stop();
-      setIsPlayingAudio(false);
-    } else {
-      if (currentTrack !== 'off') {
-        ambientSound.playTrack(currentTrack as any);
-        setIsPlayingAudio(true);
-      }
-    }
-  };
-
-  const changeTrack = (track: AmbientTrack) => {
-    setCurrentTrack(track);
-    if (track === 'off') {
-      ambientSound.stop();
-      setIsPlayingAudio(false);
-    } else {
-      ambientSound.playTrack(track as any);
-      setIsPlayingAudio(true);
-    }
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setVolume(val);
-    ambientSound.setVolume(val);
-  };
-
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-[#02040a]/75 backdrop-blur-xl">
       {/* Top Brand Bar */}
@@ -133,90 +76,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             </div>
           </div>
 
-          {/* AI Agents Live Status & Ambient Sound Player */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Live Agents Pill */}
-            <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md text-xs text-slate-300">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] text-slate-400">Agentes Activos:</span>
-              <span className="text-[11px] font-semibold text-emerald-300">
-                Guionista • Director • Voz • Consejero
-              </span>
-            </div>
-
-            {/* Ambient Soundscape Controller */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 backdrop-blur-md shadow-inner">
-              <button
-                onClick={toggleAudio}
-                className={`p-1.5 rounded-lg transition-all ${
-                  isPlayingAudio
-                    ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                    : 'bg-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'
-                }`}
-                title={isPlayingAudio ? 'Silenciar atmósfera' : 'Reproducir música de oración ambiental'}
-              >
-                {isPlayingAudio ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-              </button>
-
-              <select
-                value={currentTrack}
-                onChange={(e) => changeTrack(e.target.value as AmbientTrack)}
-                className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer py-0.5 pr-1 font-medium"
-              >
-                {tracks.map((t) => (
-                  <option key={t.id} value={t.id} className="bg-slate-900 text-slate-200">
-                    {t.icon} {t.label}
-                  </option>
-                ))}
-              </select>
-
-              {isPlayingAudio && (
-                <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/10">
-                  <Radio className="w-3 h-3 text-amber-400 animate-pulse" />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={volume}
-                    onChange={handleVolumeChange}
-                    className="w-14 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                    title={`Volumen: ${Math.round(volume * 100)}%`}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Google Ecosystem & Gemini Live Indicator */}
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-medium transition-all cursor-pointer shadow-sm"
-              title="Ver estado de conexión con Gemini 3.7 y Ecosistema Google"
-            >
-              <Cpu className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-              <span>Gemini 3.7</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            </button>
-
-            {/* Google Drive Status & Connector Button */}
-            <button
-              onClick={() => setIsDriveModalOpen(true)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                googleProfile.email
-                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                  : 'bg-white/5 hover:bg-white/10 border-white/5 text-slate-300 hover:text-white'
-              }`}
-              title="Administrar archivos y sincronización en Google Drive"
-            >
-              <HardDrive className={`w-3.5 h-3.5 ${googleProfile.email ? 'text-amber-400' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline">
-                {googleProfile.email ? 'Google Drive' : 'Drive'}
-              </span>
-              {googleProfile.email && (
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              )}
-            </button>
-
+          {/* User Account / Google Profile */}
+          <div className="flex items-center gap-2.5">
             {/* PROMINENT GOOGLE SIGN IN / USER PROFILE BUTTON */}
             {googleProfile.email ? (
               <button
@@ -286,36 +147,39 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
         {/* Space Tab Navigation with Immersive UI Styling */}
         <nav className="flex items-center gap-2 overflow-x-auto py-2 border-t border-white/5 scrollbar-none">
           <button
-            onClick={() => setActiveTab('studio')}
+            onClick={() => setActiveTab('spiritual-video-creator')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'studio'
+              activeTab === 'spiritual-video-creator'
                 ? 'bg-amber-400/15 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
             }`}
           >
-            <Video className="w-4 h-4" />
-            <span>Estudio Audiovisual (OiiOii Space)</span>
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Creador de Oraciones & Videos</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              activeTab === 'studio' ? 'bg-amber-400 text-slate-950' : 'bg-amber-500/10 text-amber-400'
+              activeTab === 'spiritual-video-creator' ? 'bg-amber-400 text-slate-950' : 'bg-amber-500/20 text-amber-300'
             }`}>
-              Reels & Storyboard
+              TikTok 9:16 Vertical
             </span>
           </button>
 
+          {/* DEDICATED CHANNEL STUDIO: @Aprendeen30segundos */}
           <button
-            onClick={() => setActiveTab('scene-generator')}
+            onClick={() => setActiveTab('aprende-30s')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'scene-generator'
-                ? 'bg-amber-400/15 text-amber-300 border border-amber-400/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+              activeTab === 'aprende-30s'
+                ? 'bg-gradient-to-r from-red-600/30 to-amber-600/30 text-red-100 border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.25)] font-bold'
+                : 'text-slate-300 hover:text-white hover:bg-red-500/10 border border-transparent'
             }`}
           >
-            <Film className="w-4 h-4 text-amber-400" />
-            <span>Generador de Escenas Cinematográficas</span>
+            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-red-500 to-amber-600 flex items-center justify-center text-[10px] text-white font-black">
+              30s
+            </div>
+            <span className="font-bold">@Aprendeen30segundos</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              activeTab === 'scene-generator' ? 'bg-amber-400 text-slate-950' : 'bg-amber-500/20 text-amber-300'
+              activeTab === 'aprende-30s' ? 'bg-red-600 text-white shadow-sm' : 'bg-red-500/20 text-red-300'
             }`}>
-              4 Escenas & Guía
+              Canal YouTube
             </span>
           </button>
 

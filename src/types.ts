@@ -1,3 +1,15 @@
+export interface SceneSubtitleSlot {
+  id: string;
+  text: string;
+  startSec?: number;
+  endSec?: number;
+  highlightWord?: string;
+  label?: string;
+  posY?: number; // 10 to 90 (% from top, default 78)
+  posX?: number; // 10 to 90 (% from left, default 50)
+  positionPreset?: 'top' | 'center' | 'bottom' | 'custom';
+}
+
 export interface StoryboardScene {
   sceneNumber: number;
   durationSec: number;
@@ -5,12 +17,60 @@ export interface StoryboardScene {
   cameraMovement: string;
   narrationText: string;
   onScreenText: string;
+  secondaryTitle?: string;
+  secondaryTitlePosY?: number;
+  textPositionY?: number; // default vertical position (10 to 90%, default 78)
+  textPositionX?: number; // default horizontal position (10 to 90%, default 50)
+  textPositionPreset?: 'top' | 'center' | 'bottom' | 'custom';
+  subtitleSlots?: SceneSubtitleSlot[];
   audioTone?: string;
   atmosphere?: string;
   imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  masterVideoPrompt?: string;
+  subShotImages?: string[];
+  subShots?: {
+    shot1?: string;
+    shot2?: string;
+    shot3?: string;
+  };
 }
 
 export type SceneScript = StoryboardScene;
+
+export interface AntiErrorRuleItem {
+  id: string;
+  errorName: string;
+  mistakeDescription: string;
+  solutionStrategy: string;
+  isCompliant: boolean;
+  scoreImpact: number;
+}
+
+export interface PackagingVariant {
+  id: string;
+  title: string;
+  titleFormula: string;
+  thumbnailOverlayText: string;
+  thumbnailVisualPrompt: string;
+  firstTwoSecondsHook: string;
+  expectedCtrPercentage: number;
+  focalPointDescription: string;
+  contrastRating: 'Máximo' | 'Alto' | 'Medio';
+}
+
+export interface EduSerranoPackagingData {
+  primaryTitle: string;
+  thumbnailOverlayText: string;
+  thumbnailConcept: string;
+  firstTwoSecondsHook: string;
+  targetAudienceAvatar: string;
+  packagingScore: number;
+  variants: PackagingVariant[];
+  antiErrorChecklist: AntiErrorRuleItem[];
+  keyLessons: string[];
+}
 
 export interface FaithScriptData {
   title: string;
@@ -29,6 +89,9 @@ export interface FaithScriptData {
     caption: string;
     pinnedComment: string;
   };
+  packaging?: EduSerranoPackagingData;
+  banner_hook_superior?: string;
+  modo_viral?: 'vaca_morada' | 'clasico';
 }
 
 export interface PrayerData {
@@ -116,7 +179,7 @@ export interface BlessingCard {
   themeCategory?: 'dawn' | 'jesus' | 'cross' | 'dove' | 'olive' | 'healing' | 'night' | 'peace';
 }
 
-export type ActiveTab = 'studio' | 'scene-generator' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
+export type ActiveTab = 'studio' | 'scene-generator' | 'spiritual-video-creator' | 'aprende-30s' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
 
 // Devotional Scene Generator Types
 export interface StructuredPromptAnalysis {
@@ -514,4 +577,245 @@ export interface InnovativeHookItem {
   psychologicalTrigger: string;
   recommendedVisual: string;
 }
+
+// ============================================================================
+// HABILIDAD: Creador de Oraciones, Reflexiones y Versículos para Videos
+// ============================================================================
+
+export type SpiritualContentType =
+  | 'oracion'
+  | 'reflexion'
+  | 'versiculo'
+  | 'devocional'
+  | 'animo'
+  | 'gratitud'
+  | 'proteccion'
+  | 'familia'
+  | 'ansiedad'
+  | 'duelo'
+  | 'fe'
+  | 'disciplina_espiritual';
+
+export type SpiritualTargetAudience =
+  | 'general'
+  | 'jovenes'
+  | 'familias'
+  | 'mujeres'
+  | 'hombres'
+  | 'ninos';
+
+export type SpiritualVideoDuration = 10 | 15 | 20 | 30 | 40 | 60;
+
+export type SpiritualTone =
+  | 'esperanzador'
+  | 'profundo'
+  | 'sereno'
+  | 'urgente'
+  | 'reconfortante'
+  | 'motivador';
+
+export type BibleTranslationOption =
+  | 'RVR1960'
+  | 'NVI'
+  | 'DHH'
+  | 'NTV'
+  | 'TLA'
+  | 'Parafrasis Fiel';
+
+export type SpiritualVoiceOption =
+  | 'femenina_calida'
+  | 'femenina_emotiva'
+  | 'masculina_calida'
+  | 'masculina_pausada'
+  | 'masculina_emotiva';
+
+export type SpiritualMusicOption =
+  | 'sin_musica'
+  | 'piano_suave'
+  | 'adoracion_instrumental'
+  | 'ambiente_cinematografico';
+
+export type SpiritualVisualStyle =
+  | 'persona_hablando'
+  | 'naturaleza'
+  | 'biblia_manos'
+  | 'amanecer'
+  | 'minimalista'
+  | 'cinematografico';
+
+export type SpiritualFinalCallToAction =
+  | 'amen'
+  | 'comparte'
+  | 'guarda'
+  | 'peticion'
+  | 'sigueme';
+
+export type SpiritualPublicationOption =
+  | 'publicar_ahora'
+  | 'programar_fecha_hora'
+  | 'guardar_borrador';
+
+export type SpiritualPublicationStatus = 'borrador' | 'programado' | 'listo';
+
+export interface SpiritualVerseData {
+  referencia: string;
+  texto_o_parafrasis: string;
+  traduccion: string;
+}
+
+export interface SpiritualSceneItem {
+  inicio_segundo: number;
+  fin_segundo: number;
+  visual: string;
+  narracion: string;
+  texto_pantalla: string;
+  palabras_resaltadas: string[];
+  transicion: 'corte' | 'fundido' | 'zoom_suave' | 'desplazamiento';
+  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+}
+
+export interface SpiritualVideoPackage {
+  id: string;
+  titulo: string;
+  tipo: string;
+  duracion_segundos: SpiritualVideoDuration;
+  tema: string;
+  gancho: string;
+  guion_narrado: string;
+  versiculo: SpiritualVerseData;
+  escenas: SpiritualSceneItem[];
+  direccion_de_voz: string;
+  musica_sugerida: string;
+  texto_portada: string;
+  descripcion_publicacion: string;
+  hashtags: string[];
+  llamado_a_la_accion: string;
+  fecha_sugerida: string;
+  estado: SpiritualPublicationStatus;
+  // High Retention & Viral Purple Cow fields
+  banner_hook_superior?: string;
+  modo_viral?: 'vaca_morada' | 'clasico';
+  // Additional production fields
+  targetAudience?: SpiritualTargetAudience;
+  tono?: SpiritualTone;
+  estiloVisual?: SpiritualVisualStyle;
+  vozSeleccionada?: SpiritualVoiceOption;
+  musicaSeleccionada?: SpiritualMusicOption;
+  plataforma_destino?: 'tiktok' | 'instagram' | 'youtube' | 'facebook';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PublicationQueueItem {
+  id: string;
+  videoId: string;
+  titulo: string;
+  tema: string;
+  duracion_segundos: number;
+  plataforma: 'tiktok' | 'instagram' | 'youtube' | 'facebook';
+  fecha_programada: string; // ISO 8601
+  hora_programada: string; // HH:mm
+  estado: 'programado' | 'pausado' | 'listo' | 'borrador';
+  videoPackage: SpiritualVideoPackage;
+  notas?: string;
+  created_at: string;
+}
+
+export interface PublicationScheduleConfig {
+  timezone: string;
+  frecuencia: 'diario' | 'tres_por_semana' | 'personalizado';
+  horariosSugeridos: string[]; // e.g. ["06:30", "12:30", "20:30"]
+  diasSugeridos: number[]; // 0 = Domingo, 1 = Lunes, etc.
+}
+
+// ============================================================================
+// HABILIDAD: Aprende en 30 Segundos Studio (@Aprendeen30segundos)
+// ============================================================================
+
+export type Aprende30Category = 
+  | 'ventas_negocios'
+  | 'finanzas_dinero'
+  | 'productividad_habitos'
+  | 'psicologia_mente'
+  | 'ciencia_curiosidades'
+  | 'tecnologia_ia'
+  | 'historia_cultura';
+
+export type Aprende30Pace = 'ultra_rapido' | 'dinamico' | 'pausado_impacto';
+
+export interface Aprende30Scene {
+  sceneNumber: number;
+  durationSec: number;
+  inicio_segundo: number;
+  fin_segundo: number;
+  stageTitle: string; // e.g. "Gancho Disruptivo (0-10s)", "El Secreto Revelado (10-20s)", "Llamado a la Acción (20-30s)"
+  visualPrompt: string;
+  narration: string;
+  onScreenText: string;
+  secondaryTitle?: string;
+  subtitleSlots?: SceneSubtitleSlot[];
+  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  cameraMovement?: string;
+  masterVideoPrompt?: string;
+}
+
+export interface Aprende30FlashCard {
+  titulo: string;
+  subtitulo: string;
+  categoriaLabel: string;
+  errorComun: string;
+  puntosClave: string[];
+  accionInmediata: string;
+  quoteDestacada: string;
+  badgeCanal?: string;
+  formato?: 'cuadrada' | 'vertical'; // 1080x1080 o 1080x1920
+  colorTema?: 'rojo_ambar' | 'esmeralda' | 'violeta' | 'azul_tech' | 'dorado_minimal';
+}
+
+export interface Aprende30DailyCapsule {
+  id: string;
+  fecha: string;
+  titulo: string;
+  categoria: Aprende30Category;
+  categoriaNombre: string;
+  icono: string;
+  gancho3s: string;
+  explicacion30s: string;
+  sabiasQue: string;
+  retoDelDia: string;
+  puntosClave: string[];
+  citaMaestra: string;
+  tarjeta: Aprende30FlashCard;
+  videoPackage?: Aprende30Package;
+}
+
+export interface Aprende30Package {
+  id: string;
+  channelHandle: string; // "@Aprendeen30segundos"
+  channelUrl: string; // "https://www.youtube.com/@Aprendeen30segundos"
+  titulo: string;
+  categoria: Aprende30Category;
+  duracion_segundos: 30;
+  banner_hook_superior: string; // e.g. "🔴 APRENDE A VENDER EN 30 SEGUNDOS"
+  gancho_inicial: string;
+  guion_completo: string;
+  escenas: Aprende30Scene[];
+  miniatura_texto: string;
+  miniatura_visual: string;
+  ctr_estimado: number; // e.g. 14.8%
+  retencion_proyectada: number; // e.g. 88%
+  musica_sugerida: string;
+  descripcion_youtube: string;
+  hashtags: string[];
+  llamado_accion: string;
+  tarjeta_flash?: Aprende30FlashCard;
+  fecha_programada?: string;
+  created_at?: string;
+}
+
+
 

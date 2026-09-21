@@ -146,25 +146,30 @@ class AmbientAudioEngine {
       }
 
       case 'bells': {
-        const bellFreqs = [523.25, 659.25, 783.99, 1046.50];
+        const bellFreqs = [261.63, 329.63, 392.00]; // Warm low acoustic octaves C4, E4, G4 (no high beeps)
         const timer = window.setInterval(() => {
           if (!this.audioCtx || !this.masterGain) return;
           const freq = bellFreqs[Math.floor(Math.random() * bellFreqs.length)];
           const osc = this.audioCtx.createOscillator();
           const gain = this.audioCtx.createGain();
+          const filter = this.audioCtx.createBiquadFilter();
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(450, this.audioCtx.currentTime);
 
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
 
-          gain.gain.setValueAtTime(0.06, this.audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 4.0);
+          gain.gain.setValueAtTime(0.02, this.audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 3.0);
 
-          osc.connect(gain);
+          osc.connect(filter);
+          filter.connect(gain);
           gain.connect(this.masterGain);
 
           osc.start();
-          osc.stop(this.audioCtx.currentTime + 4.1);
-        }, 2200);
+          osc.stop(this.audioCtx.currentTime + 3.1);
+        }, 3200);
         this.activeNodes.push(timer);
         break;
       }

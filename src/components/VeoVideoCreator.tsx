@@ -31,6 +31,11 @@ import { ambientSound } from '../utils/audioSynth';
 import { uploadVideoToDrive } from '../services/googleDriveService';
 import { CinematicPromptBuilder, CinematicPromptData } from './CinematicPromptBuilder';
 import confetti from 'canvas-confetti';
+import { 
+  MANDATORY_VISUAL_EDITING_INSTRUCTION, 
+  OFFICIAL_DEFAULT_JESUS_DIALOGUE, 
+  OFFICIAL_CAMERA_MOVEMENT 
+} from '../services/videoGenerator';
 
 interface VeoVideoCreatorProps {
   onSendToCapcutTimeline?: (clip: {
@@ -826,15 +831,38 @@ export const VeoVideoCreator: React.FC<VeoVideoCreatorProps> = ({
             <div className="space-y-2 pt-1">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-slate-300">Prompt / Visión de la Escena:</span>
-                <button
-                  type="button"
-                  onClick={handleEnhancePromptWithGemini}
-                  disabled={isEnhancingPrompt}
-                  className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isEnhancingPrompt ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                  <span>{isEnhancingPrompt ? 'Optimizando con Gemini...' : '✨ Optimizar Veo 3'}</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const official = `Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas: 
+Duración: 10 segundos (movimiento continuo sin interrupciones).
+
+Movimiento de cámara: ${OFFICIAL_CAMERA_MOVEMENT}
+
+
+Diálogo de 10 segundos en español con la compasiva voz de Jesús: "${OFFICIAL_DEFAULT_JESUS_DIALOGUE}"
+
+${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+                      setUserPrompt(official);
+                      setDurationSec(10);
+                      setCameraMovement('living-breath');
+                    }}
+                    className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-[10px] flex items-center gap-1 transition-all cursor-pointer"
+                    title="Cargar prompt oficial de 10s con voz de Jesús y cortes cada 2-3s"
+                  >
+                    <span>⭐ Prompt Oficial 10s</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEnhancePromptWithGemini}
+                    disabled={isEnhancingPrompt}
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isEnhancingPrompt ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                    <span>{isEnhancingPrompt ? 'Optimizando...' : '✨ Optimizar Veo 3'}</span>
+                  </button>
+                </div>
               </div>
               <textarea
                 value={userPrompt}

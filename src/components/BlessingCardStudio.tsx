@@ -26,14 +26,43 @@ import {
   MessageSquare,
   ExternalLink,
   Shuffle,
-  CheckCheck
+  CheckCheck,
+  UploadCloud,
+  FolderUp,
+  Palette,
+  Type,
+  Edit3,
+  Trash2,
+  Maximize2,
+  ZoomIn,
+  BookOpen,
+  Heart,
+  Search,
+  X,
+  RotateCcw,
+  AlignLeft,
+  AlignCenter
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BlessingCard } from '../types';
 import { uploadBlobToDrive } from '../services/googleDriveService';
 import { 
-  BIBLICAL_VERSES_COLLECTION
+  BIBLICAL_VERSES_COLLECTION,
+  BibleVerseItem
 } from '../data/biblicalVersesLibrary';
+
+export const BIBLICAL_CATEGORIES = [
+  { id: 'all', name: '✨ Todos' },
+  { id: 'salmos-proteccion', name: '🛡️ Salmos Protección' },
+  { id: 'salmos-manana', name: '🌅 Salmos Mañana' },
+  { id: 'salmos-noche', name: '🌙 Salmos Noche' },
+  { id: 'sanidad', name: '🌿 Sanidad' },
+  { id: 'fortaleza', name: '⚔️ Fortaleza' },
+  { id: 'paz', name: '🕊️ Paz' },
+  { id: 'familia', name: '👨‍👩‍👧‍👦 Familia' },
+  { id: 'promesas', name: '📜 Promesas' },
+  { id: 'amor', name: '💖 Amor' }
+];
 
 // Curated High-Definition Sacred Spiritual Environments
 export const SACRED_THEME_PRESETS = [
@@ -334,6 +363,28 @@ export const BlessingCardStudio: React.FC = () => {
   const [showParticles, setShowParticles] = useState(true);
   const [customAccentColor, setCustomAccentColor] = useState<string>('#fbbf24');
 
+  // Studio Mode: 'editor' (Editor de Tarjeta & Subir Imagen) | 'generator' (IA Gemini)
+  const [studioMode, setStudioMode] = useState<'editor' | 'generator'>('editor');
+
+  // Custom Image Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [customImageInfo, setCustomImageInfo] = useState<{ name: string; size: string } | null>(null);
+  const [imageZoom, setImageZoom] = useState<number>(1);
+  const [imagePosition, setImagePosition] = useState<'center' | 'top' | 'bottom'>('center');
+  const [imageFilter, setImageFilter] = useState<'none' | 'warm' | 'golden' | 'sepia' | 'mono'>('none');
+
+  // Card Content & Typography State
+  const [cardIcon, setCardIcon] = useState<string>('🕊️');
+  const [cardFooter, setCardFooter] = useState<string>('ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO');
+  const [fontFamily, setFontFamily] = useState<'serif' | 'cinzel' | 'sans'>('serif');
+  const [textAlign, setTextAlign] = useState<'center' | 'left'>('center');
+
+  // Bible Verse Library Modal
+  const [isVerseModalOpen, setIsVerseModalOpen] = useState(false);
+  const [verseSearchTerm, setVerseSearchTerm] = useState('');
+  const [verseCategoryFilter, setVerseCategoryFilter] = useState<string>('all');
+
   // Trigger Automatic 2 Daily Cards on Initial Mount or Load Transferred Devotional Card
   useEffect(() => {
     try {
@@ -562,20 +613,101 @@ export const BlessingCardStudio: React.FC = () => {
     setIsGenerativeModelImage(true);
   };
 
+  // Handle custom image file processing (drag & drop or file input)
+  const handleProcessCustomImageFile = (file: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      if (uploadEvent.target?.result) {
+        setActiveArtworkSrc(uploadEvent.target.result as string);
+        setCustomImageInfo({
+          name: file.name,
+          size: (file.size / 1024).toFixed(1) + ' KB'
+        });
+        setArtworkPromptDescription(`Foto personalizada: ${file.name}`);
+        setIsGenerativeModelImage(false);
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          origin: { y: 0.65 },
+          colors: ['#fbbf24', '#f59e0b', '#ffffff']
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handle custom image file upload
   const handleCustomImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        if (uploadEvent.target?.result) {
-          setActiveArtworkSrc(uploadEvent.target.result as string);
-          setArtworkPromptDescription(`Imagen personalizada cargada: ${file.name}`);
-          setIsGenerativeModelImage(false);
-        }
-      };
-      reader.readAsDataURL(file);
+      handleProcessCustomImageFile(file);
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleProcessCustomImageFile(file);
+    }
+  };
+
+  const handleRestoreDefaultImage = () => {
+    const defaultUrl = timeOfDayContext === 'night' 
+      ? '/sacred-assets/jesus-night.jpg' 
+      : '/sacred-assets/celestial-sunrise.jpg';
+    setActiveArtworkSrc(defaultUrl);
+    setCustomImageInfo(null);
+    setImageZoom(1);
+    setImagePosition('center');
+    setImageFilter('none');
+    setIsGenerativeModelImage(true);
+    setArtworkPromptDescription('Fondo sagrado predeterminado restaurado');
+  };
+
+  const getCssFilter = (filterType: string) => {
+    switch (filterType) {
+      case 'warm': return 'sepia(0.25) saturate(1.3) hue-rotate(-10deg)';
+      case 'golden': return 'sepia(0.4) saturate(1.5) brightness(1.05)';
+      case 'sepia': return 'sepia(0.7) contrast(1.1)';
+      case 'mono': return 'grayscale(1) contrast(1.2)';
+      default: return 'none';
+    }
+  };
+
+  const handleApplyVerseFromLibrary = (verseItem: BibleVerseItem) => {
+    setCard(prev => ({
+      ...prev,
+      verseReference: verseItem.reference,
+      verseText: verseItem.text,
+      cardHeader: verseItem.headerTitle || prev.cardHeader,
+      blessingQuote: verseItem.blessingQuote || prev.blessingQuote,
+      shortPrayer: verseItem.prayer || prev.shortPrayer
+    }));
+    if (verseItem.accentColor) {
+      setCustomAccentColor(verseItem.accentColor);
+    }
+    setIsVerseModalOpen(false);
+    confetti({
+      particleCount: 35,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
   };
 
   // 1. Asynchronous Call: Generate Card + Brand New Generative Artwork with Gemini
@@ -732,10 +864,25 @@ export const BlessingCardStudio: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    // 1. Draw Unique AI Background Image
+    // 1. Draw Unique AI Background Image or Custom Uploaded Image
     try {
       const bgImg = await loadImage(activeArtworkSrc);
-      ctx.drawImage(bgImg, 0, 0, 1080, 1080);
+      const zoom = imageZoom || 1;
+      const targetW = 1080 * zoom;
+      const targetH = 1080 * zoom;
+      const offsetX = (1080 - targetW) / 2;
+      let offsetY = (1080 - targetH) / 2;
+      if (imagePosition === 'top') offsetY = 0;
+      if (imagePosition === 'bottom') offsetY = 1080 - targetH;
+
+      if (imageFilter !== 'none') {
+        if (imageFilter === 'warm') ctx.filter = 'sepia(0.25) saturate(1.3) hue-rotate(-10deg)';
+        else if (imageFilter === 'golden') ctx.filter = 'sepia(0.4) saturate(1.5) brightness(1.05)';
+        else if (imageFilter === 'sepia') ctx.filter = 'sepia(0.7) contrast(1.1)';
+        else if (imageFilter === 'mono') ctx.filter = 'grayscale(1) contrast(1.2)';
+      }
+      ctx.drawImage(bgImg, offsetX, offsetY, targetW, targetH);
+      ctx.filter = 'none';
     } catch (e) {
       const fallbackGrad = ctx.createLinearGradient(0, 0, 0, 1080);
       fallbackGrad.addColorStop(0, '#090d16');
@@ -807,10 +954,10 @@ export const BlessingCardStudio: React.FC = () => {
     ctx.fillText((card.cardHeader || 'BENDICIÓN DE DIOS').toUpperCase(), 540, 140);
     ctx.restore();
 
-    // Dove Icon Emoji
+    // Sacred Icon Emoji
     ctx.font = '48px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🕊️', 540, 215);
+    ctx.fillText(cardIcon || '🕊️', 540, 215);
 
     // Recipient line
     if (recipient) {
@@ -865,7 +1012,7 @@ export const BlessingCardStudio: React.FC = () => {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
     ctx.font = 'bold 15px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🕊️ ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO', 540, 960);
+    ctx.fillText(cardFooter || '🕊️ ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO', 540, 960);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), 'image/png');
@@ -1072,502 +1219,878 @@ _«${verse}»_
           Diseñador de Tarjetas con Obra Única Elvis Osorio
         </h2>
         <p className="text-xs sm:text-sm text-slate-400 font-sans leading-relaxed">
-          Cada tarjeta y obra de arte es generada de forma asíncrona y 100% inédita con variación de prompt según el momento (Buenos Días con luz dorada de amanecer vs. Buenas Noches con paz estelar).
+          Diseña tarjetas de bendición sagradas con tu propia foto o con arte generativo, personaliza el versículo, la oración y descarga en alta resolución 1080x1080 HD.
         </p>
-      </div>
-
-      {/* Automated Daily 2-Card Schedule Panel */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white font-cinzel flex items-center gap-2">
-                <span>Automatización Diaria (2 Tarjetas por Día)</span>
-                <span className="text-[10px] font-semibold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Activa
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Genera automáticamente una tarjeta matutina de "Buenos Días" y una nocturna de "Buenas Noches" con arte y textos distintos.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => generateAutomatedDailyBatch(true)}
-              disabled={isGeneratingDailyBatch}
-              className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-              title="Regenerar tarjetas automáticas de hoy"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isGeneratingDailyBatch ? 'animate-spin' : ''}`} />
-              <span>{isGeneratingDailyBatch ? 'Actualizando...' : 'Actualizar 2 Tarjetas'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 2 Daily Cards Cards Preview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Buenos Días */}
-          {(() => {
-            const mRecord = automatedCards.find(c => c.type === 'morning');
-            const mCard = mRecord?.card;
-            const headerTitle = mCard?.cardHeader || "¡BUENOS DÍAS! LA FUERZA Y EL PODER DE DIOS";
-            const quote = mCard?.blessingQuote || "Hoy el Señor renueva tus fuerzas como las del águila. Camina confiado en que Sus bendiciones te alcanzarán.";
-            const verse = mCard?.verseReference || "Isaías 40:29-31";
-            const artSrc = mRecord?.artworkSrc || "/sacred-assets/celestial-sunrise.jpg";
-
-            return (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-amber-400/30 hover:border-amber-400/50 transition-all space-y-3 relative group overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0 pr-2">
-                    <div className="w-6 h-6 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
-                      <Sun className="w-3.5 h-3.5 text-amber-400" />
-                    </div>
-                    <span className="text-xs font-bold text-amber-400 tracking-wide truncate" title={headerTitle}>
-                      {headerTitle}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-amber-300/70 font-mono shrink-0 px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">
-                    07:00 AM
-                  </span>
-                </div>
-
-                <div className="flex gap-3 items-start">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-amber-400/20 bg-slate-900 relative">
-                    <img 
-                      src={artSrc} 
-                      alt="Arte Matutino" 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => {
-                        e.currentTarget.src = "/sacred-assets/celestial-sunrise.jpg";
-                      }} 
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-xs text-slate-200 italic line-clamp-2 leading-relaxed">
-                      "{quote}"
-                    </p>
-                    <p className="text-[11px] font-semibold text-amber-400 font-mono truncate">
-                      📖 {verse}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end pt-1 border-t border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (mRecord) {
-                        handleApplyAutomatedCard(mRecord);
-                      } else {
-                        setTimeOfDayContext('morning');
-                        setOccasion('Bendición de Buenos Días y Renovación');
-                        handleGenerateCard(undefined, 'morning');
-                      }
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Cargar & Diseñar</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Card 2: Buenas Noches */}
-          {(() => {
-            const nRecord = automatedCards.find(c => c.type === 'night');
-            const nCard = nRecord?.card;
-            const headerTitle = nCard?.cardHeader || "¡BUENAS NOCHES! EN PAZ ME ACOSTARÉ Y DORMIRÉ";
-            const quote = nCard?.blessingQuote || "Suelta toda carga y preocupación a los pies de la cruz. El Dios de la paz vela por tu reposo esta noche.";
-            const verse = nCard?.verseReference || "Salmos 4:8";
-            const artSrc = nRecord?.artworkSrc || "/sacred-assets/jesus-night.jpg";
-
-            return (
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-sky-400/30 hover:border-sky-400/50 transition-all space-y-3 relative group overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0 pr-2">
-                    <div className="w-6 h-6 rounded-lg bg-sky-400/10 border border-sky-400/30 flex items-center justify-center shrink-0">
-                      <Moon className="w-3.5 h-3.5 text-sky-400" />
-                    </div>
-                    <span className="text-xs font-bold text-sky-400 tracking-wide truncate" title={headerTitle}>
-                      {headerTitle}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-sky-300/70 font-mono shrink-0 px-2 py-0.5 rounded-full bg-sky-400/10 border border-sky-400/20">
-                    08:00 PM
-                  </span>
-                </div>
-
-                <div className="flex gap-3 items-start">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-sky-400/20 bg-slate-900 relative">
-                    <img 
-                      src={artSrc} 
-                      alt="Arte Nocturno" 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => {
-                        e.currentTarget.src = "/sacred-assets/jesus-night.jpg";
-                      }} 
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-xs text-slate-200 italic line-clamp-2 leading-relaxed">
-                      "{quote}"
-                    </p>
-                    <p className="text-[11px] font-semibold text-sky-400 font-mono truncate">
-                      📖 {verse}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end pt-1 border-t border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (nRecord) {
-                        handleApplyAutomatedCard(nRecord);
-                      } else {
-                        setTimeOfDayContext('night');
-                        setOccasion('Bendición de Buenas Noches y Paz para Dormir');
-                        handleGenerateCard(undefined, 'night');
-                      }
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-sky-400/15 hover:bg-sky-400/25 text-sky-300 border border-sky-400/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Cargar & Diseñar</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left: Customizer & AI Generator Controls */}
-        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-2xl space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-white/5">
-            <h3 className="text-base font-bold text-white font-cinzel flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-amber-400" />
-              <span>Configuración & Prompt Dinámico</span>
-            </h3>
-            <span className="text-[10px] font-bold text-slate-950 px-2.5 py-0.5 rounded-full bg-amber-400 shadow-sm">
-              ✨ 100% INÉDITO
-            </span>
-          </div>
-
-          <form onSubmit={(e) => handleGenerateCard(e)} className="space-y-4">
-            {/* Time of Day Context Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Momento / Variación de Prompt Visual
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTimeOfDayContext('morning');
-                    setOccasion('Bendición de Buenos Días y Renovación');
-                  }}
-                  className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    timeOfDayContext === 'morning'
-                      ? 'bg-amber-400/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                      : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Buenos Días</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTimeOfDayContext('night');
-                    setOccasion('Bendición de Buenas Noches y Paz para Dormir');
-                  }}
-                  className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    timeOfDayContext === 'night'
-                      ? 'bg-sky-400/20 border-sky-400 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
-                      : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Moon className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Buenas Noches</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTimeOfDayContext('custom');
-                  }}
-                  className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    timeOfDayContext === 'custom'
-                      ? 'bg-purple-400/20 border-purple-400 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                      : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Sparkle className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Personalizada</span>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <span>Destinatario de la bendición</span>
-                  <span className="text-[10px] text-amber-400 font-medium bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                    ✨ Dinámico con IA
-                  </span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleRandomRecipient}
-                  className="text-[11px] text-amber-300 hover:text-amber-200 flex items-center gap-1 hover:underline cursor-pointer transition-colors"
-                  title="Sugerir otra dedicatoria aleatoria"
-                >
-                  <Shuffle className="w-3 h-3 text-amber-400" />
-                  <span>Sugerir otro</span>
-                </button>
-              </div>
-              <input
-                type="text"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder="Ej: Mi amada familia, Mis hijos, Una amiga en prueba..."
-                className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition-all"
-              />
-              
-              {/* Quick Contextual Recipient Tags */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {[
-                  '👨‍👩‍👧‍👦 Mi amada familia',
-                  '❤️ Mis hijos y seres queridos',
-                  '💼 Amigos en el trabajo',
-                  '🕊️ Quien necesita paz y consuelo',
-                  '🙏 Hermanos en la fe'
-                ].map((sug, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setRecipient(sug)}
-                    className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                      recipient === sug
-                        ? 'bg-amber-400/20 border-amber-400/60 text-amber-200 font-semibold shadow-[0_0_10px_rgba(245,158,11,0.15)]'
-                        : 'bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10'
-                    }`}
-                  >
-                    {sug}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300">
-                  Motivo u ocasión especial
-                </label>
-                <span className="text-[10px] text-slate-400">Temas con arte relacionado:</span>
-              </div>
-              <input
-                type="text"
-                value={occasion}
-                onChange={(e) => setOccasion(e.target.value)}
-                placeholder="Ej: Sanidad divina, Paz en la tormenta, Jesús el Buen Pastor, Cumpleaños..."
-                className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30"
-              />
-
-              {/* Thematic Quick Buttons */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {[
-                  { label: '🌅 Buenos Días', val: 'Bendición de Buenos Días y Renovación de Fe', time: 'morning' as const },
-                  { label: '🌙 Buenas Noches', val: 'Bendición de Buenas Noches y Paz para Dormir', time: 'night' as const },
-                  { label: '🌿 Sanidad', val: 'Oración de Sanidad, Restauración y Salud Divina', time: 'morning' as const },
-                  { label: '🕊️ Paz en Tormenta', val: 'Paz y Confianza en medio de la Prueba', time: 'custom' as const },
-                  { label: '✝️ Gracia & Cruz', val: 'La Gracia Redentora de Jesucristo en la Cruz', time: 'custom' as const },
-                  { label: '🏡 Familia', val: 'Bendición, Protección y Unidad Familiar', time: 'morning' as const },
-                  { label: '🛡️ Salmo 91', val: 'Amparo y Protección Divina del Salmo 91', time: 'custom' as const }
-                ].map((item, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setOccasion(item.val);
-                      setTimeOfDayContext(item.time);
-                    }}
-                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/10 transition-all cursor-pointer"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Primary Action Button */}
+        <div className="lg:col-span-5 p-5 sm:p-7 rounded-3xl bg-slate-900/50 border border-white/10 backdrop-blur-xl shadow-2xl space-y-6">
+          
+          {/* Mode Switcher Tabs */}
+          <div className="flex rounded-2xl bg-slate-950/80 p-1.5 border border-white/10 shadow-inner">
             <button
-              type="submit"
-              disabled={isLoading || isGeneratingImage}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.25)] transition-all cursor-pointer disabled:opacity-50"
+              type="button"
+              onClick={() => setStudioMode('editor')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                studioMode === 'editor'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
             >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Sintetizando Tarjeta + Obra Inédita con Gemini...</span>
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4 text-slate-950" />
-                  <span>✨ Crear Tarjeta + Imagen Única con Gemini</span>
-                </>
-              )}
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>🎨 Editor de Tarjeta</span>
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => setStudioMode('generator')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                studioMode === 'generator'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>✨ Generador IA (Gemini)</span>
+            </button>
+          </div>
 
-          {/* Dynamic Generative Artwork Status, Thumbnail Preview & Preset Gallery */}
-          <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                <span>Obra Visual Activa en Fondo:</span>
-              </label>
+          {/* ============================================================ */}
+          {/* MODE 1: CARD EDITOR (SUBIR IMAGEN + PERSONALIZAR CONTENIDO) */}
+          {/* ============================================================ */}
+          {studioMode === 'editor' && (
+            <div className="space-y-6">
               
-              <button
-                type="button"
-                onClick={handleGenerateGenerativeArtwork}
-                disabled={isGeneratingImage || isLoading}
-                className="text-[11px] font-semibold text-amber-300 hover:text-amber-200 px-3 py-1 rounded-lg bg-amber-400/10 border border-amber-400/30 hover:bg-amber-400/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                title="Generar nueva obra visual generativa para este mensaje"
-              >
-                {isGeneratingImage ? (
-                  <>
-                    <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
-                    <span>Pintando con IA...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkle className="w-3 h-3 text-amber-400" />
-                    <span>🎨 Pintar Nueva Imagen</span>
-                  </>
-                )}
-              </button>
-            </div>
+              {/* 1. SECCIÓN SUBIR IMAGEN PERSONALIZADA */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-amber-400/20 shadow-inner space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UploadCloud className="w-4 h-4 text-amber-400" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Subir Imagen Personalizada
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-amber-300/90 font-medium bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/30">
+                    📸 1080x1080 HD
+                  </span>
+                </div>
 
-            {/* Thumbnail Preview & Description */}
-            <div className="flex gap-3 items-center bg-slate-900/90 p-2.5 rounded-xl border border-white/5">
-              <div className="w-16 h-16 rounded-lg overflow-hidden border border-amber-400/40 relative shrink-0 shadow-md bg-slate-950">
-                <img 
-                  src={activeArtworkSrc} 
-                  alt="Fondo Activo" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = timeOfDayContext === 'night'
-                      ? '/sacred-assets/jesus-night.jpg'
-                      : '/sacred-assets/celestial-sunrise.jpg';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-                <span className="absolute bottom-0.5 right-0.5 text-[8px] bg-black/80 text-amber-300 px-1 rounded font-mono font-bold">
-                  {isGenerativeModelImage ? 'IA' : 'Lienzo'}
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-300 font-sans leading-relaxed min-w-0">
-                <span className="font-bold text-amber-400 block truncate">
-                  {isGenerativeModelImage ? '✨ Imagen Única Generada por IA' : '🎨 Composición Sagrada'}
-                </span>
-                <p className="text-slate-400 line-clamp-2 text-[10px] mt-0.5">
-                  "{artworkPromptDescription}"
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Sacred Environment Presets */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span className="font-semibold text-slate-300">Ambientes Sagrados Inmediatos:</span>
-                <label className="text-amber-400/90 hover:text-amber-300 cursor-pointer flex items-center gap-1 font-medium">
-                  <span>📁 Subir Foto</span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleCustomImageUpload} 
-                    className="hidden" 
+                {/* Dropzone Container */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`p-4 rounded-xl border-2 border-dashed text-center transition-all cursor-pointer relative overflow-hidden group ${
+                    isDragging
+                      ? 'border-amber-400 bg-amber-400/15 scale-[1.01]'
+                      : customImageInfo
+                        ? 'border-emerald-400/40 bg-slate-900/50 hover:border-amber-400/50'
+                        : 'border-white/20 bg-slate-900/40 hover:border-amber-400/50 hover:bg-slate-900/70'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCustomImageUpload}
+                    className="hidden"
                   />
-                </label>
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-amber-400/15 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <FolderUp className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200">
+                        {isDragging ? '¡Suelta tu imagen aquí!' : 'Haz clic o arrastra tu foto aquí'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Formatos JPG, PNG, WEBP • Se adapta perfectamente a la tarjeta
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Image Status & Adjustment Controls */}
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between gap-3 bg-slate-900/80 p-2.5 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-amber-400/40 shrink-0 bg-slate-950">
+                        <img
+                          src={activeArtworkSrc}
+                          alt="Fondo Activo"
+                          className="w-full h-full object-cover"
+                          style={{ filter: getCssFilter(imageFilter) }}
+                          onError={(e) => {
+                            e.currentTarget.src = '/sacred-assets/celestial-sunrise.jpg';
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                            customImageInfo 
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                              : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                          }`}>
+                            {customImageInfo ? '📸 Tu Foto' : '🎨 Fondo Sagrado'}
+                          </span>
+                          {customImageInfo && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {customImageInfo.size}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-200 font-medium truncate mt-0.5">
+                          {customImageInfo ? customImageInfo.name : artworkPromptDescription}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-1.5 rounded-lg bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/30 text-[10px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Cambiar imagen"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Cambiar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRestoreDefaultImage}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/10 text-[10px] font-medium cursor-pointer transition-colors"
+                        title="Restaurar fondo sagrado predeterminado"
+                      >
+                        Restaurar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Image Adjustments (Zoom, Vertical Position, Filter, Contrast Veil) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {/* Zoom Slider */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-400 font-medium flex items-center gap-1">
+                          <ZoomIn className="w-3 h-3 text-amber-400" />
+                          <span>Escala</span>
+                        </span>
+                        <span className="text-amber-400 font-mono font-bold">{Math.round(imageZoom * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="2.5"
+                        step="0.05"
+                        value={imageZoom}
+                        onChange={(e) => setImageZoom(parseFloat(e.target.value))}
+                        className="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
+                      />
+                    </div>
+
+                    {/* Contrast / Dark Overlay Slider */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-400 font-medium flex items-center gap-1">
+                          <Sliders className="w-3 h-3 text-amber-400" />
+                          <span>Contraste</span>
+                        </span>
+                        <span className="text-amber-400 font-mono font-bold">{Math.round(overlayOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.9"
+                        step="0.05"
+                        value={overlayOpacity}
+                        onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+                        className="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
+                        title="Ajusta el velo oscuro para que las letras doradas resalten sobre cualquier foto"
+                      />
+                    </div>
+
+                    {/* Vertical Alignment */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        Enfoque
+                      </span>
+                      <div className="flex gap-1">
+                        {(['top', 'center', 'bottom'] as const).map((pos) => (
+                          <button
+                            key={pos}
+                            type="button"
+                            onClick={() => setImagePosition(pos)}
+                            className={`flex-1 py-0.5 text-[9px] font-bold rounded transition-all cursor-pointer capitalize ${
+                              imagePosition === pos
+                                ? 'bg-amber-400 text-slate-950 shadow-sm'
+                                : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {pos === 'top' ? 'Arr' : pos === 'center' ? 'Cen' : 'Abj'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Filter Atmosphere */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        Filtro Sagrado
+                      </span>
+                      <select
+                        value={imageFilter}
+                        onChange={(e) => setImageFilter(e.target.value as any)}
+                        className="w-full bg-slate-800 text-slate-200 text-[10px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-amber-400 cursor-pointer"
+                      >
+                        <option value="none">✨ Original</option>
+                        <option value="warm">🌅 Cálido</option>
+                        <option value="golden">👑 Dorado</option>
+                        <option value="sepia">📜 Sepia</option>
+                        <option value="mono">🕊️ B & N</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Sacred Preset Mini-Gallery */}
+                  <div className="pt-2 border-t border-white/5 space-y-1.5">
+                    <span className="text-[10px] text-slate-400 font-semibold block">
+                      O escoge un fondo sagrado predefinido:
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {SACRED_THEME_PRESETS.map((preset) => {
+                        const isSelected = activeArtworkSrc === preset.url && !customImageInfo;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectPresetArtwork(preset);
+                              setCustomImageInfo(null);
+                            }}
+                            className={`text-[10px] py-1 px-1.5 rounded-lg border text-left truncate transition-all cursor-pointer ${
+                              isSelected 
+                                ? 'bg-amber-400/20 border-amber-400 text-amber-200 font-bold shadow-sm' 
+                                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                            }`}
+                            title={preset.promptDesc}
+                          >
+                            {preset.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {SACRED_THEME_PRESETS.map((preset) => {
-                  const isSelected = activeArtworkSrc === preset.url;
-                  return (
+
+              {/* 2. SECCIÓN TEXTOS & CONTENIDO DE LA TARJETA */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Type className="w-4 h-4 text-amber-400" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Editor de Mensaje & Dedicatoria
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsVerseModalOpen(true)}
+                    className="px-2.5 py-1 rounded-lg bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-300 text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    <span>Biblioteca Bíblica</span>
+                  </button>
+                </div>
+
+                {/* Encabezado / Título Superior */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Título Superior de la Tarjeta
+                  </label>
+                  <input
+                    type="text"
+                    value={card.cardHeader || ''}
+                    onChange={(e) => setCard(c => ({ ...c, cardHeader: e.target.value }))}
+                    placeholder="BENDICIÓN DE DIOS"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-100 text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-amber-400"
+                  />
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {[
+                      'UN NUEVO AMANECER DE ESPERANZA',
+                      'NOCHE DE PAZ Y DESCANSO',
+                      'ORACIÓN DE SANIDAD Y FE',
+                      'BENDICIÓN PARA NUESTRO HOGAR',
+                      'REFUGIO Y FORTALEZA'
+                    ].map((hdr, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setCard(c => ({ ...c, cardHeader: hdr }))}
+                        className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/5 cursor-pointer"
+                      >
+                        {hdr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Emblema / Icono Sagrado */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Emblema Sagrado Central
+                  </label>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                    {[
+                      { icon: '🕊️', name: 'Paloma' },
+                      { icon: '✝️', name: 'Cruz' },
+                      { icon: '🌅', name: 'Sol' },
+                      { icon: '✨', name: 'Luz' },
+                      { icon: '🌿', name: 'Olivo' },
+                      { icon: '💖', name: 'Amor' },
+                      { icon: '👑', name: 'Corona' },
+                      { icon: '🛡️', name: 'Escudo' }
+                    ].map((item) => (
+                      <button
+                        key={item.icon}
+                        type="button"
+                        onClick={() => setCardIcon(item.icon)}
+                        className={`py-1.5 rounded-xl border text-base flex flex-col items-center justify-center transition-all cursor-pointer ${
+                          cardIcon === item.icon
+                            ? 'bg-amber-400/20 border-amber-400 shadow-md scale-105'
+                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                        title={item.name}
+                      >
+                        <span>{item.icon}</span>
+                        <span className="text-[8px] text-slate-400 mt-0.5">{item.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Destinatario ("Para:") */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-300">
+                      Destinatario ("Para:")
+                    </label>
                     <button
-                      key={preset.id}
                       type="button"
-                      onClick={() => handleSelectPresetArtwork(preset)}
-                      className={`text-[10px] py-1 px-1.5 rounded-lg border text-left truncate transition-all cursor-pointer ${
-                        isSelected 
-                          ? 'bg-amber-400/20 border-amber-400 text-amber-200 font-bold shadow-sm' 
-                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                      }`}
-                      title={preset.promptDesc}
+                      onClick={handleRandomRecipient}
+                      className="text-[10px] text-amber-400 hover:underline cursor-pointer flex items-center gap-1"
                     >
-                      {preset.name}
+                      <Shuffle className="w-2.5 h-2.5" />
+                      <span>Sugerir</span>
                     </button>
-                  );
-                })}
+                  </div>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    placeholder="Ej: Mi amada familia, Mis hijos..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-100 text-xs focus:outline-none focus:border-amber-400"
+                  />
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {['👨‍👩‍👧‍👦 Mi amada familia', '❤️ Mis amados hijos', '🕊️ Quien necesita consuelo hoy', '🙏 Hermanos en la fe'].map((r, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setRecipient(r)}
+                        className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/5 cursor-pointer"
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Frase Central de Bendición */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Frase Principal de Bendición
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={card.blessingQuote}
+                    onChange={(e) => setCard(c => ({ ...c, blessingQuote: e.target.value }))}
+                    placeholder="Escribe aquí la bendición o mensaje central..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-100 text-xs font-serif italic focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                {/* Versículo Bíblico: Referencia & Texto */}
+                <div className="p-3 rounded-xl bg-slate-900/80 border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Versículo Bíblico</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsVerseModalOpen(true)}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold hover:underline cursor-pointer"
+                    >
+                      📖 Cambiar desde Biblioteca
+                    </button>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={card.verseReference}
+                      onChange={(e) => setCard(c => ({ ...c, verseReference: e.target.value }))}
+                      placeholder="Referencia (ej: Lamentaciones 3:22-23)"
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-amber-300 text-xs font-bold focus:outline-none focus:border-amber-400 mb-1.5"
+                    />
+                    <textarea
+                      rows={2}
+                      value={card.verseText}
+                      onChange={(e) => setCard(c => ({ ...c, verseText: e.target.value }))}
+                      placeholder="Texto del versículo bíblico..."
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-slate-200 text-xs italic font-serif focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Oración Breve */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Oración Breve / Plegaria
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={card.shortPrayer}
+                    onChange={(e) => setCard(c => ({ ...c, shortPrayer: e.target.value }))}
+                    placeholder="Plegaria breve..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-100 text-xs italic focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                {/* Pie de Tarjeta / Firma */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Firma o Pie de Tarjeta
+                  </label>
+                  <input
+                    type="text"
+                    value={cardFooter}
+                    onChange={(e) => setCardFooter(e.target.value)}
+                    placeholder="ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-300 text-xs font-medium focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {/* 3. SECCIÓN ESTILOS, TIPOGRAFÍA & COLORES */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3.5">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-amber-400" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Estilos, Tipografía & Acabados
+                  </h4>
+                </div>
+
+                {/* Color de Acento */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                    Color de Acento Divino
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[
+                      { color: '#fbbf24', name: 'Oro' },
+                      { color: '#f59e0b', name: 'Ámbar' },
+                      { color: '#38bdf8', name: 'Cielo' },
+                      { color: '#34d399', name: 'Esmeralda' },
+                      { color: '#c084fc', name: 'Púrpura' },
+                      { color: '#ffffff', name: 'Blanco' }
+                    ].map((item) => (
+                      <button
+                        key={item.color}
+                        type="button"
+                        onClick={() => setCustomAccentColor(item.color)}
+                        className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
+                          customAccentColor === item.color ? 'scale-125 border-white shadow-lg' : 'border-transparent hover:scale-110'
+                        }`}
+                        style={{ backgroundColor: item.color }}
+                        title={item.name}
+                      />
+                    ))}
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-400">Libre:</span>
+                      <input
+                        type="color"
+                        value={customAccentColor}
+                        onChange={(e) => setCustomAccentColor(e.target.value)}
+                        className="w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tipografía & Alineación */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-300 mb-1">
+                      Tipografía
+                    </label>
+                    <div className="flex gap-1">
+                      {[
+                        { id: 'serif' as const, label: 'Serif' },
+                        { id: 'cinzel' as const, label: 'Cinzel' },
+                        { id: 'sans' as const, label: 'Moderna' }
+                      ].map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setFontFamily(f.id)}
+                          className={`flex-1 py-1 text-[10px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                            fontFamily === f.id
+                              ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-sm'
+                              : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-300 mb-1">
+                      Alineación
+                    </label>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setTextAlign('center')}
+                        className={`flex-1 py-1 text-[10px] font-semibold rounded-lg border flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                          textAlign === 'center'
+                            ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-sm'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        <AlignCenter className="w-3 h-3" />
+                        <span>Centro</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTextAlign('left')}
+                        className={`flex-1 py-1 text-[10px] font-semibold rounded-lg border flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                          textAlign === 'left'
+                            ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-sm'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        <AlignLeft className="w-3 h-3" />
+                        <span>Izquierda</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opacidad del Fondo & Toggles */}
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-slate-300 font-semibold flex items-center gap-1">
+                      <Sliders className="w-3 h-3 text-amber-400" />
+                      <span>Oscuridad del Fondo (Contraste)</span>
+                    </span>
+                    <span className="text-[11px] text-amber-400 font-mono font-bold">
+                      {Math.round(overlayOpacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="0.9"
+                    step="0.05"
+                    value={overlayOpacity}
+                    onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                  />
+
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={showGoldBorder}
+                        onChange={(e) => setShowGoldBorder(e.target.checked)}
+                        className="rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
+                      />
+                      <span>Marco Dorado Sagrado</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={showParticles}
+                        onChange={(e) => setShowParticles(e.target.checked)}
+                        className="rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
+                      />
+                      <span>Polvo de Oro Flotante</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* MODE 2: GENERADOR IA (GEMINI GENERATIVE PROMPT & ENGINE)      */}
+          {/* ============================================================ */}
+          {studioMode === 'generator' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                <h3 className="text-sm font-bold text-white font-cinzel flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-amber-400" />
+                  <span>Configuración & Prompt Dinámico</span>
+                </h3>
+                <span className="text-[10px] font-bold text-slate-950 px-2.5 py-0.5 rounded-full bg-amber-400 shadow-sm">
+                  ✨ 100% INÉDITO
+                </span>
+              </div>
+
+              <form onSubmit={(e) => handleGenerateCard(e)} className="space-y-4">
+                {/* Time of Day Context Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Momento / Variación de Prompt Visual
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimeOfDayContext('morning');
+                        setOccasion('Bendición de Buenos Días y Renovación');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        timeOfDayContext === 'morning'
+                          ? 'bg-amber-400/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                          : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Sun className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Buenos Días</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimeOfDayContext('night');
+                        setOccasion('Bendición de Buenas Noches y Paz para Dormir');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        timeOfDayContext === 'night'
+                          ? 'bg-sky-400/20 border-sky-400 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
+                          : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Moon className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Buenas Noches</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimeOfDayContext('custom');
+                      }}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        timeOfDayContext === 'custom'
+                          ? 'bg-purple-400/20 border-purple-400 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                          : 'bg-slate-950/40 border-white/5 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Sparkle className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Personalizada</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <span>Destinatario de la bendición</span>
+                      <span className="text-[10px] text-amber-400 font-medium bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                        ✨ Dinámico con IA
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRandomRecipient}
+                      className="text-[11px] text-amber-300 hover:text-amber-200 flex items-center gap-1 hover:underline cursor-pointer transition-colors"
+                      title="Sugerir otra dedicatoria aleatoria"
+                    >
+                      <Shuffle className="w-3 h-3 text-amber-400" />
+                      <span>Sugerir otro</span>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    placeholder="Ej: Mi amada familia, Mis hijos, Una amiga en prueba..."
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                  />
+                  
+                  {/* Quick Contextual Recipient Tags */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      '👨‍👩‍👧‍👦 Mi amada familia',
+                      '❤️ Mis hijos y seres queridos',
+                      '💼 Amigos en el trabajo',
+                      '🕊️ Quien necesita paz y consuelo',
+                      '🙏 Hermanos en la fe'
+                    ].map((sug, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setRecipient(sug)}
+                        className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                          recipient === sug
+                            ? 'bg-amber-400/20 border-amber-400/60 text-amber-200 font-semibold shadow-[0_0_10px_rgba(245,158,11,0.15)]'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10'
+                        }`}
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Motivo u ocasión especial
+                    </label>
+                    <span className="text-[10px] text-slate-400">Temas con arte relacionado:</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={occasion}
+                    onChange={(e) => setOccasion(e.target.value)}
+                    placeholder="Ej: Sanidad divina, Paz en la tormenta, Jesús el Buen Pastor, Cumpleaños..."
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950/60 border border-white/10 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30"
+                  />
+
+                  {/* Thematic Quick Buttons */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      { label: '🌅 Buenos Días', val: 'Bendición de Buenos Días y Renovación de Fe', time: 'morning' as const },
+                      { label: '🌙 Buenas Noches', val: 'Bendición de Buenas Noches y Paz para Dormir', time: 'night' as const },
+                      { label: '🌿 Sanidad', val: 'Oración de Sanidad, Restauración y Salud Divina', time: 'morning' as const },
+                      { label: '🕊️ Paz en Tormenta', val: 'Paz y Confianza en medio de la Prueba', time: 'custom' as const },
+                      { label: '✝️ Gracia & Cruz', val: 'La Gracia Redentora de Jesucristo en la Cruz', time: 'custom' as const },
+                      { label: '🏡 Familia', val: 'Bendición, Protección y Unidad Familiar', time: 'morning' as const },
+                      { label: '🛡️ Salmo 91', val: 'Amparo y Protección Divina del Salmo 91', time: 'custom' as const }
+                    ].map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setOccasion(item.val);
+                          setTimeOfDayContext(item.time);
+                        }}
+                        className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/10 transition-all cursor-pointer"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Primary Action Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading || isGeneratingImage}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.25)] transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sintetizando Tarjeta + Obra Inédita con Gemini...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 text-slate-950" />
+                      <span>✨ Crear Tarjeta + Imagen Única con Gemini</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Dynamic Generative Artwork Status, Thumbnail Preview & Preset Gallery */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Obra Visual Activa en Fondo:</span>
+                  </label>
+                  
+                  <button
+                    type="button"
+                    onClick={handleGenerateGenerativeArtwork}
+                    disabled={isGeneratingImage || isLoading}
+                    className="text-[11px] font-semibold text-amber-300 hover:text-amber-200 px-3 py-1 rounded-lg bg-amber-400/10 border border-amber-400/30 hover:bg-amber-400/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    title="Generar nueva obra visual generativa para este mensaje"
+                  >
+                    {isGeneratingImage ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+                        <span>Pintando con IA...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkle className="w-3 h-3 text-amber-400" />
+                        <span>🎨 Pintar Nueva Imagen</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Thumbnail Preview & Description */}
+                <div className="flex gap-3 items-center bg-slate-900/90 p-2.5 rounded-xl border border-white/5">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-amber-400/40 relative shrink-0 shadow-md bg-slate-950">
+                    <img 
+                      src={activeArtworkSrc} 
+                      alt="Fondo Activo" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = timeOfDayContext === 'night'
+                          ? '/sacred-assets/jesus-night.jpg'
+                          : '/sacred-assets/celestial-sunrise.jpg';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                    <span className="absolute bottom-0.5 right-0.5 text-[8px] bg-black/80 text-amber-300 px-1 rounded font-mono font-bold">
+                      {isGenerativeModelImage ? 'IA' : 'Lienzo'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-300 font-sans leading-relaxed min-w-0">
+                    <span className="font-bold text-amber-400 block truncate">
+                      {isGenerativeModelImage ? '✨ Imagen Única Generada por IA' : '🎨 Composición Sagrada'}
+                    </span>
+                    <p className="text-slate-400 line-clamp-2 text-[10px] mt-0.5">
+                      "{artworkPromptDescription}"
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setStudioMode('editor')}
+                    className="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center justify-center gap-1.5 hover:underline cursor-pointer mx-auto"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>¿Quieres subir tu foto o retocar textos? Ir al Editor de Tarjeta</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Visual Customizer Sliders */}
-          <div className="space-y-3 pt-2 border-t border-white/5 text-xs text-slate-300">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                <span>Ajuste de Luz & Contraste</span>
-              </span>
-              <span className="text-[11px] text-amber-400 font-mono">{Math.round(overlayOpacity * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min="0.3"
-              max="0.85"
-              step="0.05"
-              value={overlayOpacity}
-              onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
-              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-            />
-
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showGoldBorder}
-                  onChange={(e) => setShowGoldBorder(e.target.checked)}
-                  className="rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
-                />
-                <span>Marco Dorado Sagrado</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showParticles}
-                  onChange={(e) => setShowParticles(e.target.checked)}
-                  className="rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
-                />
-                <span>Polvo de Oro Flotante</span>
-              </label>
-            </div>
-          </div>
+          )}
 
         </div>
 
@@ -1597,11 +2120,12 @@ _«${verse}»_
             {/* Live Visual Card Display */}
             <div className="flex justify-center">
               <div 
-                className="w-full max-w-[480px] aspect-square rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl flex flex-col justify-between text-center select-none"
+                className="w-full max-w-[480px] aspect-square rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl flex flex-col justify-between select-none transition-all duration-300"
                 style={{
                   backgroundImage: `url(${activeArtworkSrc})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundSize: imageZoom > 1 ? `${imageZoom * 100}%` : 'cover',
+                  backgroundPosition: imagePosition === 'top' ? 'center top' : imagePosition === 'bottom' ? 'center bottom' : 'center',
+                  filter: getCssFilter(imageFilter)
                 }}
               >
                 {/* Vignette Overlay */}
@@ -1623,14 +2147,14 @@ _«${verse}»_
                 )}
 
                 {/* Header Tag */}
-                <div className="relative z-10 space-y-1">
+                <div className={`relative z-10 space-y-1 ${textAlign === 'left' ? 'text-left' : 'text-center'}`}>
                   <div 
                     className="text-[11px] sm:text-xs font-bold tracking-widest uppercase drop-shadow-md"
                     style={{ color: customAccentColor || '#fbbf24' }}
                   >
                     {card.cardHeader || 'BENDICIÓN DE DIOS'}
                   </div>
-                  <div className="text-2xl sm:text-3xl">🕊️</div>
+                  <div className="text-2xl sm:text-3xl">{cardIcon || '🕊️'}</div>
                   {recipient && (
                     <div className="text-xs sm:text-sm font-medium text-slate-200 drop-shadow">
                       Para: <span className="font-semibold text-white">{recipient}</span>
@@ -1639,33 +2163,33 @@ _«${verse}»_
                 </div>
 
                 {/* Main Quote */}
-                <div className="relative z-10 px-2 my-auto">
-                  <p className="text-base sm:text-lg italic font-serif text-white leading-relaxed drop-shadow-lg">
+                <div className={`relative z-10 px-2 my-auto ${textAlign === 'left' ? 'text-left' : 'text-center'}`}>
+                  <p className={`text-base sm:text-lg italic text-white leading-relaxed drop-shadow-lg ${fontFamily === 'cinzel' ? 'font-cinzel' : fontFamily === 'sans' ? 'font-sans' : 'font-serif'}`}>
                     "{card.blessingQuote}"
                   </p>
                 </div>
 
                 {/* Verse Scripture Box */}
                 <div className="relative z-10 space-y-2">
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/75 border border-white/15 backdrop-blur-md shadow-xl text-left space-y-1">
+                  <div className={`p-3.5 sm:p-4 rounded-2xl bg-slate-950/75 border border-white/15 backdrop-blur-md shadow-xl space-y-1 ${textAlign === 'left' ? 'text-left' : 'text-center'}`}>
                     <div 
-                      className="text-xs font-bold text-center"
+                      className="text-xs font-bold"
                       style={{ color: customAccentColor || '#fbbf24' }}
                     >
                       📖 {card.verseReference}
                     </div>
-                    <p className="text-[11px] sm:text-xs text-slate-200 italic font-serif text-center leading-relaxed">
+                    <p className={`text-[11px] sm:text-xs text-slate-200 italic leading-relaxed ${fontFamily === 'cinzel' ? 'font-cinzel' : fontFamily === 'sans' ? 'font-sans' : 'font-serif'}`}>
                       "{card.verseText}"
                     </p>
                   </div>
 
-                  <p className="text-[11px] sm:text-xs text-amber-200/90 italic drop-shadow">
+                  <p className={`text-[11px] sm:text-xs text-amber-200/90 italic drop-shadow ${textAlign === 'left' ? 'text-left' : 'text-center'}`}>
                     🙏 {card.shortPrayer}
                   </p>
 
                   {/* Persistent Branding Signature Line for Elvis Osorio */}
-                  <div className="text-[9px] text-slate-300/85 uppercase tracking-wider pt-1 font-semibold">
-                    🕊️ ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO
+                  <div className="text-[9px] text-slate-300/85 uppercase tracking-wider pt-1 font-semibold text-center">
+                    {cardFooter || '🕊️ ESPACIO DE FE & ORACIÓN • OBRA ÚNICA ELVIS OSORIO'}
                   </div>
                 </div>
 
@@ -1938,6 +2462,138 @@ _«${verse}»_
         </div>
 
       </div>
+
+      {/* ============================================================ */}
+      {/* MODAL: BIBLIOTECA SAGRADA DE VERSÍCULOS BÍBLICOS             */}
+      {/* ============================================================ */}
+      {isVerseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-3xl max-h-[88vh] flex flex-col rounded-3xl bg-slate-900 border border-amber-400/30 shadow-2xl overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white font-cinzel">
+                    Biblioteca Sagrada de Versículos Bíblicos
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Selecciona un versículo para insertarlo instantáneamente en tu tarjeta
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsVerseModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Search & Categories Bar */}
+            <div className="p-4 border-b border-white/10 bg-slate-950/40 space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={verseSearchTerm}
+                  onChange={(e) => setVerseSearchTerm(e.target.value)}
+                  placeholder="Buscar por libro, palabra clave (paz, sanidad, amor, salmo)..."
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-slate-200 text-xs focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                {BIBLICAL_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setVerseCategoryFilter(cat.id)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      verseCategoryFilter === cat.id
+                        ? 'bg-amber-400 text-slate-950 shadow-md font-bold'
+                        : 'bg-white/5 border border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Verses List */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-3.5 flex-1 max-h-[58vh]">
+              {BIBLICAL_VERSES_COLLECTION
+                .filter((v) => {
+                  const matchesCategory = verseCategoryFilter === 'all' || v.category === verseCategoryFilter;
+                  const query = verseSearchTerm.toLowerCase().trim();
+                  if (!query) return matchesCategory;
+                  const matchesQuery = 
+                    v.reference.toLowerCase().includes(query) ||
+                    v.text.toLowerCase().includes(query) ||
+                    v.categoryLabel.toLowerCase().includes(query) ||
+                    v.blessingQuote.toLowerCase().includes(query) ||
+                    v.keywords?.some((k: string) => k.toLowerCase().includes(query));
+                  return matchesCategory && matchesQuery;
+                })
+                .map((verse) => (
+                  <div
+                    key={verse.id}
+                    className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 hover:border-amber-400/40 transition-all space-y-2 group"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-300 font-cinzel">
+                          📖 {verse.reference}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300/90 border border-amber-400/20 font-medium">
+                          {verse.categoryLabel}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyVerseFromLibrary(verse)}
+                        className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <Sparkle className="w-3.5 h-3.5" />
+                        <span>Aplicar a Tarjeta</span>
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-slate-200 italic font-serif leading-relaxed">
+                      "{verse.text}"
+                    </p>
+
+                    <div className="pt-1.5 border-t border-white/5 flex flex-wrap items-center justify-between text-[11px] text-slate-400 gap-2">
+                      <span className="truncate max-w-md italic">
+                        🙏 "{verse.blessingQuote}"
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-white/10 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400">
+              <span>💡 Al aplicar un versículo, se actualiza la cita, oración y título de tu tarjeta automáticamente.</span>
+              <button
+                type="button"
+                onClick={() => setIsVerseModalOpen(false)}
+                className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

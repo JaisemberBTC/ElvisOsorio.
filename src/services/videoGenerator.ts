@@ -5,6 +5,8 @@
  * Zero external CDN dependencies, 100% guaranteed delivery without AccessDenied.
  */
 
+import { assignNonRepeatingJesusScene, JESUS_CHRONOLOGY_GALLERY } from '../data/jesusChronologyGallery';
+
 export interface RenderSceneOptions {
   sceneNumber: number;
   title: string;
@@ -100,6 +102,14 @@ export function getThematicSacredImageForScene(
 ): string {
   const text = `${scene?.visualPrompt || ''} ${scene?.onScreenText || ''} ${scene?.narrationText || ''} ${scene?.atmosphere || ''}`.toLowerCase();
   
+  // Utilizar el asignador inteligente no repetitivo de la Gran Galería Sagrada de Jesús
+  try {
+    const matchedScene = assignNonRepeatingJesusScene(text);
+    if (matchedScene && (matchedScene.localFallbackImage || matchedScene.cloudImageUrl)) {
+      return matchedScene.localFallbackImage || matchedScene.cloudImageUrl;
+    }
+  } catch (_e) {}
+
   if (text.includes('noche') || text.includes('dormir') || text.includes('descanso') || text.includes('sueño') || text.includes('luna')) {
     const pool = [
       "/sacred-assets/jesus_night_sanctuary_1787716164249.jpg",
@@ -275,7 +285,54 @@ export async function preloadAndCacheImageBlob(imageUrl: string): Promise<string
   return imageUrl;
 }
 
-export const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al generar el guion y las indicaciones del video, debes estructurar los tiempos para que ocurra un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando de manera aleatoria entre: acercamientos sutiles (zoom in), alejamientos (zoom out), paneos ligeros o cambios de ángulo. Especifica claramente que cada cambio visual debe estar estrictamente sincronizado con las pausas naturales de la voz en off o con los ritmos de la música de fondo. Evita transiciones bruscas o de estilo 'gaming'; solicita únicamente cortes limpios (hard cuts) o disolvencias muy suaves que mantengan la atmósfera de paz y profesionalismo";
+export const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo";
+
+export const OFFICIAL_DEFAULT_JESUS_DIALOGUE = "Recibe hoy mi paz y mi poder sobrenatural; yo estoy contigo, renovando cada parte de tu vida para que sigas adelante con esperanza. Cree, hijo mío.";
+
+export const OFFICIAL_CAMERA_MOVEMENT = "Primer plano con zoom lento y continuo durante 10 segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido.";
+
+export const OFFICIAL_PROMPT_HEADER = "Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas:";
+
+/**
+ * Genera el prompt oficial exacto para dar vida a las imágenes del personaje:
+ * - Encabezado: Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas:
+ * - Duración: 10 segundos (movimiento continuo sin interrupciones)
+ * - Movimiento de cámara: Primer plano con zoom lento y continuo durante 10 segundos
+ * - Diálogo de 10 segundos en español con la compasiva voz de Jesús (mínimo 9 segundos de voz)
+ * - Instrucción obligatoria de edición visual con cortes cada 2 o 3 segundos
+ */
+export function generateMasterVideoPrompt(
+  scene: {
+    sceneNumber?: number;
+    visualPrompt?: string;
+    onScreenText?: string;
+    narrationText?: string;
+    cameraMovement?: string;
+    atmosphere?: string;
+    durationSec?: number;
+  },
+  _sceneIdx: number = 0
+): string {
+  const spanishVoiceText = (scene.narrationText || OFFICIAL_DEFAULT_JESUS_DIALOGUE).trim();
+  // Guaranteed minimum 10 seconds per prompt / scene
+  const duration = Math.max(10, scene.durationSec || 10);
+  const defaultCam = `Primer plano con zoom lento y continuo durante ${duration} segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido.`;
+  const camMovement = scene.cameraMovement
+    ? scene.cameraMovement.replace(/\b\d+\s*segundos\b/g, `${duration} segundos`)
+    : defaultCam;
+  const formattedDialogue = spanishVoiceText.startsWith('"') && spanishVoiceText.endsWith('"') 
+    ? spanishVoiceText 
+    : `"${spanishVoiceText}"`;
+
+  return `Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:
+Duración: ${duration} segundos (movimiento continuo sin interrupciones).
+
+Movimiento de cámara: ${camMovement}
+
+Diálogo de ${duration} segundos en español con la compasiva voz de Jesús (locución de mínimo 9 segundos): ${formattedDialogue}
+
+${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+}
 
 /**
  * Generates an ultra-precise, cinematic video generation prompt in English
@@ -295,55 +352,40 @@ export function generateCinematicEnglishVideoPrompt(
   },
   sceneIdx: number
 ): string {
-  const spanishVoiceText = (scene.narrationText || 'Limpia tus ojos, respira mi paz y levántate. Hoy decreto una nueva fuerza en tu espíritu. Todo estará bien porque yo estoy contigo.').trim();
-  const duration = scene.durationSec || 10;
-  const camMovement = scene.cameraMovement || 'Primer plano cerrado (Close-up) con giro orbital lento de 45 grados';
-  const cleanVisual = scene.visualPrompt || scene.onScreenText || 'Jesús mirando con ojos de infinita ternura y extendiendo su mano bendita';
-
-  return `Dale vida al personaje de la imagen:
-Transcendental cinematic 8K, volumetric celestial lighting and living luminous particles, glorified Jesus Christ with snow-white sacred robes emitting a divine glow and marks of glory on His hands. The subject is performing: ${cleanVisual}, standing with majestic serenity, breathing gently, looking directly into the camera with infinite paternal compassion, extending His holy hands in blessing as golden divine particles emanate gracefully.
-Duration: ${duration} seconds (seamless continuous motion).
-Camera movement: Close-up shot with ${camMovement}, highlighting the emotion and sacred glow of Christ's gaze with smooth, natural fluid motion.
-Lighting and atmosphere: Dazzling dawn light breaking from behind, creating golden anamorphic flares, divine halos, realistic shadows, and sharply defined 8K textures.
-Native audio: Soft yet rushing celestial wind, faint heavenly bells, deep resonance of victory, and peaceful morning atmosphere.
-Spoken aloud in Spanish in the compassionate voice of Jesus (10 seconds dialogue): "${spanishVoiceText}"
-
-${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+  return generateMasterVideoPrompt(scene, sceneIdx);
 }
 
-// Generates an ambient celestial audio tone using Web Audio API
+// Generates an ambient celestial audio tone using Web Audio API (smooth sub-bass warmth, zero whistling/beeps)
 export function createCelestialAudioTrack(ctx: AudioContext, durationSec: number): AudioNode {
   const osc1 = ctx.createOscillator();
   const osc2 = ctx.createOscillator();
-  const osc3 = ctx.createOscillator();
   const gain = ctx.createGain();
+  const lowpass = ctx.createBiquadFilter();
 
-  // Divine chords: Root (C#3 138.59Hz), Fifth (G#3 207.65Hz), Octave (C#4 277.18Hz)
+  lowpass.type = 'lowpass';
+  lowpass.frequency.setValueAtTime(180, ctx.currentTime);
+
+  // Soft low root & octave warm sine tones
   osc1.type = 'sine';
-  osc1.frequency.setValueAtTime(138.59, ctx.currentTime);
+  osc1.frequency.setValueAtTime(65.41, ctx.currentTime); // C2 low warm root
 
   osc2.type = 'sine';
-  osc2.frequency.setValueAtTime(207.65, ctx.currentTime);
+  osc2.frequency.setValueAtTime(98.00, ctx.currentTime); // G2 warm fifth
 
-  osc3.type = 'triangle';
-  osc3.frequency.setValueAtTime(277.18, ctx.currentTime);
+  gain.gain.setValueAtTime(0.001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.04, ctx.currentTime + 1.5);
+  gain.gain.setValueAtTime(0.04, ctx.currentTime + durationSec - 1);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationSec);
 
-  gain.gain.setValueAtTime(0.01, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 1.5);
-  gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + durationSec - 1);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationSec);
-
-  osc1.connect(gain);
-  osc2.connect(gain);
-  osc3.connect(gain);
+  osc1.connect(lowpass);
+  osc2.connect(lowpass);
+  lowpass.connect(gain);
 
   osc1.start();
   osc2.start();
-  osc3.start();
 
   osc1.stop(ctx.currentTime + durationSec);
   osc2.stop(ctx.currentTime + durationSec);
-  osc3.stop(ctx.currentTime + durationSec);
 
   return gain;
 }

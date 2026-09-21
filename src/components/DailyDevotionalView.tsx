@@ -1483,84 +1483,12 @@ _${thought}_
 
         </div>
 
-        {/* Right 4-Cols: Spiritual Progress & Prayer Community Panel */}
+        {/* Right 4-Cols: Spiritual Community Panel */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* Quick Direct Actions Card */}
-          <div className="p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-2xl space-y-4">
-            <h4 className="text-xs font-semibold uppercase tracking-widest text-amber-400 font-cinzel flex items-center gap-1.5">
-              <span>⚡ Acciones Rápidas con este Devocional</span>
-            </h4>
-
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={handleCreateCardFromDevotional}
-                className="w-full py-3 px-4 rounded-2xl bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-200 text-xs font-bold flex items-center justify-between transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Palette className="w-4 h-4 text-amber-400" />
-                  <span>Diseñar Tarjeta de Bendición</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-amber-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCreateVideoFromDevotional}
-                className="w-full py-3 px-4 rounded-2xl bg-blue-400/10 hover:bg-blue-400/20 border border-blue-400/30 text-blue-200 text-xs font-bold flex items-center justify-between transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Film className="w-4 h-4 text-blue-400" />
-                  <span>Crear Video / Reel 9:16</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-blue-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShareWhatsApp}
-                className="w-full py-3 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-xs font-bold flex items-center justify-between transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-emerald-400" />
-                  <span>Compartir en WhatsApp</span>
-                </div>
-                <ExternalLink className="w-4 h-4 text-emerald-400" />
-              </button>
-            </div>
-          </div>
-
-          {/* Progress Card */}
+          {/* Testimonial & Community Card */}
           <div className="p-6 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl shadow-2xl space-y-6">
-            <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 font-cinzel">
-              Tu Progreso Espiritual
-            </h4>
-            
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-300">Racha de Oración & Devocional</span>
-                  <span className="text-amber-400 font-bold">12 Días</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-400 w-[65%] rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-300">Tiempo en Meditación Bíblica</span>
-                  <span className="text-blue-400 font-bold">4.5 Horas</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-400 w-[45%] rounded-full"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial Box */}
-            <div className="pt-4 border-t border-white/5">
+            <div>
               <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 font-cinzel">
                 Testimonio de Fe Reciente
               </h4>
@@ -1573,7 +1501,7 @@ _${thought}_
             </div>
 
             {/* Quick Action Badges */}
-            <div className="grid grid-cols-2 gap-2 pt-2">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
               <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-center space-y-1">
                 <span className="text-base">🕯️</span>
                 <p className="text-[11px] font-medium text-slate-200">128 Velas</p>

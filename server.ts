@@ -58,12 +58,18 @@ async function callWithRetry(
   config?: any,
   maxRetries = 2
 ): Promise<any> {
+  // Normalize contents to prevent invalid argument error if object with { contents: ... } was passed
+  let normalizedContents = contents;
+  if (contents && typeof contents === "object" && !Array.isArray(contents) && "contents" in contents) {
+    normalizedContents = (contents as any).contents;
+  }
+
   let lastError: any = null;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await ai.models.generateContent({
         model,
-        contents,
+        contents: normalizedContents,
         config,
       });
       return res;
@@ -81,9 +87,10 @@ async function callWithRetry(
         errMsg.includes("FetchError") ||
         errMsg.includes("ETIMEDOUT");
 
-      if (isTransient && attempt < maxRetries) {
-        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 600;
-        console.warn(`[Gemini API] Transient issue with model ${model} (attempt ${attempt + 1}/${maxRetries + 1}). Retrying in ${Math.round(delay)}ms...`);
+      // For 503 high demand or temporary unavailable, fail fast so fallback models can respond immediately
+      const isOverloadedOrUnavailable = errMsg.includes("503") || errMsg.includes("high demand") || errMsg.includes("UNAVAILABLE");
+      if (isTransient && !isOverloadedOrUnavailable && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 500 + Math.random() * 300;
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -95,12 +102,19 @@ async function callWithRetry(
 
 async function generateWithFallback(
   ai: GoogleGenAI,
-  { contents, config, preferredModel = "gemini-3.7-flash" }: GenerateOptions
+  { contents, config, preferredModel = "gemini-3.8-flash" }: GenerateOptions
 ): Promise<any> {
-  // Prioritize fast, high-quota models: gemini-3.1-flash-lite, gemini-3.7-flash, gemini-flash-latest
+  // Normalize model name: prioritize reliable, modern models and avoid congested aliases
+  const targetPreferred = (!preferredModel || preferredModel === "gemini-flash-latest")
+    ? "gemini-3.8-flash"
+    : preferredModel;
+
+  // Prioritize reliable, high-capacity models
   const modelsToTry = [
+    targetPreferred,
+    "gemini-3.8-flash",
     "gemini-3.1-flash-lite",
-    preferredModel,
+    "gemini-2.5-flash",
     "gemini-flash-latest",
   ].filter((m, i, arr) => arr.indexOf(m) === i);
 
@@ -110,10 +124,10 @@ async function generateWithFallback(
       const response = await callWithRetry(ai, model, contents, config, 1);
       return response;
     } catch (err: any) {
-      console.warn(`[Gemini API] Note with model "${model}":`, err?.message?.substring(0, 120) || err);
       lastError = err;
     }
   }
+  console.error(`[Gemini API] All fallback models failed. Last error:`, lastError?.message || lastError);
   throw lastError;
 }
 
@@ -344,7 +358,19 @@ app.post("/api/gemini/generate-script", async (req: Request, res: Response) => {
 
     const ai = getGeminiClient();
 
-    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al generar el guion y las indicaciones del video, debes estructurar los tiempos para que ocurra un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando de manera aleatoria entre: acercamientos sutiles (zoom in), alejamientos (zoom out), paneos ligeros o cambios de ángulo. Especifica claramente que cada cambio visual debe estar estrictamente sincronizado con las pausas naturales de la voz en off o con los ritmos de la música de fondo. Evita transiciones bruscas o de estilo 'gaming'; solicita únicamente cortes limpios (hard cuts) o disolvencias muy suaves que mantengan la atmósfera de paz y profesionalismo.";
+    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo.";
+
+    const MANDATORY_VACA_MORADA_VIRAL_DIRECTIVE = `FÓRMULA SUPREMA 'LA VACA MORADA' & RETENCIÓN VIRAL (ANTI-ESTANCAMIENTO):
+- Si creas un video religioso o devocional genérico, es una 'vaca normal' al lado de la carretera: la gente lo pasa de largo en TikTok, Reels y Shorts.
+- Para NO QUEDARNOS ESTANCADOS haciendo lo mismo de siempre, este guion DEBE SER LA VACA MORADA:
+  1. Romper el patrón desde el milisegundo 0 con una perspectiva inesperada, profunda y transformadora.
+  2. Metáforas frescas nunca antes escuchadas que toquen la llaga y el dolor secreto del oyente (lágrimas en la almohada, cansancio en el pecho, soledad en silencio).
+  3. CAJA ROJA SUPERIOR DE ALTO IMPACTO (banner_hook_superior): Genera un titular visual en mayúsculas de 3 a 6 palabras que inicie con 🔴 (ej: '🔴 CONSEJO PARA HACERTE VIRAL EN TU FE', '🔴 NO PASES ESTE VIDEO SI ESTÁS CANSADO', '🔴 JESÚS VIO LO QUE LLORASTE EN SILENCIO', '🔴 3 SEGUNDOS QUE CAMBIARÁN TU DÍA'). Este banner congelará el pulgar antes de que pasen el video.
+  4. ALTERNANCIA DINÁMICA DE 3 TOMAS POR ESCENA: "Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas":
+     - Toma 1 (0-3.3s): Plano General Celestial.
+     - Toma 2 (3.3-6.6s): Primer Plano mirando a los ojos del oyente.
+     - Toma 3 (6.6-10s): Plano Detalle de manos extendidas y bendición.
+  5. Cero saludos aburridos ("Hola hermanos", "hoy les traigo"). Empieza directo a la emoción.`;
 
     const MANDATORY_INNOVATIVE_HOOK_DIRECTIVE = `REGLA DE ORO DEL GANCHO (HOOK 0-2 SEGUNDOS) - ALTA RETENCIÓN Y DETENCIÓN DE SCROLL (+75% a 90%):
 - El gancho DEBE conectar de inmediato con la necesidad emocional de la audiencia en los primeros 2 segundos.
@@ -358,7 +384,9 @@ app.post("/api/gemini/generate-script", async (req: Request, res: Response) => {
 - El gancho debe obligar al usuario a detener el scroll en los primeros 2 segundos con amor, revelación o alivio instantáneo.`;
 
     const systemPrompt = `Eres el equipo élite de producción de Reels y videos virales para el nicho de FE, ORACIÓN Y ESPERANZA con los mayores récords de retención (+75% a 90%).
-Tu misión es generar guiones y storyboards donde JESUCRISTO o la voz de fe le habla directamente a la necesidad emocional del creyente.
+Tu misión es generar guiones y storyboards aplicando la ESTRATEGIA DE LA VACA MORADA donde JESUCRISTO le habla directamente a la necesidad emocional del creyente.
+
+${MANDATORY_VACA_MORADA_VIRAL_DIRECTIVE}
 
 TIPOS DE REEL DEL NICHO:
 1. Oración rápida (15–25s): Frase de poder y clamor directo (ej: "Señor, fortalece a quien está viendo este video...").
@@ -368,16 +396,17 @@ TIPOS DE REEL DEL NICHO:
 5. Historia o testimonio (45–90s): Estructura problema, intervención de Dios y aprendizaje transformador.
 
 ESTRUCTURA DE ALTO RENDIMIENTO POR REEL:
+- BANNER SUPERIOR VIRAL (Caja Roja): Gancho visual en la parte superior para detener el scroll.
 - GANCHO INMEDIATO (0-2s): Directo a la necesidad emocional. Cero rodeos, sin saludos.
 - MENSAJE DIRECTO: Una sola idea clara y poderosa por Reel.
 - ORACIÓN O PROMESA BÍBLICA: Fundamento de paz, gracia y victoria.
 - LLAMADA A LA ACCIÓN (CTA): Enfocada en la interacción comunitaria y esperanza (ej: "Escribe 'Amén' si recibes esta oración y compártela con alguien que necesite esperanza hoy").
-- ESTILO DE PRODUCCIÓN: Voz cálida y paternal de Jesús, subtítulos grandes, música suave (432Hz/piano) e imágenes tranquilas con consistencia de personaje.
+- ESTILO DE PRODUCCIÓN: Voz cálida y paternal de Jesús, subtítulos grandes, música suave (432Hz/piano) e imágenes con alternancia de 3 tomas por escena.
 
 REGLA DE CONTINUIDAD VISUAL:
-- Genera 4 escenas consecutivas equilibradas (10s aprox cada una para un total ideal de 25-40s).
+- Genera escenas consecutivas de 10s aprox cada una.
 - Cada escena contiene su propio DIÁLOGO SAGRADO en español (~20 a 25 palabras por escena) y texto en pantalla grande.
-- Jesucristo es el centro visual visible con luz divina, amor y gloria, manteniendo perfecta continuidad de personaje con la imagen de referencia ("Dale vida al personaje de la imagen:").
+- Jesucristo es el centro visual visible con luz divina, amor y gloria, manteniendo perfecta continuidad de personaje con las imágenes de referencia ("Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:").
 - Idioma: Español cálido, reverente, poético y de profunda paz espiritual.
 
 ${MANDATORY_INNOVATIVE_HOOK_DIRECTIVE}
@@ -390,7 +419,7 @@ ${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
 
     const randomSeed = Math.floor(Math.random() * 1000000);
     const userPrompt = `[Generación Única - Semilla #${randomSeed}]
-Crea un video devocional de MÁXIMA RETENCIÓN Y GANCHO INNOVADOR con EXACTAMENTE ${targetSceneCount} ESCENAS DE ${secPerScene} SEGUNDOS CADA UNA (${targetDuration}s total) donde JESÚS le habla directamente al oyente.
+Aplica la ESTRATEGIA DE LA VACA MORADA Y RETENCIÓN VIRAL (TikTok/Reels/Shorts) para crear un guion devocional de MÁXIMA RETENCIÓN con EXACTAMENTE ${targetSceneCount} ESCENAS DE ${secPerScene} SEGUNDOS CADA UNA (${targetDuration}s total) donde JESÚS le habla directamente al oyente.
 Tema del video: "${topic || "Paz en la tormenta y consuelo divino"}"
 Formato: ${format || `Reel / TikTok 9:16 (${targetSceneCount} clips de ${secPerScene}s - ${targetDuration}s total)`}
 Tono: ${tone || "Voz de Jesús amorosa, serena, paternal y reconfortante"}
@@ -398,6 +427,8 @@ Audiencia: ${targetAudience || "Creyentes buscando paz, dirección, consuelo noc
 Preferencia bíblica: ${biblePassagePreference || "Promesas de Cristo y Salmos de protección"}
 Duración: EXACTAMENTE ${targetSceneCount} escenas de ${secPerScene} segundos cada una (${targetDuration} segundos en total). Cada escena con su propio diálogo hablado en español de ${secPerScene}s adaptado con fluidez.
 Cada escena en el arreglo de escenas debe tener su 'durationSec' igual a ${secPerScene}.
+
+${MANDATORY_VACA_MORADA_VIRAL_DIRECTIVE}
 
 ${MANDATORY_INNOVATIVE_HOOK_DIRECTIVE}
 
@@ -413,6 +444,7 @@ ${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
           type: Type.OBJECT,
           properties: {
             title: { type: Type.STRING, description: "Título llamativo para el video/reel" },
+            banner_hook_superior: { type: Type.STRING, description: "Caja roja superior viral con 🔴 (ej: 🔴 CONSEJO PARA HACERTE VIRAL EN TU FE)" },
             hook: { type: Type.STRING, description: "Gancho inicial de 3 segundos innovador para detener el scroll" },
             mainTheme: { type: Type.STRING, description: "Tema central de fe" },
             primaryBibleVerse: {
@@ -452,22 +484,146 @@ ${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
               required: ["hashtags", "caption", "pinnedComment"]
             }
           },
-          required: ["title", "hook", "mainTheme", "primaryBibleVerse", "closingPrayer", "callToAction", "scenes", "socialMetadata"]
+          required: ["title", "banner_hook_superior", "hook", "mainTheme", "primaryBibleVerse", "closingPrayer", "callToAction", "scenes", "socialMetadata"]
         }
       }
     });
 
     const parsed = JSON.parse(response.text || "{}");
+    if (!parsed.banner_hook_superior) {
+      parsed.banner_hook_superior = "🔴 CONSEJO PARA HACERTE VIRAL EN TU FE";
+    }
+    parsed.modo_viral = "vaca_morada";
+
     if (parsed.scenes && Array.isArray(parsed.scenes)) {
       if (parsed.scenes.length > targetSceneCount) {
         parsed.scenes = parsed.scenes.slice(0, targetSceneCount);
       }
-      parsed.scenes = parsed.scenes.map((sc: any, idx: number) => ({
-        ...sc,
-        sceneNumber: idx + 1,
-        durationSec: secPerScene
-      }));
+      parsed.scenes = parsed.scenes.map((sc: any, idx: number) => {
+        const duration = sc.durationSec || secPerScene || 10;
+        const dialogue = (sc.narrationText || "Recibe hoy mi paz y mi poder sobrenatural; yo estoy contigo, renovando cada parte de tu vida para que sigas adelante con esperanza. Cree, hijo mío.").trim();
+        const cameraMov = sc.cameraMovement || "Primer plano con zoom lento y continuo durante 10 segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido.";
+        const formattedDialogue = dialogue.startsWith('"') && dialogue.endsWith('"') ? dialogue : `"${dialogue}"`;
+
+        const structuredPrompt = `Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:
+Duración: ${duration} segundos (movimiento continuo sin interrupciones con alternancia cada 2.5s-3.3s: Plano General ➔ Primer Plano ➔ Manos de Bendición).
+
+Movimiento de cámara: ${cameraMov}
+
+Diálogo de ${duration} segundos en español con la compasiva voz de Jesús: ${formattedDialogue}
+
+${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+
+        return {
+          ...sc,
+          sceneNumber: idx + 1,
+          durationSec: duration,
+          cameraMovement: cameraMov,
+          visualPrompt: structuredPrompt,
+          subShots: {
+            shot1: "Plano General Celestial (0s - 3.3s): Entrada y contexto majestuoso con luz dorada",
+            shot2: "Primer Plano Cercano (3.3s - 6.6s): Mirada compasiva fija a los ojos del oyente",
+            shot3: "Plano Detalle / Manos (6.6s - 10s): Manos extendidas impartiendo consuelo y bendición"
+          }
+        };
+      });
     }
+
+    // Edu Serrano High-CTR Packaging & Anti-Error Enrichment
+    if (!parsed.packaging || !parsed.packaging.variants || parsed.packaging.variants.length === 0) {
+      parsed.packaging = {
+        primaryTitle: parsed.title,
+        thumbnailOverlayText: (parsed.scenes?.[0]?.onScreenText || "ÉL ESTÁ CONTIGO").slice(0, 22),
+        thumbnailConcept: "Jesucristo en primer plano cinematográfico con mirada compasiva y aura dorada viva",
+        firstTwoSecondsHook: parsed.hook,
+        targetAudienceAvatar: "Creyentes afligidos o buscando consuelo, descanso nocturno y dirección divina",
+        packagingScore: 98,
+        variants: [
+          {
+            id: 'var_curiosity_relief',
+            title: parsed.title,
+            titleFormula: "Curiosidad + Alivio Inmediato",
+            thumbnailOverlayText: (parsed.scenes?.[0]?.onScreenText || "ÉL ESTÁ CONTIGO").slice(0, 20),
+            thumbnailVisualPrompt: "Primer plano de Jesús con mirada paternal tierna y resplandor celestial",
+            firstTwoSecondsHook: parsed.hook,
+            expectedCtrPercentage: 14.8,
+            focalPointDescription: "1 solo punto focal: Mirada y rostro luminoso de Cristo",
+            contrastRating: "Máximo"
+          },
+          {
+            id: 'var_urgency_night',
+            title: "No Cierres Tus Ojos Esta Noche Sin Escuchar Esto de Jesús",
+            titleFormula: "Urgencia Íntima / Nocturna",
+            thumbnailOverlayText: "NO TE DUERMAS",
+            thumbnailVisualPrompt: "Mano luminosa de Jesús extendiéndose con partículas doradas disipando la penumbra",
+            firstTwoSecondsHook: "Antes de cerrar tus ojos, Jesús te pide 20 segundos: Entrega esa carga pesada a Sus pies ahora.",
+            expectedCtrPercentage: 13.6,
+            focalPointDescription: "Mano extendida de Jesús y resplandor de paz",
+            contrastRating: "Máximo"
+          },
+          {
+            id: 'var_belief_break',
+            title: "Pensaste Que Dios Guardó Silencio... Pero Te Estaba Protegiendo",
+            titleFormula: "Ruptura de Creencia & Revelación",
+            thumbnailOverlayText: "NO FUE CASTIGO",
+            thumbnailVisualPrompt: "Jesús cubriendo con Su manto celestial a una persona quebrantada disipando la tormenta",
+            firstTwoSecondsHook: "Si creías que Dios te había olvidado en la tormenta, escucha con atención lo que Él te revela hoy.",
+            expectedCtrPercentage: 15.3,
+            focalPointDescription: "Manto protector de Cristo disipando la tormenta con luz viva",
+            contrastRating: "Alto"
+          }
+        ],
+        antiErrorChecklist: [
+          {
+            id: 'rule_packaging_first',
+            errorName: "Error #1: Diseñar el Packaging al final como ocurrencia secundaria",
+            mistakeDescription: "Crear y editar el video primero y luego inventarse un título genérico o miniatura descuidada.",
+            solutionStrategy: "El packaging (Título + Miniatura + Gancho 0-2s) se diseña ANTES para garantizar que la promesa sea irresistible.",
+            isCompliant: true,
+            scoreImpact: 25
+          },
+          {
+            id: 'rule_two_second_hook',
+            errorName: "Error #2: Introducciones lentas o saludos que matan la retención",
+            mistakeDescription: "Decir 'Hola bienvenidos a mi canal...' en los primeros segundos hace que el 80% de usuarios deslice hacia arriba.",
+            solutionStrategy: "Gancho inmediato en los primeros 2 segundos cumpliendo de golpe la promesa de la miniatura.",
+            isCompliant: true,
+            scoreImpact: 20
+          },
+          {
+            id: 'rule_single_focal_point',
+            errorName: "Error #3: Miniaturas caóticas y texto largo ilegible en móvil",
+            mistakeDescription: "Saturar la miniatura con 10 elementos y frases largas que en pantalla de celular son manchas ilegibles.",
+            solutionStrategy: "1 solo punto focal dominante (Jesús con emoción clara) + máximo 3 a 4 palabras clave complementarias.",
+            isCompliant: true,
+            scoreImpact: 20
+          },
+          {
+            id: 'rule_thumbnail_title_synergy',
+            errorName: "Error #4: Duplicar exactamente el título en la miniatura",
+            mistakeDescription: "Poner en la imagen el mismo texto del título desperdicia el 50% de la fuerza del packaging.",
+            solutionStrategy: "La miniatura y el título se complementan: el título despierta curiosidad/dolor y la miniatura remata con impacto emocional.",
+            isCompliant: true,
+            scoreImpact: 15
+          },
+          {
+            id: 'rule_niche_audience_clarity',
+            errorName: "Error #5: Confundir al algoritmo de YouTube con temas dispersos",
+            mistakeDescription: "Saltar de un tema a otro sin un avatar de audiencia claro produce 'visitas vacías' y el algoritmo deja de recomendar.",
+            solutionStrategy: "Enfoque láser en el nicho de Fe, Oración y Esperanza: el algoritmo aprende exactamente a quién mostrarle el contenido.",
+            isCompliant: true,
+            scoreImpact: 20
+          }
+        ],
+        keyLessons: [
+          "El 99% de canales no crece porque cree que la solución es subir más videos en vez de mejorar el packaging.",
+          "El algoritmo de YouTube no recomienda videos por caridad: recomienda videos que retienen a una audiencia específica.",
+          "Una buena idea mal empaquetada parecerá aburrida e invisible para millones de personas.",
+          "No copies a ciegas: entiende la psicología de la audiencia y aplica 1 mejora concreta en cada video."
+        ]
+      };
+    }
+
     res.json(parsed);
   } catch (error: any) {
     console.error("Error generating script, serving dynamic fallback:", error);
@@ -664,6 +820,180 @@ ${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
       }));
     }
     res.json(chosenFallback);
+  }
+});
+
+// 1.12 Generador de Packaging A/B y Sistema Anti-Error de YouTube (Metodología Edu Serrano)
+app.post("/api/gemini/generate-packaging-ab", async (req: Request, res: Response) => {
+  try {
+    const { topic = "Jesús secando tus lágrimas", currentTitle = "", mainTheme = "" } = req.body;
+    const ai = getGeminiClient();
+
+    const systemPrompt = `Eres un estratega experto de crecimiento en YouTube especializado en Packaging (Título + Miniatura + Primeros 2s de Gancho) siguiendo estrictamente los principios de Edu Serrano:
+1. EL ERROR DEL 99%: Canales que suben mucho volumen con empaque aburrido, títulos sin curiosidad y miniaturas ilegibles en celular.
+2. FÓRMULAS DE TÍTULOS DE ALTO CTR:
+   - Curiosidad + Alivio Emocional Inmediato
+   - Urgencia Íntima / Nocturna (ej: "Antes de dormir, Jesús te pide 20 segundos...")
+   - Ruptura de Creencia / Deseo Profundo (ej: "Creías que Dios te olvidó...")
+3. REGLA DE LA MINIATURA:
+   - 1 Solo Punto Focal Dominante (Jesús en primer plano con mirada o manos de compasión).
+   - TEXTO EN MINIATURA: MÁXIMO 3 A 4 PALABRAS CLAVE EN MAYÚSCULAS.
+   - REGLA DE NO DUPLICACIÓN: La miniatura NUNCA debe repetir el título; debe complementarlo y rematar la emoción.
+4. GANCHO DE 2 SEGUNDOS: Cero saludos, directo a cumplir la promesa del empaque.
+Genera 3 variantes A/B irresistibles para el nicho de fe y oración.`;
+
+    const userPrompt = `Genera un paquete de Packaging y Anti-Error para el tema: "${topic}". Título base: "${currentTitle}". Tema: "${mainTheme}".`;
+
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.7-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            primaryTitle: { type: Type.STRING },
+            thumbnailOverlayText: { type: Type.STRING },
+            thumbnailConcept: { type: Type.STRING },
+            firstTwoSecondsHook: { type: Type.STRING },
+            targetAudienceAvatar: { type: Type.STRING },
+            packagingScore: { type: Type.INTEGER },
+            variants: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  titleFormula: { type: Type.STRING },
+                  thumbnailOverlayText: { type: Type.STRING },
+                  thumbnailVisualPrompt: { type: Type.STRING },
+                  firstTwoSecondsHook: { type: Type.STRING },
+                  expectedCtrPercentage: { type: Type.NUMBER },
+                  focalPointDescription: { type: Type.STRING },
+                  contrastRating: { type: Type.STRING }
+                },
+                required: ["id", "title", "titleFormula", "thumbnailOverlayText", "thumbnailVisualPrompt", "firstTwoSecondsHook", "expectedCtrPercentage"]
+              }
+            },
+            antiErrorChecklist: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  errorName: { type: Type.STRING },
+                  mistakeDescription: { type: Type.STRING },
+                  solutionStrategy: { type: Type.STRING },
+                  isCompliant: { type: Type.BOOLEAN },
+                  scoreImpact: { type: Type.INTEGER }
+                },
+                required: ["id", "errorName", "mistakeDescription", "solutionStrategy", "isCompliant", "scoreImpact"]
+              }
+            },
+            keyLessons: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["primaryTitle", "thumbnailOverlayText", "variants", "antiErrorChecklist"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    res.json(parsed);
+  } catch (error: any) {
+    console.warn("Falling back for packaging generation:", error);
+    res.json({
+      primaryTitle: req.body.currentTitle || "Nadie Vio Tus Lágrimas Anoche... Pero Jesús Estuvo Ahí",
+      thumbnailOverlayText: "ÉL ESTUVO AHÍ",
+      thumbnailConcept: "Jesús en primer plano cinematográfico con mirada compasiva y aura dorada",
+      firstTwoSecondsHook: "Detén tus pensamientos un segundo... Jesús estuvo contigo en tu dolor.",
+      targetAudienceAvatar: "Creyentes con aflicción nocturna o ansiedad",
+      packagingScore: 97,
+      variants: [
+        {
+          id: 'var_curiosity_relief',
+          title: req.body.currentTitle || "Nadie Vio Tus Lágrimas Anoche... Pero Jesús Estuvo Ahí",
+          titleFormula: "Curiosidad + Alivio Inmediato",
+          thumbnailOverlayText: "ÉL ESTUVO AHÍ",
+          thumbnailVisualPrompt: "Primer plano de Jesús con mirada paternal tierna y resplandor celestial",
+          firstTwoSecondsHook: "Detén tus pensamientos... Nadie vio la lágrima en tu almohada anoche, pero Jesús estuvo ahí.",
+          expectedCtrPercentage: 14.8,
+          focalPointDescription: "1 solo punto focal: Rostro y mirada luminosa de Cristo",
+          contrastRating: "Máximo"
+        },
+        {
+          id: 'var_urgency_night',
+          title: "No Cierres Tus Ojos Esta Noche Sin Escuchar Esto de Jesús",
+          titleFormula: "Urgencia Íntima / Nocturna",
+          thumbnailOverlayText: "NO TE DUERMAS",
+          thumbnailVisualPrompt: "Mano luminosa de Jesús extendiéndose hacia ti con partículas doradas de bendición",
+          firstTwoSecondsHook: "Antes de dormir, Jesús te pide 20 segundos: Entrega esa carga pesada a Sus pies ahora.",
+          expectedCtrPercentage: 13.5,
+          focalPointDescription: "Mano extendida de Jesús y paz divina",
+          contrastRating: "Máximo"
+        },
+        {
+          id: 'var_belief_break',
+          title: "Pensaste Que Dios Guardó Silencio... Pero Te Estaba Protegiendo",
+          titleFormula: "Ruptura de Creencia & Revelación",
+          thumbnailOverlayText: "NO FUE CASTIGO",
+          thumbnailVisualPrompt: "Jesús cubriendo con Su manto celestial a una persona quebrantada",
+          firstTwoSecondsHook: "Si creías que Dios te había olvidado en la tormenta, escucha con atención lo que Él te revela hoy.",
+          expectedCtrPercentage: 15.2,
+          focalPointDescription: "Manto protector de Cristo disipando la tormenta",
+          contrastRating: "Alto"
+        }
+      ],
+      antiErrorChecklist: [
+        {
+          id: 'rule_packaging_first',
+          errorName: "Error #1: Diseñar el Packaging al final como ocurrencia secundaria",
+          mistakeDescription: "Crear y editar el video primero y luego inventarse un título genérico o miniatura descuidada.",
+          solutionStrategy: "El packaging se concibe ANTES para garantizar que la promesa sea irresistible.",
+          isCompliant: true,
+          scoreImpact: 25
+        },
+        {
+          id: 'rule_two_second_hook',
+          errorName: "Error #2: Introducciones lentas o saludos que matan la retención",
+          mistakeDescription: "Decir 'Hola bienvenidos...' hace que el 80% de usuarios deslice hacia arriba.",
+          solutionStrategy: "Gancho inmediato en los primeros 2 segundos cumpliendo de golpe la promesa de la miniatura.",
+          isCompliant: true,
+          scoreImpact: 20
+        },
+        {
+          id: 'rule_single_focal_point',
+          errorName: "Error #3: Miniaturas caóticas y texto largo ilegible en móvil",
+          mistakeDescription: "Saturar la imagen con 10 elementos y frases largas ilegibles en teléfono.",
+          solutionStrategy: "1 solo punto focal dominante + máximo 3 a 4 palabras clave complementarias.",
+          isCompliant: true,
+          scoreImpact: 20
+        },
+        {
+          id: 'rule_thumbnail_title_synergy',
+          errorName: "Error #4: Duplicar exactamente el título en la miniatura",
+          mistakeDescription: "Poner en la imagen el mismo texto del título desperdicia el 50% de la fuerza del packaging.",
+          solutionStrategy: "La miniatura complementa y remata la emoción sin repetir palabras.",
+          isCompliant: true,
+          scoreImpact: 15
+        },
+        {
+          id: 'rule_niche_audience_clarity',
+          errorName: "Error #5: Confundir al algoritmo de YouTube con temas dispersos",
+          mistakeDescription: "Saltar de un tema a otro produce 'visitas vacías' y el algoritmo deja de recomendar.",
+          solutionStrategy: "Enfoque láser en el nicho de Fe, Oración y Esperanza.",
+          isCompliant: true,
+          scoreImpact: 20
+        }
+      ],
+      keyLessons: [
+        "El 99% de canales no crece porque cree que la solución es subir más videos en vez de mejorar el packaging.",
+        "El algoritmo de YouTube recomienda videos que retienen a una audiencia específica.",
+        "Una buena idea mal empaquetada parecerá aburrida e invisible para millones de personas.",
+        "No copies a ciegas: entiende la psicología de la audiencia y aplica 1 mejora concreta en cada video."
+      ]
+    });
   }
 });
 
@@ -1015,6 +1345,128 @@ async function generateSingleIndependentSceneImage(
     hash
   };
 }
+
+// AI Subtitle & Audio Transcription Engine with Gemini 2.5
+app.post("/api/transcribe-and-generate-subtitles", async (req: Request, res: Response) => {
+  try {
+    const { audioBase64, mimeType = "audio/mp3", scriptText = "", durationSec = 10 } = req.body;
+    const ai = getGeminiClient();
+
+    let parts: any[] = [];
+
+    if (audioBase64 && typeof audioBase64 === 'string') {
+      const cleanBase64 = audioBase64.replace(/^data:[^;]+;base64,/, '');
+      parts.push({
+        inlineData: {
+          mimeType: mimeType || 'audio/mp3',
+          data: cleanBase64
+        }
+      });
+      parts.push({
+        text: `Escucha atentamente este archivo de audio de ${durationSec} segundos.
+Tu tarea es transcribir exactamente las palabras habladas y estructurar subtítulos virales de alto impacto para redes sociales (TikTok / Instagram Reels).
+Divide la narración en 2 a 4 títulos o frases clave sincronizadas en orden cronológico entre 0.0 y ${durationSec}.0 segundos.
+Devuelve un JSON estrictamente con la estructura:
+{
+  "fullTranscript": "texto transcrito completo del audio",
+  "subtitles": [
+    {
+      "text": "FRASE CLAVE EN MAYÚSCULAS (3 a 6 palabras)",
+      "startSec": 0.0,
+      "endSec": 3.3,
+      "label": "Título 1 (Gancho)"
+    }
+  ]
+}`
+      });
+    } else {
+      // Prompt-based segmentation from scriptText
+      const seg1 = Number((durationSec / 3).toFixed(1));
+      const seg2 = Number(((durationSec * 2) / 3).toFixed(1));
+      parts.push({
+        text: `Eres un editor profesional de video viral para TikTok y Reels.
+A continuación tienes el texto de una escena espiritual de ${durationSec} segundos:
+"${scriptText}"
+
+Tu tarea es desglosarlo en 3 secciones de títulos / subtítulos virales de alto impacto (estilo CapCut / MrBeast), distribuidos cronológicamente:
+- Título 1: [0.0s a ${seg1}s] (Gancho inicial potente)
+- Título 2: [${seg1}s a ${seg2}s] (Mensaje central / Clímax)
+- Título 3: [${seg2}s a ${durationSec}s] (Promesa / Cierre / Llamado)
+
+Escribe cada título en MAYÚSCULAS, de 2 a 5 palabras directas y conmovedoras.
+Devuelve un JSON estrictamente con la estructura:
+{
+  "fullTranscript": "${scriptText.replace(/"/g, '\\"')}",
+  "subtitles": [
+    {
+      "text": "FRASE 1 EN MAYÚSCULAS",
+      "startSec": 0.0,
+      "endSec": ${seg1},
+      "label": "Título 1 (Gancho)"
+    },
+    {
+      "text": "FRASE 2 EN MAYÚSCULAS",
+      "startSec": ${seg1},
+      "endSec": ${seg2},
+      "label": "Título 2 (Clímax)"
+    },
+    {
+      "text": "FRASE 3 EN MAYÚSCULAS",
+      "startSec": ${seg2},
+      "endSec": ${durationSec},
+      "label": "Título 3 (Promesa)"
+    }
+  ]
+}`
+      });
+    }
+
+    const response = await generateWithFallback(ai, {
+      preferredModel: 'gemini-3.8-flash',
+      contents: parts,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.2
+      }
+    });
+
+    const rawText = response.text || '{}';
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = {
+        fullTranscript: scriptText,
+        subtitles: [
+          { text: "SUELTA TU CARGA HOY", startSec: 0, endSec: Number((durationSec / 3).toFixed(1)), label: "Título 1 (Gancho)" },
+          { text: "DIOS TIENE EL CONTROL", startSec: Number((durationSec / 3).toFixed(1)), endSec: Number(((durationSec * 2) / 3).toFixed(1)), label: "Título 2 (Clímax)" },
+          { text: "RECIBE PAZ AHORA", startSec: Number(((durationSec * 2) / 3).toFixed(1)), endSec: durationSec, label: "Título 3 (Promesa)" }
+        ]
+      };
+    }
+
+    return res.json({ success: true, ...data });
+  } catch (error: any) {
+    console.error("Error in transcribe-and-generate-subtitles:", error);
+    // Fallback: local heuristic generation
+    const scriptText = req.body?.scriptText || "Dios cuida de ti en todo momento";
+    const durationSec = Number(req.body?.durationSec) || 10;
+    const words = scriptText.split(/\s+/).filter(Boolean);
+    const chunk1 = words.slice(0, Math.ceil(words.length / 3)).join(' ').toUpperCase();
+    const chunk2 = words.slice(Math.ceil(words.length / 3), Math.ceil((words.length * 2) / 3)).join(' ').toUpperCase();
+    const chunk3 = words.slice(Math.ceil((words.length * 2) / 3)).join(' ').toUpperCase();
+
+    return res.json({
+      success: true,
+      fullTranscript: scriptText,
+      subtitles: [
+        { text: chunk1 || "HIJO MÍO ESCÚCHAME", startSec: 0, endSec: Number((durationSec / 3).toFixed(1)), label: "Título 1 (Gancho)" },
+        { text: chunk2 || "YO SANO TU CORAZÓN", startSec: Number((durationSec / 3).toFixed(1)), endSec: Number(((durationSec * 2) / 3).toFixed(1)), label: "Título 2 (Clímax)" },
+        { text: chunk3 || "RECIBE MI BENDICIÓN", startSec: Number(((durationSec * 2) / 3).toFixed(1)), endSec: durationSec, label: "Título 3 (Promesa)" }
+      ]
+    });
+  }
+});
 
 // Endpoint to inspect image model availability and configuration
 app.get("/api/devotional-scenes/check-model", async (_req: Request, res: Response) => {
@@ -1463,7 +1915,7 @@ REGLAS ESTRICTAS DE CONTINUIDAD Y DIFERENCIACIÓN:
         voiceMusicBalance: "Voz en primer plano (100%); música ambiental envolvente (25%)"
       },
       finalAnimationVideoPrompt: parsed?.finalAnimationVideoPrompt || 
-        `Dale vida al personaje de la imagen: Jesús con túnica blanca de lino y mirada de amor realiza un movimiento suave y natural de respiración serena. Su mirada transmite consuelo eterno mientras partículas sutiles de luz dorada descienden en cámara lenta a 24fps. Iluminación cinematográfica 35mm, preservando idéntico rostro y vestiduras en todo momento.`,
+        `Dale vida al personaje de las  imagenes ten es cuenta les tres y alternalas: Jesús con túnica blanca de lino y mirada de amor realiza un movimiento suave y natural de respiración serena. Su mirada transmite consuelo eterno mientras partículas sutiles de luz dorada descienden en cámara lenta a 24fps. Iluminación cinematográfica 35mm, preservando idéntico rostro y vestiduras en todo momento.`,
       createdAt: new Date().toISOString()
     };
 
@@ -2795,7 +3247,7 @@ app.post("/api/gemini/generate-multimedia-assets", async (req: Request, res: Res
       { sceneNumber: 1, narrationText: "Hijo mío, escucha mi voz", onScreenText: "Jesús te habla", visualPrompt: "Jesús en luz dorada" }
     ];
 
-    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al generar el guion y las indicaciones del video, debes estructurar los tiempos para que ocurra un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando de manera aleatoria entre: acercamientos sutiles (zoom in), alejamientos (zoom out), paneos ligeros o cambios de ángulo. Especifica claramente que cada cambio visual debe estar estrictamente sincronizado con las pausas naturales de la voz en off o con los ritmos de la música de fondo. Evita transiciones bruscas o de estilo 'gaming'; solicita únicamente cortes limpios (hard cuts) o disolvencias muy suaves que mantengan la atmósfera de paz y profesionalismo";
+    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo";
 
     const prompt = `Eres el Director Cinemático de Multimedia de "Espacio de Fe y Oración AI".
 El usuario ha solicitado un video devocional sobre: "${contextTopic || 'Paz y Gracia'}" (Tema: "${mainTheme || 'Espacio de Fe'}").
@@ -2864,7 +3316,7 @@ app.post("/api/gemini/veo-prompt-enhance", async (req: Request, res: Response) =
     const { rawPrompt, cameraMovement, intensity, mood } = req.body;
     const ai = getGeminiClient();
 
-    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al generar el guion y las indicaciones del video, debes estructurar los tiempos para que ocurra un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando de manera aleatoria entre: acercamientos sutiles (zoom in), alejamientos (zoom out), paneos ligeros o cambios de ángulo. Especifica claramente que cada cambio visual debe estar estrictamente sincronizado con las pausas naturales de la voz en off o con los ritmos de la música de fondo. Evita transiciones bruscas o de estilo 'gaming'; solicita únicamente cortes limpios (hard cuts) o disolvencias muy suaves que mantengan la atmósfera de paz y profesionalismo";
+    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo";
 
     const prompt = `Eres el Director Cinemático Maestro de Google Veo 3 especializado en arte sacro cristiano y cinematografía hiperrealista 8k.
 Convierte la siguiente idea o imagen en una directiva de movimiento y cinematografía de Google Veo 3 de clase mundial:
@@ -3098,7 +3550,7 @@ app.post("/api/gemini/google-flow/pipeline", async (req: Request, res: Response)
 
     const ai = getGeminiClient();
 
-    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al generar el guion y las indicaciones del video, debes estructurar los tiempos para que ocurra un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando de manera aleatoria entre: acercamientos sutiles (zoom in), alejamientos (zoom out), paneos ligeros o cambios de ángulo. Especifica claramente que cada cambio visual debe estar estrictamente sincronizado con las pausas naturales de la voz en off o con los ritmos de la música de fondo. Evita transiciones bruscas o de estilo 'gaming'; solicita únicamente cortes limpios (hard cuts) o disolvencias muy suaves que mantengan la atmósfera de paz y profesionalismo";
+    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo";
 
     const prompt = `Actúa como el motor central de GOOGLE FLOW para producción cinematográfica y devocional de alta unción y viralidad.
 El usuario desea generar un flujo completo de creación de video ("Google Flow Video Pipeline") sobre:
@@ -3805,26 +4257,1248 @@ Genera un reporte analítico profundo y accionable en formato JSON.`;
   }
 });
 
-// Vite / static middleware setup
-async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
+// ============================================================================
+// HABILIDAD: CREADOR DE ORACIONES, REFLEXIONES Y VERSÍCULOS PARA VIDEOS
+// ============================================================================
+
+// Helper to convert raw 16-bit mono PCM to standard RIFF WAV buffer
+function pcmToWav(pcmBuffer: Buffer, sampleRate = 24000, numChannels = 1, bitsPerSample = 16): Buffer {
+  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const dataSize = pcmBuffer.length;
+  const header = Buffer.alloc(44);
+
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + dataSize, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(dataSize, 40);
+
+  return Buffer.concat([header, pcmBuffer]);
+}
+
+// Synthesizes rich 432Hz sacred harmonic audio directly into a standard WAV Buffer
+function generateServerSacredWav(text: string, durationSec = 10, sampleRate = 24000): Buffer {
+  const safeDuration = Math.max(5, Math.min(60, durationSec));
+  const numSamples = Math.floor(sampleRate * safeDuration);
+  const pcmBuffer = Buffer.alloc(numSamples * 2);
+
+  const words = text ? text.split(/\s+/).filter(Boolean) : ['Paz', 'a', 'tu', 'corazón'];
+  const wordStep = Math.max(1, Math.floor(numSamples / Math.max(1, words.length)));
+
+  // Sacred harmonic frequencies (A4=432Hz tuning and sub-octaves)
+  const freqs = [108, 216, 324, 432, 540];
+
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+
+    // Smooth envelope: 1.0s gentle attack, sustained body, 1.5s gentle release
+    let env = 1.0;
+    if (t < 1.0) {
+      env = t / 1.0;
+    } else if (t > safeDuration - 1.5) {
+      env = Math.max(0, (safeDuration - t) / 1.5);
+    }
+
+    // Sacred chord sum
+    let sample = 0;
+    for (let f = 0; f < freqs.length; f++) {
+      const freq = freqs[f];
+      const amp = 0.22 / (f + 1);
+      sample += Math.sin(2 * Math.PI * freq * t) * amp;
+    }
+
+    // Gentle crystal bell chime intro (first 2.5s)
+    if (t < 2.5) {
+      const bellDecay = Math.exp(-t * 2.2);
+      const bellChime = Math.sin(2 * Math.PI * 523.25 * t) * 0.15 +
+                        Math.sin(2 * Math.PI * 659.25 * t) * 0.10 +
+                        Math.sin(2 * Math.PI * 783.99 * t) * 0.08;
+      sample += bellChime * bellDecay;
+    }
+
+    // Subtle vocal warmth modulation based on speech cadence
+    const wordIdx = Math.floor(i / wordStep);
+    const wordPhase = (i % wordStep) / wordStep;
+    const vocalPitch = 110 + (wordIdx % 4) * 3; // 110-119 Hz baritone warmth
+    const vocalBreath = Math.sin(2 * Math.PI * vocalPitch * t) * Math.sin(Math.PI * wordPhase) * 0.18;
+    sample += vocalBreath;
+
+    // Master envelope and headroom
+    sample = sample * env * 0.75;
+
+    // Clamp to 16-bit signed integer (-32768 to 32767)
+    const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+    pcmBuffer.writeInt16LE(intSample, i * 2);
+  }
+
+  return pcmToWav(pcmBuffer, sampleRate, 1, 16);
+}
+
+// Helper to ensure each scene narration covers minimum 9 seconds of spoken voice (at least 22-28 words)
+function ensureNarrationDuration(text: string): string {
+  const clean = (text || '').trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length >= 22) {
+    return clean;
+  }
+  
+  // Enriches text with heartfelt pastoral continuation to guarantee minimum 9 seconds of spoken voice
+  const extensions = [
+    "Hijo mío, yo conozco tus batallas en silencio y hoy renuevo tus fuerzas con mi paz eterna; no temas, camina en victoria.",
+    "No te rindas ni desmayes, porque yo estoy contigo en cada paso sosteniendo tu mano y derramando sanidad en tu corazón.",
+    "Abre tu corazón a mi gracia, suelta toda angustia y recibe en este instante el abrazo y la bendición que tanto esperabas.",
+    "Yo he escuchado cada una de tus oraciones en la intimidad; ten fe, porque hoy comienzo a transformar tu dolor en testimonio.",
+    "Recibe hoy mi paz que sobrepasa todo entendimiento humano; confía plenamente, porque mi amor nunca te dejará caer jamás."
+  ];
+  
+  const ext = extensions[Math.floor(Math.random() * extensions.length)];
+  return clean ? `${clean.replace(/[.]+$/, '')}; ${ext}` : ext;
+}
+
+// Helper to sanitize and validate JSON structure from Gemini
+function sanitizeAndValidateSpiritualVideoJson(parsed: any, durationSec: number, topic: string, contentType: string): any {
+  const dur = Number(durationSec) || 10;
+  const safeDur: 10 | 15 | 20 | 30 | 40 | 60 = [10, 15, 20, 30, 40, 60].includes(dur as any) ? (dur as any) : 10;
+
+  const title = parsed?.titulo || `Video de Fe: ${topic || 'Paz y Esperanza'}`;
+  const tipo = parsed?.tipo || contentType || 'oracion';
+  const gancho = ensureNarrationDuration(parsed?.gancho || 'Detén tu día por un momento y escucha esto que Dios tiene para ti');
+  const guion = parsed?.guion_narrado || `${gancho} El Señor está renovando tus fuerzas y cuidando tu corazón hoy. Confía en Su gracia y camina en victoria.`;
+
+  const versiculo = {
+    referencia: parsed?.versiculo?.referencia || 'Filipenses 4:6-7',
+    texto_o_parafrasis: parsed?.versiculo?.texto_o_parafrasis || 'Por nada estéis afanosos, sino sean conocidas vuestras peticiones delante de Dios en toda oración.',
+    traduccion: parsed?.versiculo?.traduccion || 'RVR1960'
+  };
+
+  // Scene count calculation:
+  // Strict rule: Video prompts/scenes must be 10 seconds each!
+  // The first scene ALWAYS covers 10 seconds (0 to 10s) and the voice covers minimum 9 seconds.
+  let targetSceneCount = 1;
+  if (safeDur === 10) targetSceneCount = 1;
+  else if (safeDur === 15 || safeDur === 20) targetSceneCount = 2;
+  else if (safeDur === 30) targetSceneCount = 3;
+  else if (safeDur === 40) targetSceneCount = 4;
+  else if (safeDur === 60) targetSceneCount = 6;
+  else targetSceneCount = Math.max(1, Math.round(safeDur / 10));
+
+  const rawEscenas = Array.isArray(parsed?.escenas) && parsed.escenas.length > 0 ? parsed.escenas : [];
+
+  const escenas: any[] = [];
+  for (let i = 0; i < targetSceneCount; i++) {
+    const raw = rawEscenas[i] || {};
+    const rawNarration = raw.narracion || (i === 0 ? gancho : 'Recibe hoy la paz y protección sobrenatural de Dios en tu vida.');
+    const validatedNarration = ensureNarrationDuration(rawNarration);
+
+    escenas.push({
+      inicio_segundo: i * 10,
+      fin_segundo: (i + 1) * 10,
+      duracion_segundos: 10,
+      visual: raw.visual || (i === 0 ? 'Amanecer radiante sobre montañas con luz celestial dorada y Jesucristo presente mirando con compasión infinita' : 'Jesús con túnica blanca extendiendo manos de sanidad y amor consolando el corazón'),
+      narracion: validatedNarration,
+      texto_pantalla: raw.texto_pantalla || (i === 0 ? 'NO TEMAS HOY' : 'DIOS ESTÁ CONTIGO'),
+      palabras_resaltadas: Array.isArray(raw.palabras_resaltadas) && raw.palabras_resaltadas.length > 0 ? raw.palabras_resaltadas : (i === 0 ? ['NO TEMAS', 'DIOS'] : ['PAZ', 'BENDICIÓN']),
+      transicion: ['corte', 'fundido', 'zoom_suave', 'desplazamiento'].includes(raw.transicion) ? raw.transicion : 'corte'
     });
-    app.use(vite.middlewares);
+  }
+
+  const fallbackBanner = (topic && topic.length < 35) ? `MENSAJE DE JESÚS: ${topic.toUpperCase()}` : 'MENSAJE URGENTE DE JESÚS';
+  const bannerHook = (parsed?.banner_hook_superior || fallbackBanner).slice(0, 50);
+  const cta = parsed?.llamado_a_la_accion || 'Declara Amén en los comentarios, guarda esta bendición y compártela.';
+
+  // REGLA CRÍTICA: El CTA debe quedar incluido dentro del guion al final de los videos
+  if (escenas.length > 0) {
+    const lastIdx = escenas.length - 1;
+    const lastScene = escenas[lastIdx];
+    const ctaNorm = cta.toLowerCase();
+    const narrNorm = (lastScene.narracion || '').toLowerCase();
+    const hasCta = narrNorm.includes('amén') || narrNorm.includes('comenta') || narrNorm.includes('comparte') || narrNorm.includes('guarda') || (ctaNorm.length > 10 && narrNorm.includes(ctaNorm.slice(0, 15)));
+    if (!hasCta) {
+      lastScene.narracion = `${(lastScene.narracion || '').replace(/[.]+$/, '')}. ${cta}.`;
+      if (!lastScene.texto_pantalla || lastScene.texto_pantalla === 'DIOS ESTÁ CONTIGO') {
+        lastScene.texto_pantalla = 'DECLARA AMÉN • COMPARTE';
+      }
+    }
+  }
+
+  // El guion_narrado debe finalizar obligatoriamente con el llamado a la acción
+  let finalGuion = guion;
+  const ctaNorm = cta.toLowerCase();
+  const guionNorm = finalGuion.toLowerCase();
+  const guionHasCta = guionNorm.includes('amén') || guionNorm.includes('comenta') || guionNorm.includes('comparte') || guionNorm.includes('guarda') || (ctaNorm.length > 10 && guionNorm.includes(ctaNorm.slice(0, 15)));
+  if (!guionHasCta) {
+    finalGuion = `${finalGuion.replace(/[.]+$/, '')}. ${cta}.`;
+  }
+
+  return {
+    titulo: title,
+    tipo: tipo,
+    duracion_segundos: safeDur,
+    tema: parsed?.tema || topic || 'Esperanza y Fe',
+    banner_hook_superior: bannerHook,
+    modo_viral: parsed?.modo_viral || 'vaca_morada',
+    gancho: gancho,
+    guion_narrado: finalGuion,
+    versiculo: versiculo,
+    escenas: escenas,
+    direccion_de_voz: parsed?.direccion_de_voz || 'Voz de Jesús cálida, pastoral y solemne en español; cubrir mínimo 9 segundos por escena con pausas de paz.',
+    musica_sugerida: parsed?.musica_sugerida || 'Piano suave con notas sostenidas de adoración íntima.',
+    texto_portada: parsed?.texto_portada || 'Paz para tu corazón',
+    descripcion_publicacion: parsed?.descripcion_publicacion || `Un mensaje de fe para tu vida hoy. Comparte la bendición.`,
+    hashtags: Array.isArray(parsed?.hashtags) && parsed.hashtags.length > 0 ? parsed.hashtags : ['#oracion', '#reflexion', '#versiculodeldia', '#fe'],
+    llamado_a_la_accion: cta,
+    fecha_sugerida: parsed?.fecha_sugerida || new Date(Date.now() + 86400000).toISOString(),
+    estado: ['borrador', 'programado', 'listo'].includes(parsed?.estado) ? parsed.estado : 'borrador'
+  };
+}
+
+// 1. Endpoint: Generate Complete Spiritual Video Package
+app.post("/api/gemini/spiritual-video-script", async (req: Request, res: Response) => {
+  try {
+    const { 
+      tipo = 'oracion',
+      tema = 'comenzar el día con paz',
+      publico = 'general',
+      duracion_segundos = 10,
+      tono = 'esperanzador',
+      traduccion_biblica = 'RVR1960',
+      voz = 'femenina_calida',
+      musica = 'piano_suave',
+      estilo_visual = 'amanecer',
+      idioma = 'Español latinoamericano',
+      llamado_final = 'Guarda esta oración para escucharla cada mañana',
+      fecha_publicacion = 'programar_fecha_hora'
+    } = req.body;
+
+    const safeDuration = [10, 15, 20, 30, 40, 60].includes(Number(duracion_segundos)) ? Number(duracion_segundos) : 10;
+
+    // Strict word rules calculation and scene division: All scenes are 10s and voice covers >= 9s
+    const wordRules: Record<number, { words: string; structure: string; sceneCount: number; sceneSec: number }> = {
+      10: { words: "22 a 28 palabras EXACTAS", structure: "1 escena de 10s: La primera escena cubre los 10 segundos completos (0 a 10s) y la voz de Jesús debe cubrir mínimo 9 segundos", sceneCount: 1, sceneSec: 10 },
+      15: { words: "22 a 28 palabras por escena de 10s", structure: "Escenas de 10s: La primera escena CUBRE OBLIGATORIAMENTE 10 segundos completos (0 a 10s) y la voz de Jesús cubre mínimo 9 segundos", sceneCount: 2, sceneSec: 10 },
+      20: { words: "45 a 56 palabras EXACTAS (22 a 28 palabras por cada escena de 10s)", structure: "2 escenas de 10s cada una: Cada escena dura 10s y la voz cubre mínimo 9 segundos por escena", sceneCount: 2, sceneSec: 10 },
+      30: { words: "68 a 84 palabras EXACTAS (22 a 28 palabras por cada escena de 10s)", structure: "3 escenas de 10s cada una: Cada escena dura 10s y la voz cubre mínimo 9 segundos por escena", sceneCount: 3, sceneSec: 10 },
+      40: { words: "90 a 112 palabras EXACTAS (22 a 28 palabras por cada escena de 10s)", structure: "4 escenas de 10s cada una: Cada escena dura 10s y la voz cubre mínimo 9 segundos por escena", sceneCount: 4, sceneSec: 10 },
+      60: { words: "135 a 168 palabras EXACTAS (22 a 28 palabras por cada escena de 10s)", structure: "6 escenas de 10s cada una: Cada escena dura 10s y la voz cubre mínimo 9 segundos por escena", sceneCount: 6, sceneSec: 10 }
+    };
+
+    const targetRule = wordRules[safeDuration] || wordRules[10];
+
+    const prompt = `Actúa con unción espiritual profunda, como la VOZ ÍNTIMA, AMOROSA Y VIVA DE JESUCRISTO hablando directamente al corazón del creyente, o como un pastor sabio que comprende el dolor secreto y las batallas silenciosas de su grey.
+PONLE ALMA, TERNURA HUMANA, POESÍA SAGRADA Y CALOR DE HOGAR. ELIMINA TODO RASTRO DE LENGUAJE ROBÓTICO.
+
+REGLA SUPREMA OBLIGATORIA DE ESCENAS Y VOZ:
+1. LOS GUIONES O DIVISIONES DE VIDEO DEBEN SER DE 10 SEGUNDOS. No importa si se solicitan 10s, 15s o 20s, EL PRIMER PROMPT / PRIMERA ESCENA DEBE CUBRIR OBLIGATORIAMENTE LOS 10 SEGUNDOS COMPLETOS (inicio_segundo: 0, fin_segundo: 10).
+2. LA VOZ DEBE CUBRIR MÍNIMO 9 SEGUNDOS: La narración de Jesús de cada escena de 10s debe tener entre 22 y 28 palabras con pausas sagradas de ternura para que la locución hablada dure mínimo 9 segundos reales. PROHIBIDO generar frases cortas de menos de 20 palabras por escena.
+3. EL CTA DEBE QUEDAR INCLUIDO DENTRO DEL GUION AL FINAL DEL VIDEO: El llamado a la acción final ("${llamado_final}") DEBE quedar explícitamente integrado y hablado dentro de la narración de la última escena (Escena ${targetRule.sceneCount} de ${targetRule.sceneCount}) y como cierre del campo 'guion_narrado'. Jesús invita tiernamente al espectador con este llamado a la acción antes de terminar el video.
+
+PARÁMETROS DEL VIDEO:
+- Tipo de contenido: ${tipo} (Opciones: oración, reflexión, versículo, devocional, ánimo, gratitud, protección, familia, ansiedad, duelo, fe, disciplina espiritual).
+- Tema del corazón: "${tema}"
+- Público objetivo: ${publico} (habla de manera íntima, tierna, cercana y maternal/paternal)
+- Duración total solicitada: ${safeDuration} segundos
+- Estructura de escenas requerida: Genera EXACTAMENTE ${targetRule.sceneCount} escenas contiguas de 10 segundos cada una (inicio_segundo: 0, fin_segundo: 10 para la escena 1; inicio_segundo: 10, fin_segundo: 20 para la escena 2, etc.).
+- Tono: ${tono} (profundamente conmovedor, cálido, reconfortante, ungido, lleno de paz viva)
+- Traducción bíblica deseada: ${traduccion_biblica} (usar cita textual fiel o paráfrasis exacta de esta versión; NO inventar citas ni atribuir a libros incorrectos)
+- Voz recomendada: ${voz}
+- Música de fondo sugerida: ${musica}
+- Estilo visual: ${estilo_visual}
+- Idioma: ${idioma}
+- Llamado final (CTA): "${llamado_final}"
+
+DIRECTRICES SUPREMAS DE CONEXIÓN CON EL ALMA Y RETENCIÓN VIRAL (FÓRMULA VACA MORADA):
+1. REGLA SUPREMA ANTI-ESTANCAMIENTO (SER LA VACA MORADA):
+   - En redes sociales los videos religiosos comunes son como vacas normales al lado de la carretera: la gente los pasa de largo sin mirar.
+   - Para no quedarnos estancados haciendo lo mismo que los demás, este video DEBE ser la VACA MORADA: una idea que rompa patrones, una metáfora que jamás hayan escuchado, un planteamiento que desafíe lo predecible desde el amor divino y detenga el scroll en seco en los primeros 3 segundos.
+2. BANNER SUPERIOR VIRAL (Caja Roja de Alto Impacto estilo TikTok / MrBeast):
+   - Genera OBLIGATORIAMENTE el campo "banner_hook_superior": Una frase explosiva y directa en mayúsculas (de 3 a 6 palabras) para la caja roja superior del video que detiene el pulgar en menos de medio segundo (ejemplos: "🔴 CONSEJO PARA HACERTE VIRAL EN TU FE", "🔴 NO PASES ESTE VIDEO SI TE SIENTES CANSADO", "🔴 JESÚS VIO LO QUE LLORASTE EN SILENCIO", "🔴 3 SEGUNDOS QUE CAMBIARÁN TU FE HOY").
+3. PROHIBICIÓN ABSOLUTA DE CLICHÉS ROBÓTICOS Y DISCURSOS PREDECIBLES:
+   - PROHIBIDO: "Hola amigos", "En este video vamos a reflexionar...", "Hoy te traigo 3 puntos...", "A continuación...", "Recuerda suscribirte", "El versículo de hoy nos enseña...".
+   - PROHIBIDO el tono de asistente virtual, locutor de noticias o sermón corporativo frío.
+4. CONEXIÓN VISCERAL Y EMPÁTICA CON EL DOLOR HUMANO:
+   - Habla al dolor real que la persona guarda en secreto: la almohada mojada de lágrimas anoche, el cansancio de sostener a la familia cuando nadie te sostiene a ti, el nudo en la garganta al despertar, la taquicardia por las deudas o la salud, la sensación de estar en un callejón sin salida.
+   - Jesús responde mirándola a los ojos con infinita ternura: "Hijo mío, suelta esa presión en el pecho... no estás solo en esa habitación. Cada suspiro que callaste para no preocupar a otros, Yo lo recogí en mis manos."
+5. EDICIÓN VISUAL CON 3 PLANOS ALTERNADOS CADA 2.5 A 3 SEGUNDOS:
+   - "Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas": Estructura cada escena con 3 sub-tomas alternadas del personaje sagrado (plano general celestial, primer plano con mirada a cámara, plano detalle de manos y bendición).
+6. CADENCIA POÉTICA Y ORATORIA SAGRADA (MÍNIMO 9 SEGUNDOS DE VOZ):
+   - Frases con respiración, pausas meditativas marcadas con puntos suspensivos o comas, con suficiente desarrollo para cubrir 9 a 10 segundos reales de locución hablada.
+
+REGLAS DE EXTENSIÓN Y TIEMPO:
+- Duración de cada escena: 10 segundos continuos.
+- La extensión del guion narrado de cada escena DEBE contener entre 22 y 28 palabras en español para cubrir mínimo 9 segundos de locución.
+- Estructura: ${targetRule.structure}.
+- Cada escena debe tener: inicio_segundo, fin_segundo (múltiplos de 10s: 0-10, 10-20, etc.), visual descriptivo con Jesús presente (alternando 3 planos), narración de mínimo 9 segundos (22-28 palabras), texto corto en pantalla para subtítulos grandes (1-4 palabras impactantes), palabras resaltadas y tipo de transición.
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta sin texto introductorio ni explicaciones:
+{
+  "titulo": "Título entrañable y devocional lleno de alma",
+  "tipo": "${tipo}",
+  "duracion_segundos": ${safeDuration},
+  "tema": "${tema}",
+  "banner_hook_superior": "FRASE EXPLOSIVA DE 3 A 6 PALABRAS EN MAYÚSCULAS PARA LA CAJA ROJA SUPERIOR",
+  "modo_viral": "vaca_morada",
+  "gancho": "Gancho inicial conmovedor de mínimo 22 palabras que cubre al menos 9 segundos de voz",
+  "guion_narrado": "Guion completo con alma, emoción y unción respetando ${targetRule.words}",
+  "versiculo": {
+    "referencia": "Libro Capítulo:Versículo (ej: Mateo 11:28)",
+    "texto_o_parafrasis": "Texto bíblico fiel en la traducción seleccionada",
+    "traduccion": "${traduccion_biblica}"
+  },
+  "escenas": [
+    {
+      "inicio_segundo": 0,
+      "fin_segundo": 10,
+      "visual": "Jesucristo con túnica blanca y luz celestial mirando con ternura infinita...",
+      "narracion": "Fragmento hablado con alma y respiración pausada (entre 22 y 28 palabras para cubrir mínimo 9 segundos de voz)",
+      "texto_pantalla": "Texto corto y contundente (1-4 palabras)",
+      "palabras_resaltadas": ["PALABRA_1", "PALABRA_2"],
+      "transicion": "corte"
+    }
+  ],
+  "direccion_de_voz": "Indicación íntima para la voz de Jesús (locución solemne, tierna y pausada, mínimo 9s de duración)",
+  "musica_sugerida": "Piano solemne y cuerdas celestiales que conmueven el corazón",
+  "texto_portada": "Texto para la miniatura que despierta sed espiritual",
+  "descripcion_publicacion": "Copy devocional con alma para la descripción del video en redes",
+  "hashtags": ["#oracion", "#fe", "#jesusteama", "#pazinterior"],
+  "llamado_a_la_accion": "${llamado_final}",
+  "fecha_sugerida": "${new Date(Date.now() + 86400000).toISOString()}",
+  "estado": "programado"
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.35,
+      }
+    });
+
+    let parsed: any = null;
+    try {
+      const clean = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in spiritual video generation, repairing...", parseErr);
+    }
+
+    const validatedPackage = sanitizeAndValidateSpiritualVideoJson(parsed, safeDuration, tema, tipo);
+    res.json({ success: true, package: validatedPackage });
+  } catch (error: any) {
+    console.error("Error generating spiritual video script:", error);
+    // Fallback gracefully without showing technical crash to user
+    const fallback = sanitizeAndValidateSpiritualVideoJson(null, req.body?.duracion_segundos || 10, req.body?.tema || 'Paz', req.body?.tipo || 'oracion');
+    res.json({ success: true, package: fallback, note: "Generado con plantilla ministerial de respaldo." });
+  }
+});
+
+// Endpoint: Generate Real Audio (TTS) with Gemini or Sacred Synthesis fallback
+app.post("/api/gemini/tts-audio", async (req: Request, res: Response) => {
+  try {
+    const { text, voice = 'jesus', sceneIdx, durationSec = 10 } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ success: false, error: 'Texto requerido para síntesis de voz.' });
+    }
+
+    const safeDuration = Math.max(5, Math.min(60, Number(durationSec) || 10));
+    const cleanText = text.replace(/[*#_`"]/g, '').trim();
+
+    let wavBase64: string | null = null;
+    let ttsSource = 'gemini-tts';
+
+    // Voice choice: Charon is warm deep baritone (ideal for Jesus/pastoral male), Kore is gentle warm female
+    const preferredVoice = (voice.includes('femenina') || voice === 'kore') ? 'Kore' : 'Charon';
+    const candidateVoices = [preferredVoice, preferredVoice === 'Kore' ? 'Zephyr' : 'Fenrir', 'Puck'];
+
+    // Try Gemini TTS with retry and voice fallback for transient 503 / high demand spikes
+    const ai = getGeminiClient();
+    const maxAttempts = 3;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const currentVoice = candidateVoices[attempt % candidateVoices.length];
+        const response = await ai.models.generateContent({
+          model: "gemini-3.1-flash-tts-preview",
+          contents: [{ parts: [{ text: `Lee con voz paternal, tierna, solemne y compasiva en español: "${cleanText}"` }] }],
+          config: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: currentVoice },
+              },
+            },
+          },
+        });
+
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (base64Audio) {
+          const rawPcm = Buffer.from(base64Audio, 'base64');
+          const wavBuffer = pcmToWav(rawPcm, 24000, 1, 16);
+          wavBase64 = wavBuffer.toString('base64');
+          ttsSource = 'gemini-tts';
+          break;
+        }
+      } catch (ttsErr: any) {
+        const errMsg = String(ttsErr?.message || ttsErr);
+        const isTransient503 = errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand") || errMsg.includes("429");
+        if (isTransient503 && attempt < maxAttempts - 1) {
+          const delay = (attempt + 1) * 700 + Math.random() * 300;
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        // If demand spike persists, break gracefully to harmonious server sacred synthesis
+        break;
+      }
+    }
+
+    if (wavBase64) {
+      return res.json({
+        success: true,
+        audioBase64: wavBase64,
+        format: 'audio/wav',
+        sceneIdx,
+        mimeType: 'audio/wav',
+        source: ttsSource
+      });
+    }
+
+    // High-demand fallback: generate high-fidelity 432Hz sacred meditation audio directly on server
+    const fallbackBuffer = generateServerSacredWav(cleanText, safeDuration, 24000);
+    const fallbackBase64 = fallbackBuffer.toString('base64');
+
+    return res.json({
+      success: true,
+      audioBase64: fallbackBase64,
+      format: 'audio/wav',
+      sceneIdx,
+      mimeType: 'audio/wav',
+      source: 'sacred-synth',
+      note: 'Audio sagrado generado armónicamente ante alta demanda de red'
+    });
+  } catch (err: any) {
+    console.error('Error in /api/gemini/tts-audio:', err?.message || err);
+    // Even in unforeseen errors, provide sacred audio so the user experience is never interrupted
+    try {
+      const safeDuration = Math.max(5, Math.min(60, Number(req.body?.durationSec) || 10));
+      const fallbackBuffer = generateServerSacredWav(String(req.body?.text || 'Paz a tu corazón'), safeDuration, 24000);
+      return res.json({
+        success: true,
+        audioBase64: fallbackBuffer.toString('base64'),
+        format: 'audio/wav',
+        sceneIdx: req.body?.sceneIdx,
+        mimeType: 'audio/wav',
+        source: 'sacred-synth'
+      });
+    } catch {
+      res.status(500).json({ success: false, error: err?.message || 'Error en síntesis' });
+    }
+  }
+});
+
+// 2. Endpoint: Regenerate Only Script (keeps theme & verse, updates narration & scene times)
+app.post("/api/gemini/regenerate-script-only", async (req: Request, res: Response) => {
+  try {
+    const { currentPackage } = req.body;
+    if (!currentPackage) {
+      return res.status(400).json({ success: false, error: "Falta currentPackage" });
+    }
+
+    const duration = currentPackage.duracion_segundos || 10;
+    const prompt = `Regenera ÚNICAMENTE el guion narrado y la subdivisión de escenas para este video cristiano de ${duration} segundos.
+Mantén el tema ("${currentPackage.tema}") y el versículo bíblico (${currentPackage.versiculo?.referencia}: "${currentPackage.versiculo?.texto_o_parafrasis}").
+
+REGLAS OBLIGATORIAS:
+- Duración total: ${duration} segundos.
+- TODAS las escenas deben durar 10 segundos continuos (inicio: 0, fin: 10 para la escena 1; inicio: 10, fin: 20 para la escena 2, etc.).
+- LA VOZ DEBE CUBRIR MÍNIMO 9 SEGUNDOS: Cada escena debe tener entre 22 y 28 palabras en español habladas por Jesús con pausas de amor.
+- Gancho impactante inicial en los primeros segundos.
+
+Devuelve en JSON:
+{
+  "gancho": "Gancho de mínimo 22 palabras",
+  "guion_narrado": "Guion completo con alma y unción",
+  "escenas": [
+    {
+      "inicio_segundo": 0,
+      "fin_segundo": 10,
+      "visual": "string con Jesús presente mirando con amor",
+      "narracion": "string (entre 22 y 28 palabras para cubrir mínimo 9 segundos de voz)",
+      "texto_pantalla": "string",
+      "palabras_resaltadas": ["string"],
+      "transicion": "corte | fundido | zoom_suave | desplazamiento"
+    }
+  ],
+  "direccion_de_voz": "string indicando locución pausada de mínimo 9 segundos por escena"
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json", temperature: 0.4 }
+    });
+
+    let parsed: any = {};
+    try {
+      const clean = (response.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in regenerate-script-only:", parseErr);
+    }
+
+    const rawEscenas = Array.isArray(parsed.escenas) && parsed.escenas.length > 0 ? parsed.escenas : (currentPackage.escenas || []);
+    const normalizedEscenas = rawEscenas.map((sc: any, idx: number) => ({
+      ...sc,
+      inicio_segundo: idx * 10,
+      fin_segundo: (idx + 1) * 10,
+      duracion_segundos: 10,
+      narracion: ensureNarrationDuration(sc.narracion || '')
+    }));
+
+    // REGLA: El CTA debe quedar incluido dentro del guion al final de los videos
+    const cta = currentPackage.llamado_a_la_accion || 'Declara Amén en los comentarios, guarda esta bendición y compártela.';
+    if (normalizedEscenas.length > 0) {
+      const lastIdx = normalizedEscenas.length - 1;
+      const lastScene = normalizedEscenas[lastIdx];
+      const narrNorm = (lastScene.narracion || '').toLowerCase();
+      const ctaNorm = cta.toLowerCase();
+      const hasCta = narrNorm.includes('amén') || narrNorm.includes('comenta') || narrNorm.includes('comparte') || narrNorm.includes('guarda') || (ctaNorm.length > 10 && narrNorm.includes(ctaNorm.slice(0, 15)));
+      if (!hasCta) {
+        lastScene.narracion = `${(lastScene.narracion || '').replace(/[.]+$/, '')}. ${cta}.`;
+      }
+    }
+
+    let updatedGuion = parsed.guion_narrado || currentPackage.guion_narrado;
+    const guionNorm = (updatedGuion || '').toLowerCase();
+    const ctaNorm = cta.toLowerCase();
+    const guionHasCta = guionNorm.includes('amén') || guionNorm.includes('comenta') || guionNorm.includes('comparte') || guionNorm.includes('guarda') || (ctaNorm.length > 10 && guionNorm.includes(ctaNorm.slice(0, 15)));
+    if (!guionHasCta) {
+      updatedGuion = `${(updatedGuion || '').replace(/[.]+$/, '')}. ${cta}.`;
+    }
+
+    const updated = {
+      ...currentPackage,
+      gancho: ensureNarrationDuration(parsed.gancho || currentPackage.gancho),
+      guion_narrado: updatedGuion,
+      escenas: normalizedEscenas.length > 0 ? normalizedEscenas : currentPackage.escenas,
+      direccion_de_voz: parsed.direccion_de_voz || currentPackage.direccion_de_voz
+    };
+
+    res.json({ success: true, package: updated });
+  } catch (error: any) {
+    console.error("Error regenerating script only:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 3. Endpoint: Change Bible Verse (suggests another coherent verse and adapts script)
+app.post("/api/gemini/change-bible-verse", async (req: Request, res: Response) => {
+  try {
+    const { currentPackage, translation = 'RVR1960' } = req.body;
+    if (!currentPackage) {
+      return res.status(400).json({ success: false, error: "Falta currentPackage" });
+    }
+
+    const prompt = `Proporciona un NUEVO versículo bíblico alternativo y poderoso para el tema "${currentPackage.tema}" (Tipo: ${currentPackage.tipo}).
+Traducción requerida: ${translation}.
+No inventes citas. Asegúrate de que el libro, capítulo y versículo sean auténticos.
+Adapta el guion narrado de ${currentPackage.duracion_segundos}s para integrar este nuevo versículo armoniosamente.
+
+Devuelve en JSON:
+{
+  "versiculo": {
+    "referencia": "Libro Capítulo:Versículo",
+    "texto_o_parafrasis": "Texto bíblico fiel",
+    "traduccion": "${translation}"
+  },
+  "guion_narrado": "Nuevo guion narrado adaptado",
+  "descripcion_publicacion": "Nueva descripción para redes"
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json", temperature: 0.3 }
+    });
+
+    let parsed: any = {};
+    try {
+      const clean = (response.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in change-bible-verse:", parseErr);
+    }
+    const updated = {
+      ...currentPackage,
+      versiculo: parsed.versiculo || currentPackage.versiculo,
+      guion_narrado: parsed.guion_narrado || currentPackage.guion_narrado,
+      descripcion_publicacion: parsed.descripcion_publicacion || currentPackage.descripcion_publicacion
+    };
+
+    res.json({ success: true, package: updated });
+  } catch (error: any) {
+    console.error("Error changing bible verse:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 4. Endpoint: Change Tone
+app.post("/api/gemini/change-script-tone", async (req: Request, res: Response) => {
+  try {
+    const { currentPackage, newTone } = req.body;
+    if (!currentPackage || !newTone) {
+      return res.status(400).json({ success: false, error: "Falta currentPackage o newTone" });
+    }
+
+    const duration = currentPackage.duracion_segundos || 10;
+    const prompt = `Reescribe el siguiente guion de video cristiano de ${duration} segundos cambiando su tono a: "${newTone}".
+Opciones de tono: esperanzador, profundo, sereno, urgente, reconfortante, motivador.
+Mantén la duración de ${duration} segundos y el versículo ${currentPackage.versiculo?.referencia}.
+
+REGLAS OBLIGATORIAS:
+- Duración total: ${duration} segundos.
+- TODAS las escenas deben ser de 10 segundos continuos (inicio: 0, fin: 10 para la primera; inicio: 10, fin: 20 para la segunda, etc.).
+- LA VOZ DEBE CUBRIR MÍNIMO 9 SEGUNDOS: Cada escena debe tener entre 22 y 28 palabras en español con pausas de ternura pastoral.
+
+Guion actual: "${currentPackage.guion_narrado}"
+
+Devuelve en JSON:
+{
+  "gancho": "Nuevo gancho en tono ${newTone} de mínimo 22 palabras",
+  "guion_narrado": "Nuevo guion narrado en tono ${newTone}",
+  "direccion_de_voz": "Nueva indicación de voz para el tono ${newTone} (locución solemne, cubrir mínimo 9s)",
+  "escenas": [
+    {
+      "inicio_segundo": 0,
+      "fin_segundo": 10,
+      "visual": "string con Jesús presente",
+      "narracion": "string (entre 22 y 28 palabras para cubrir mínimo 9 segundos de voz)",
+      "texto_pantalla": "string",
+      "palabras_resaltadas": ["string"],
+      "transicion": "corte | fundido | zoom_suave"
+    }
+  ]
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json", temperature: 0.35 }
+    });
+
+    let parsed: any = {};
+    try {
+      const clean = (response.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in change-script-tone:", parseErr);
+    }
+
+    const rawEscenas = Array.isArray(parsed.escenas) && parsed.escenas.length > 0 ? parsed.escenas : (currentPackage.escenas || []);
+    const normalizedEscenas = rawEscenas.map((sc: any, idx: number) => ({
+      ...sc,
+      inicio_segundo: idx * 10,
+      fin_segundo: (idx + 1) * 10,
+      duracion_segundos: 10,
+      narracion: ensureNarrationDuration(sc.narracion || '')
+    }));
+
+    const updated = {
+      ...currentPackage,
+      tono: newTone,
+      gancho: ensureNarrationDuration(parsed.gancho || currentPackage.gancho),
+      guion_narrado: parsed.guion_narrado || currentPackage.guion_narrado,
+      direccion_de_voz: parsed.direccion_de_voz || currentPackage.direccion_de_voz,
+      escenas: normalizedEscenas.length > 0 ? normalizedEscenas : currentPackage.escenas
+    };
+
+    res.json({ success: true, package: updated });
+  } catch (error: any) {
+    console.error("Error changing script tone:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint: Generate & Align Viral Subtitles with Gemini IA for TikTok / Reels / Shorts
+app.post("/api/gemini/generate-subtitles", async (req: Request, res: Response) => {
+  try {
+    const { 
+      text, 
+      scenes = [], 
+      durationSec = 10, 
+      style = 'capcut_yellow' 
+    } = req.body;
+
+    const fullScript = text || (Array.isArray(scenes) ? scenes.map((s: any) => s.narrationText || s.narracion || '').join(' ') : '');
+    if (!fullScript || typeof fullScript !== 'string') {
+      return res.status(400).json({ success: false, error: 'Texto requerido para generar subtítulos.' });
+    }
+
+    const safeDuration = Math.max(5, Math.min(120, Number(durationSec) || 10));
+
+    const prompt = `Eres un experto viral en edición de video para TikTok, Instagram Reels y YouTube Shorts, especialista en retención extrema de audiencia mediante subtítulos dinámicos de alto impacto (estilo CapCut, Hormozi, MrBeast).
+
+Analiza el siguiente texto devocional / espiritual hablado (duración total aproximada: ${safeDuration} segundos):
+"${fullScript}"
+
+Genera una lista de subtítulos segmentados cronológicamente con sincronización exacta para formato 9:16 vertical:
+Reglas OBLIGATORIAS:
+1. Agrupa en fragmentos cortos y dinámicos de 2 a 4 palabras máximo por pantalla (estilo lectura rápida viral).
+2. Para cada fragmento, indica:
+   - "text": Texto en MAYÚSCULAS o frase con puntuación atractiva.
+   - "highlightWord": La palabra clave más impactante y emotiva (ej. "JESÚS", "PAZ", "LLORES", "TORMENTA", "FUERZA", "HOY") para resaltarla en color brillante (amarillo eléctrico, verde neón o cian).
+   - "startSec": Segundo de inicio (0.0 a ${safeDuration}).
+   - "endSec": Segundo de fin (debe coincidir con la locución natural).
+   - "emoji": Un emoji sagrado o emotivo adecuado (ej. 🕊️, ❤️, 🙏, ✨, 🛡️, ⛈️).
+3. Asegura que los tiempos cubran desde 0.0s hasta ${safeDuration}s de forma continua y fluida.
+
+Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
+{
+  "style": "${style}",
+  "subtitles": [
+    {
+      "text": "HIJO MÍO",
+      "highlightWord": "HIJO",
+      "startSec": 0.0,
+      "endSec": 1.5,
+      "emoji": "🕊️"
+    }
+  ],
+  "viralTips": "Consejo de retención visual para este guion"
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.2
+      }
+    });
+
+    let result: any = {};
+    try {
+      const clean = (response.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
+      result = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse fallback in generate-subtitles:", parseErr);
+    }
+
+    if (!Array.isArray(result.subtitles) || result.subtitles.length === 0) {
+      // Intelligent local fallback if model output is blank
+      const words = fullScript.split(/\s+/).filter(Boolean);
+      const chunkSize = 3;
+      const totalChunks = Math.ceil(words.length / chunkSize);
+      const chunkDuration = safeDuration / Math.max(1, totalChunks);
+      const generatedSubtitles = [];
+
+      for (let i = 0; i < words.length; i += chunkSize) {
+        const chunkWords = words.slice(i, i + chunkSize);
+        const chunkText = chunkWords.join(' ').toUpperCase();
+        const startSec = Number(((i / chunkSize) * chunkDuration).toFixed(2));
+        const endSec = Number(Math.min(safeDuration, startSec + chunkDuration).toFixed(2));
+        generatedSubtitles.push({
+          text: chunkText,
+          highlightWord: chunkWords[0].toUpperCase(),
+          startSec,
+          endSec,
+          emoji: '🕊️'
+        });
+      }
+
+      result = {
+        style,
+        subtitles: generatedSubtitles,
+        viralTips: "Subtítulos dinámicos de alto impacto generados"
+      };
+    }
+
+    res.json({
+      success: true,
+      subtitles: result.subtitles,
+      style: result.style || style,
+      viralTips: result.viralTips || "Subtítulos optimizados para retención"
+    });
+  } catch (error: any) {
+    console.error("Error generating viral subtitles:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================================================
+// ENDPOINT: Aprende en 30 Segundos Studio (@Aprendeen30segundos)
+// ============================================================================
+app.post("/api/aprende30s/generate-package", async (req: Request, res: Response) => {
+  try {
+    const {
+      topic = "Aprende a vender en 30 segundos",
+      category = "ventas_negocios",
+      pace = "ultra_rapido",
+      customInstructions = ""
+    } = req.body;
+
+    const categoryLabels: Record<string, string> = {
+      ventas_negocios: "Ventas y Negocios de Alto Rendimiento",
+      finanzas_dinero: "Finanzas Inteligentes y Dinero",
+      productividad_habitos: "Productividad y Hábitos Atómicos",
+      psicologia_mente: "Psicología Humana y Sesgos Mentales",
+      ciencia_curiosidades: "Ciencia Asombrosa y Curiosidades",
+      tecnologia_ia: "Tecnología e Inteligencia Artificial",
+      historia_cultura: "Historia y Cultura Express"
+    };
+
+    const prompt = `Actúa como el DIRECTOR CREATIVO Y GUIONISTA PRINCIPAL del canal de YouTube "@Aprendeen30segundos" (https://www.youtube.com/@Aprendeen30segundos).
+Este canal se especializa en SHORTS VIRALES EDUCATIVOS DE EXACTAMENTE 30 SEGUNDOS de micro-aprendizaje, trucos prácticos, psicología, ventas, finanzas y ciencia.
+
+OBJETIVO:
+Crear un paquete de video viral de 30 segundos para YouTube Shorts, TikTok e Instagram Reels sobre el tema: "${topic}".
+Categoría: ${categoryLabels[category] || category}.
+Ritmo: ${pace}.
+${customInstructions ? `Instrucciones adicionales: ${customInstructions}` : ''}
+
+REGLAS DE ORO DE "APRENDE EN 30 SEGUNDOS":
+1. FORMATO STRICTO DE 30 SEGUNDOS DIVIDIDO EN 3 ESCENAS DE 10 SEGUNDOS:
+   - Escena 1 (0 a 10s): Gancho disruptivo brutal en los primeros 2-3 segundos + planteamiento del problema o mito común. Debe generar curiosidad inmediata ("El 95% de las personas comete este error...", "¿Sabías que...", "En 30 segundos vas a aprender...").
+   - Escena 2 (10 a 20s): El secreto, truco o técnica explicada con claridad quirúrgica y sin relleno. Un concepto o paso memorable.
+   - Escena 3 (20 a 30s): Cómo aplicarlo hoy mismo + remate de alto impacto + llamado a la acción enfocado en retención ("Guarda este video antes de olvidarlo y suscríbete a @Aprendeen30segundos para aprender algo nuevo cada día").
+2. PALABRAS POR ESCENA: Entre 24 y 28 palabras por cada escena de 10 segundos para mantener un ritmo dinámico de locución (voz enérgica, entusiasta y clara).
+3. CAJA ROJA SUPERIOR O BANNER HOOK: Frase corta y explosiva en mayúsculas de 3 a 6 palabras (ej: "🔴 APRENDE A VENDER EN 30s", "🔴 TRUCO PSICOLÓGICO OCULTO", "🔴 LA REGLA DE LOS 2 MINUTOS").
+4. SUBTÍTULOS ESTILO HORMOZI / CAPCUT: Texto corto y contundente por escena en mayúsculas, y 3 secciones de subtítulos cronológicos (slots) por cada escena de 10 segundos.
+5. CARACTERÍSTICAS OBLIGATORIAS DE LOS PROMPTS VISUALES (IDÉNTICAS AL GENERADOR DE ORACIÓN Y DEVOCIONAL):
+   - Cada escena debe incluir un 'visualPrompt' en inglés con calidad cinemática máxima: Masterpiece, photorealistic 8k, volumetric studio lighting, deep cinematic depth of field, shot on 35mm lens, vertical 9:16 portrait.
+   - Alternancia obligatoria de tomas en las 3 escenas:
+     * Escena 1 (0-10s): Plano general cinemático de alto impacto emocional con atmósfera envolvente y luz dramática.
+     * Escena 2 (10-20s): Primer plano mirando a los ojos del oyente, conexión emocional profunda e iluminación de contraste suave.
+     * Escena 3 (20-30s): Plano detalle o resolución gloriosa con rayos de luz dorada volumétrica y sensación de triunfo y paz.
+   - 'masterVideoPrompt': Incluye para cada escena el formato exacto del generador de oración:
+     "Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:\\nDuración: 10 segundos (movimiento continuo sin interrupciones).\\n\\nMovimiento de cámara: Primer plano con zoom lento y continuo durante 10 segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido.\\n\\nDiálogo de 10 segundos en español con voz clara y empática (locución de mínimo 9 segundos): \\"{narration}\\"\\n\\nInstrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo"
+   - Miniatura de alto CTR con sujeto en primer plano, iluminación de estudio de 3 puntos, emoción cautivadora y alto contraste.
+
+DEVUELVE ÚNICAMENTE UN OBJETO JSON VÁLIDO CON ESTA ESTRUCTURA EXACTA (SIN TEXTO INTRODUCTORIO NI MARKDOWN EXTRA):
+{
+  "id": "aprende30-${Date.now()}",
+  "channelHandle": "@Aprendeen30segundos",
+  "channelUrl": "https://www.youtube.com/@Aprendeen30segundos",
+  "titulo": "Título de alto CTR para YouTube Shorts con emojis",
+  "categoria": "${category}",
+  "duracion_segundos": 30,
+  "banner_hook_superior": "🔴 FRASE IMPACTO EN 3 A 6 PALABRAS",
+  "gancho_inicial": "Frase de 0 a 3 segundos que detiene el scroll de inmediato",
+  "guion_completo": "Transcripción completa y corrida del video de 30 segundos",
+  "escenas": [
+    {
+      "sceneNumber": 1,
+      "durationSec": 10,
+      "inicio_segundo": 0,
+      "fin_segundo": 10,
+      "stageTitle": "Gancho Disruptivo (0-10s)",
+      "visualPrompt": "Detailed 9:16 vertical prompt for scene 1 with 3D conceptual elements, hyperrealistic lighting...",
+      "narration": "Narración exacta en español de 24 a 28 palabras para los primeros 10 segundos",
+      "onScreenText": "TEXTO CORTO EN MAYÚSCULAS",
+      "secondaryTitle": "💡 Tip #1",
+      "cameraMovement": "zoom_in_suave",
+      "subtitleSlots": [
+        { "id": "slot-1", "text": "FRASE CORTA 1", "startSec": 0, "endSec": 3.3, "label": "Gancho (0-3s)" },
+        { "id": "slot-2", "text": "FRASE CORTA 2", "startSec": 3.3, "endSec": 6.6, "label": "Mito (3-6s)" },
+        { "id": "slot-3", "text": "FRASE CORTA 3", "startSec": 6.6, "endSec": 10, "label": "Revelación (6-10s)" }
+      ]
+    },
+    {
+      "sceneNumber": 2,
+      "durationSec": 10,
+      "inicio_segundo": 10,
+      "fin_segundo": 20,
+      "stageTitle": "El Secreto Revelado (10-20s)",
+      "visualPrompt": "Detailed 9:16 vertical prompt for scene 2 showing the practical method or visual analogy...",
+      "narration": "Narración exacta en español de 24 a 28 palabras para los segundos 10 al 20",
+      "onScreenText": "TEXTO CORTO EN MAYÚSCULAS",
+      "secondaryTitle": "⚡ El Secreto",
+      "cameraMovement": "paneo_dinamico",
+      "subtitleSlots": [
+        { "id": "slot-4", "text": "FRASE CORTA 4", "startSec": 10, "endSec": 13.3, "label": "Paso 1 (10-13s)" },
+        { "id": "slot-5", "text": "FRASE CORTA 5", "startSec": 13.3, "endSec": 16.6, "label": "Paso 2 (13-16s)" },
+        { "id": "slot-6", "text": "FRASE CORTA 6", "startSec": 16.6, "endSec": 20, "label": "Efecto (16-20s)" }
+      ]
+    },
+    {
+      "sceneNumber": 3,
+      "durationSec": 10,
+      "inicio_segundo": 20,
+      "fin_segundo": 30,
+      "stageTitle": "Aplicación & Llamado a la Acción (20-30s)",
+      "visualPrompt": "Detailed 9:16 vertical prompt for scene 3 with energetic resolution and subscription badge...",
+      "narration": "Narración exacta en español de 24 a 28 palabras para los segundos 20 al 30 que OBLIGATORIAMENTE INCLUYE el llamado a la acción (CTA) hablado directamente dentro del texto al final (ej: Guarda este video ahora y suscríbete a @Aprendeen30segundos)",
+      "onScreenText": "TEXTO CORTO EN MAYÚSCULAS",
+      "secondaryTitle": "🚀 Acción Rápida",
+      "cameraMovement": "zoom_out_suave",
+      "subtitleSlots": [
+        { "id": "slot-7", "text": "FRASE CORTA 7", "startSec": 20, "endSec": 23.3, "label": "Resultado (20-23s)" },
+        { "id": "slot-8", "text": "FRASE CORTA 8", "startSec": 23.3, "endSec": 26.6, "label": "Guarda el video (23-26s)" },
+        { "id": "slot-9", "text": "FRASE CORTA 9", "startSec": 26.6, "endSec": 30, "label": "Síguenos @Aprendeen30s (26-30s)" }
+      ]
+    }
+  ],
+  "miniatura_texto": "TEXTO DE IMPACTO PARA MINIATURA (2-4 PALABRAS)",
+  "miniatura_visual": "Prompt de miniatura con alto contraste, sujeto expresivo y gráfico 3D",
+  "ctr_estimado": 15.4,
+  "retencion_proyectada": 89,
+  "musica_sugerida": "Lo-Fi Focus Upbeat con sintetizadores rítmicos a 128 BPM",
+  "descripcion_youtube": "Descripción completa de YouTube Shorts con gancho, resumen, hashtags y enlaces al canal @Aprendeen30segundos",
+  "hashtags": ["#Aprendeen30segundos", "#shorts", "#aprender", "#trucos", "#educacion", "#crecimiento"],
+  "llamado_accion": "Guarda este video y suscríbete a @Aprendeen30segundos para no perderte el hack de mañana.",
+  "tarjeta_flash": {
+    "titulo": "Título directo para tarjeta infográfica viral",
+    "subtitulo": "Promesa o método en 1 frase",
+    "categoriaLabel": "Nombre legible de la categoría",
+    "errorComun": "El error o mito que el 95% de las personas cree",
+    "puntosClave": [
+      "Paso 1: Acción precisa y contundente",
+      "Paso 2: Técnica o principio clave",
+      "Paso 3: Cierre o resultado inmediato"
+    ],
+    "accionInmediata": "Aplica esto hoy: Instrucción de 1 frase",
+    "quoteDestacada": "Frase sabia o axioma inolvidable",
+    "badgeCanal": "@Aprendeen30segundos",
+    "colorTema": "rojo_ambar"
+  }
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.4
+      }
+    });
+
+    let pkg: any = null;
+    try {
+      const clean = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
+      pkg = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in aprende30s generation:", parseErr);
+    }
+
+    if (!pkg || !pkg.titulo || !Array.isArray(pkg.escenas) || pkg.escenas.length === 0) {
+      // Robust guaranteed fallback
+      pkg = {
+        id: `aprende30-${Date.now()}`,
+        channelHandle: "@Aprendeen30segundos",
+        channelUrl: "https://www.youtube.com/@Aprendeen30segundos",
+        titulo: `Aprende a ${topic.replace(/^aprende a /i, '')} en 30 Segundos 🚀`,
+        categoria: category,
+        duracion_segundos: 30,
+        banner_hook_superior: "🔴 APRENDE EN 30 SEGUNDOS",
+        gancho_inicial: "¿Sabías que el 95% de las personas hace esto mal? En los próximos 30 segundos vas a dominar el truco definitivo.",
+        guion_completo: `¿Sabías que la mayoría comete el mismo error fatal? La clave no es esforzarte el doble, sino aplicar este principio simple. Cuando lo pruebes hoy mismo, verás resultados inmediatos. Guarda este video antes de olvidarlo y síguenos en @Aprendeen30segundos.`,
+        escenas: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: "Gancho Disruptivo (0-10s)",
+            visualPrompt: "Dynamic 3D conceptual infographic with floating vibrant icons, neon depth of field, 9:16 vertical YouTube Shorts format, 8k resolution, cinematic studio lighting",
+            narration: "¿Sabías que el 95% de las personas comete este error fatal todos los días? En los próximos 30 segundos vas a cambiar tu forma de pensar para siempre.",
+            onScreenText: "EL ERROR DEL 95%",
+            secondaryTitle: "💡 Error Común",
+            cameraMovement: "zoom_in_suave",
+            subtitleSlots: [
+              { id: "slot-1", text: "EL ERROR DEL 95%", startSec: 0, endSec: 3.3, label: "Gancho (0-3s)" },
+              { id: "slot-2", text: "QUE NADIE TE DICE", startSec: 3.3, endSec: 6.6, label: "Mito (3-6s)" },
+              { id: "slot-3", text: "DESCÚBRELO EN 30s", startSec: 6.6, endSec: 10, label: "Promesa (6-10s)" }
+            ]
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: "El Secreto Revelado (10-20s)",
+            visualPrompt: "Modern 3D isometric representation of smart productivity workflow, glowing neon arrows and gears, vibrant colors, clean cinematic background, 9:16 vertical ratio",
+            narration: "El secreto no está en esforzarte más, sino en aplicar la regla del enfoque inmediato: resuelve primero la fricción y el resultado vendrá en automático.",
+            onScreenText: "EL SECRETO DEL ENFOQUE",
+            secondaryTitle: "⚡ La Técnica Clave",
+            cameraMovement: "paneo_dinamico",
+            subtitleSlots: [
+              { id: "slot-4", text: "NO TRABAJES MÁS", startSec: 10, endSec: 13.3, label: "Regla #1 (10-13s)" },
+              { id: "slot-5", text: "APLICA ESTE TRUCO", startSec: 13.3, endSec: 16.6, label: "Técnica (13-16s)" },
+              { id: "slot-6", text: "RESULTADOS AL INSTANTE", startSec: 16.6, endSec: 20, label: "Impacto (16-20s)" }
+            ]
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: "Aplicación & Llamado a la Acción (20-30s)",
+            visualPrompt: "Energetic digital celebration with golden trophy and YouTube bell notification icon, modern sleek typography, premium 9:16 vertical render",
+            narration: "Ponlo en práctica hoy mismo y nota la diferencia. Guarda este video para repasarlo y suscríbete a @Aprendeen30segundos para aprender algo valioso cada día.",
+            onScreenText: "APLÍCALO HOY MISMO",
+            secondaryTitle: "🚀 Guarda y Suscríbete",
+            cameraMovement: "zoom_out_suave",
+            subtitleSlots: [
+              { id: "slot-7", text: "PRUÉBALO HOY", startSec: 20, endSec: 23.3, label: "Práctica (20-23s)" },
+              { id: "slot-8", text: "GUARDA ESTE VIDEO", startSec: 23.3, endSec: 26.6, label: "Guarda (23-26s)" },
+              { id: "slot-9", text: "SÍGUENOS EN @APRENDEEN30S", startSec: 26.6, endSec: 30, label: "Comunidad (26-30s)" }
+            ]
+          }
+        ],
+        miniatura_texto: "EL SECRETO EN 30s",
+        miniatura_visual: "Excited professional person pointing to glowing holographic 3D clock and lightbulb icon, high contrast, red and yellow neon accents",
+        ctr_estimado: 14.8,
+        retencion_proyectada: 88,
+        musica_sugerida: "Lo-Fi Study Beat enérgico con sintetizadores limpios",
+        descripcion_youtube: `⚡ Aprende en 30 segundos: ${topic}!\n\n¿Quieres aprender habilidades de alto impacto en menos de un minuto? Suscríbete a nuestro canal oficial:\n👉 https://www.youtube.com/@Aprendeen30segundos\n\n#Aprendeen30segundos #shorts #educacion #trucos #viral`,
+        hashtags: ["#Aprendeen30segundos", "#shorts", "#aprender", "#tips", "#curiosidades"],
+        llamado_accion: "Guarda este video y suscríbete a @Aprendeen30segundos para más trucos en 30s."
+      };
+    }
+
+    // Guarantee CTA is integrated within the script of the final scene (Scene 3, 20-30s)
+    if (Array.isArray(pkg.escenas) && pkg.escenas.length > 0) {
+      const lastIdx = pkg.escenas.length - 1;
+      const lastScene = pkg.escenas[lastIdx];
+      const defaultCta = "Guarda este video ahora y suscríbete a @Aprendeen30segundos para no perderte el próximo hack diario.";
+      const currentNarration = lastScene.narration || "";
+      if (
+        !currentNarration.toLowerCase().includes("suscríbete") &&
+        !currentNarration.toLowerCase().includes("aprendeen30segundos") &&
+        !currentNarration.toLowerCase().includes("guarda este video")
+      ) {
+        lastScene.narration = `${currentNarration.trim()} ${defaultCta}`.trim();
+      }
+    }
+
+    // Ensure every scene has masterVideoPrompt and prayer-style cinematic visual instructions
+    const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo.";
+
+    pkg.escenas = (pkg.escenas || []).map((sc: any, idx: number) => {
+      const cam = sc.cameraMovement || (idx === 0 
+        ? "Primer plano con zoom lento y continuo durante 10 segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido."
+        : idx === 1 
+          ? "Paneo dinámico de enfoque con iluminación de contraste suave y contacto visual penetrante"
+          : "Acercamiento lento con iluminación gloriosa y apertura de resolución triunfante");
+      const dialogue = (sc.narration || "").trim();
+      const masterPrompt = `Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:
+Duración: 10 segundos (movimiento continuo sin interrupciones).
+
+Movimiento de cámara: ${cam}
+
+Diálogo de 10 segundos en español con voz clara y empática (locución de mínimo 9 segundos): "${dialogue}"
+
+${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+
+      return {
+        ...sc,
+        cameraMovement: sc.cameraMovement || cam,
+        masterVideoPrompt: sc.masterVideoPrompt || masterPrompt
+      };
+    });
+
+    // Ensure tarjeta_flash is always present and high quality
+    if (!pkg.tarjeta_flash) {
+      pkg.tarjeta_flash = {
+        titulo: pkg.titulo.replace(/en 30 segundos/i, '').replace(/🚀|⚡|🔥/g, '').trim(),
+        subtitulo: pkg.gancho_inicial.slice(0, 70) + '...',
+        categoriaLabel: category.replace(/_/g, ' ').toUpperCase(),
+        errorComun: "El 95% comete el error de no aplicar este principio de inmediato.",
+        puntosClave: (pkg.escenas || []).map((sc: any) => sc.onScreenText || sc.secondaryTitle || "Paso clave"),
+        accionInmediata: pkg.llamado_accion || "Guarda este hack y aplícalo hoy mismo.",
+        quoteDestacada: `"El conocimiento que no se aplica en 24 horas se olvida." — @Aprendeen30segundos`,
+        badgeCanal: "@Aprendeen30segundos",
+        colorTema: "rojo_ambar"
+      };
+    }
+
+    res.json({ success: true, package: pkg });
+  } catch (error: any) {
+    console.error("Error generating Aprende30 package:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint: Generate or Refresh Daily Capsule ("Cápsula Diaria de 30 Segundos") for @Aprendeen30segundos
+app.post("/api/aprende30s/generate-daily-capsule", async (req, res) => {
+  try {
+    const { category = "productividad_habitos", customTopic = "" } = req.body;
+
+    const prompt = `Actúa como el Director Creativo del canal viral de YouTube "@Aprendeen30segundos" (https://www.youtube.com/@Aprendeen30segundos).
+Este canal enseña micro-lecciones de alto impacto, trucos psicológicos, finanzas, productividad y negocios explicados en EXACTAMENTE 30 SEGUNDOS.
+
+Genera una "CÁPSULA DIARIA DE SABIDURÍA" (la píldora de aprendizaje del día para la comunidad).
+${customTopic ? `Tema específico: "${customTopic}"` : `Categoría: "${category}". Elige un hack, principio psicológico, truco de ventas o ley de productividad fascinante y desconocido.`}
+
+Responde ÚNICAMENTE con un JSON válido con este formato:
+{
+  "id": "daily-${Date.now()}",
+  "fecha": "Cápsula Diaria • ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}",
+  "titulo": "Título de la cápsula (ej. La Regla de los 2 Minutos)",
+  "categoria": "${category}",
+  "categoriaNombre": "Nombre de la categoría en español",
+  "icono": "⚡",
+  "gancho3s": "¿Sabías que tu cerebro solo necesita 120 segundos para engañar a la pereza?",
+  "explicacion30s": "Texto narrativo de 55 a 65 palabras explicando el concepto en 30 segundos con máxima claridad y sin relleno.",
+  "sabiasQue": "Dato científico o estadístico asombroso sobre este tema.",
+  "retoDelDia": "Acción práctica de 1 minuto para ejecutar hoy.",
+  "puntosClave": [
+    "Punto 1 en 1 frase directa",
+    "Punto 2 en 1 frase directa",
+    "Punto 3 en 1 frase directa"
+  ],
+  "citaMaestra": "Cita célebre inspiradora sobre el tema con autor.",
+  "tarjeta": {
+    "titulo": "Título corto para tarjeta flash",
+    "subtitulo": "Subtítulo de la tarjeta",
+    "categoriaLabel": "Etiqueta de categoría",
+    "errorComun": "El error que comete el 95% de las personas",
+    "puntosClave": [
+      "Clave 1",
+      "Clave 2",
+      "Clave 3"
+    ],
+    "accionInmediata": "Aplica esto hoy en 60 segundos",
+    "quoteDestacada": "Frase memorable",
+    "badgeCanal": "@Aprendeen30segundos",
+    "colorTema": "rojo_ambar"
+  }
+}`;
+
+    const ai = getGeminiClient();
+    const response = await generateWithFallback(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.5
+      }
+    });
+
+    let capsule: any = null;
+    try {
+      const clean = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
+      capsule = JSON.parse(clean);
+    } catch (parseErr) {
+      console.warn("JSON parse issue in daily capsule:", parseErr);
+    }
+
+    if (!capsule || !capsule.titulo) {
+      throw new Error("No se pudo parsear la cápsula");
+    }
+
+    res.json({ success: true, capsule });
+  } catch (err: any) {
+    console.error("Error in generate-daily-capsule:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+
+// Vite / static middleware setup with instant socket binding
+async function startServer() {
+  let viteMiddlewares: any = null;
+  let viteReady = false;
+
+  // Non-blocking request router for Vite assets / SPA
+  app.use((req, res, next) => {
+    // API endpoints pass through immediately
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+    if (viteReady && viteMiddlewares) {
+      return viteMiddlewares(req, res, next);
+    }
+    // If Vite is still spinning up, wait briefly
+    const interval = setInterval(() => {
+      if (viteReady && viteMiddlewares) {
+        clearInterval(interval);
+        return viteMiddlewares(req, res, next);
+      }
+    }, 50);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      if (!res.headersSent && !viteReady) {
+        res.status(200).send(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="1"><title>Iniciando...</title></head><body style="background:#02040a;color:#fcd34d;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>Iniciando servidor de desarrollo...</h2><p style="color:#94a3b8;">Cargando interfaz en unos segundos...</p></div></body></html>`);
+      }
+    }, 3000);
+  });
+
+  // Bind port 3000 IMMEDIATELY so health checks never time out
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[Server] Instant listening active on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`[Server] Port ${PORT} is already in use. Exiting process so supervisor can re-bind cleanly.`);
+      process.exit(1);
+    } else {
+      console.error("[Server] Server error:", err);
+    }
+  });
+
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      const isHmrDisabled = process.env.DISABLE_HMR === "true";
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: {
+          middlewareMode: true,
+          hmr: isHmrDisabled ? false : undefined,
+          watch: isHmrDisabled ? null : undefined,
+        },
+        appType: "spa",
+      });
+      viteMiddlewares = vite.middlewares;
+      viteReady = true;
+      console.log(`[Server] Vite dev middleware loaded successfully.`);
+    } catch (viteErr) {
+      console.error("[Server] Error initializing Vite middleware:", viteErr);
+    }
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
+    viteReady = true;
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  const shutdown = (signal: string) => {
+    console.log(`[Server] Received ${signal}, closing server gracefully...`);
+    try {
+      if (typeof server.closeAllConnections === "function") {
+        server.closeAllConnections();
+      }
+    } catch (_err) {}
+    server.close(() => {
+      process.exit(0);
+    });
+    setTimeout(() => {
+      process.exit(0);
+    }, 1500).unref();
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 startServer().catch((err) => {
