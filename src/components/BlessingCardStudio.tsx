@@ -66,105 +66,231 @@ export const BIBLICAL_CATEGORIES = [
 
 // Curated High-Definition Sacred Spiritual Environments
 export const SACRED_THEME_PRESETS = [
+  // 1. LUZ & AMANECERES CELESTIALES
   {
     id: 'dawn-1',
     name: '🌅 Amanecer de Fe',
     category: 'dawn',
+    badge: 'Luz Radiante',
     url: '/sacred-assets/celestial-sunrise.jpg',
     accentColor: '#fbbf24',
     promptDesc: 'Amanecer celestial con rayos dorados de gloria y luz viva matutina'
   },
   {
-    id: 'night-1',
-    name: '🌌 Noche de Paz',
-    category: 'night',
-    url: '/sacred-assets/jesus-night.jpg',
-    accentColor: '#38bdf8',
-    promptDesc: 'Noche estrellada celestial con reflejos de paz y descanso divino'
+    id: 'dawn-2',
+    name: '☀️ Resplandor del Alba',
+    category: 'dawn',
+    badge: 'Alta Iluminación',
+    url: '/sacred-assets/celestial_sunrise_dawn_1787717221920.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Nuevo amanecer lleno de misericordia y resplandor divino'
   },
+  // 2. JESÚS EN GLORIA & MAJESTAD
   {
     id: 'jesus-1',
     name: '✨ Jesús Bendiciendo',
     category: 'jesus',
+    badge: 'Luz Celestial',
     url: '/sacred-assets/jesus-blessing.jpg',
     accentColor: '#fbbf24',
     promptDesc: 'Presencia gloriosa y redentora de Jesucristo con luz celestial'
   },
   {
-    id: 'shepherd-1',
-    name: '🐑 Buen Pastor',
+    id: 'jesus-2',
+    name: '👑 Bendición Soberana',
     category: 'jesus',
-    url: '/sacred-assets/jesus-shepherd.jpg',
-    accentColor: '#fbbf24',
-    promptDesc: 'Jesús el Buen Pastor cuidando sus ovejas en verdes pastos'
-  },
-  {
-    id: 'cross-1',
-    name: '✝️ La Cruz de Gracia',
-    category: 'cross',
-    url: '/sacred-assets/cross-sunrise.jpg',
-    accentColor: '#f59e0b',
-    promptDesc: 'Cruz de la victoria y gracia sobre el horizonte dorado'
-  },
-  {
-    id: 'peace-1',
-    name: '🏞️ Aguas de Reposo',
-    category: 'peace',
-    url: '/sacred-assets/jesus-peace.jpg',
-    accentColor: '#34d399',
-    promptDesc: 'Aguas tranquilas y paz en medio de la tormenta con Jesús'
-  },
-  {
-    id: 'healing-1',
-    name: '🌿 Sanidad Divina',
-    category: 'healing',
-    url: '/sacred-assets/jesus-healing.jpg',
-    accentColor: '#a7f3d0',
-    promptDesc: 'Luz viva de sanidad, restauración y nuevas fuerzas espirituales'
-  },
-  {
-    id: 'family-1',
-    name: '🏡 Hogar & Huerto',
-    category: 'olive',
-    url: '/sacred-assets/olive-garden.jpg',
+    badge: 'Gracia Divina',
+    url: '/sacred-assets/jesus_divine_blessing_1787716123982.jpg',
     accentColor: '#fcd34d',
-    promptDesc: 'Bendición sobre el hogar, concordia y paz en el monte de los olivos'
-  },
-  {
-    id: 'dove-1',
-    name: '🕊️ Espíritu Santo',
-    category: 'worship',
-    url: '/sacred-assets/heavenly-dove.jpg',
-    accentColor: '#38bdf8',
-    promptDesc: 'Paloma celestial y unción santa del Espíritu de Dios'
+    promptDesc: 'Jesús derramando bendición y paz sobre tu familia'
   },
   {
     id: 'resurrected-1',
     name: '👑 Rey Resucitado',
     category: 'jesus',
+    badge: 'Victoria',
     url: '/sacred-assets/jesus-resurrected.jpg',
     accentColor: '#f59e0b',
     promptDesc: 'Jesucristo triunfante y resucitado en majestad'
   },
   {
-    id: 'prayer-1',
-    name: '🕯️ Oración Sagrada',
-    category: 'worship',
-    url: '/sacred-assets/jesus-prayer.jpg',
-    accentColor: '#c084fc',
-    promptDesc: 'Comunión íntima y clamor ferviente en la presencia del Padre'
+    id: 'resurrected-2',
+    name: '☀️ Cristo Triunfante',
+    category: 'jesus',
+    badge: 'Luz Eterna',
+    url: '/sacred-assets/jesus_resurrected_king_1787717534726.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'El Rey de Gloria resucitado venciendo toda oscuridad'
+  },
+  {
+    id: 'shepherd-1',
+    name: '🐑 Buen Pastor',
+    category: 'jesus',
+    badge: 'Amor y Cuidado',
+    url: '/sacred-assets/jesus-shepherd.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'Jesús el Buen Pastor cuidando sus ovejas en verdes pastos'
+  },
+  {
+    id: 'shepherd-2',
+    name: '🌾 Amor del Pastor',
+    category: 'jesus',
+    badge: 'Protección',
+    url: '/sacred-assets/jesus_shepherd_love_1787717500827.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Abrazo tierno del Buen Pastor que jamás te dejará'
   },
   {
     id: 'teaching-1',
     name: '📖 Sabiduría Divina',
     category: 'jesus',
+    badge: 'Palabra Viva',
     url: '/sacred-assets/jesus-teaching.jpg',
     accentColor: '#fbbf24',
     promptDesc: 'Jesús enseñando la Palabra viva y eterna a los creyentes'
+  },
+  {
+    id: 'teaching-2',
+    name: '📜 Luz de Sabiduría',
+    category: 'jesus',
+    badge: 'Dirección',
+    url: '/sacred-assets/jesus_teaching_wisdom_1787717523974.jpg',
+    accentColor: '#fde047',
+    promptDesc: 'Lámpara es a mis pies tu palabra y lumbrera a mi camino'
+  },
+  // 3. PAZ & ESPÍRITU SANTO
+  {
+    id: 'dove-1',
+    name: '🕊️ Espíritu Santo',
+    category: 'peace',
+    badge: 'Paz Celestial',
+    url: '/sacred-assets/heavenly-dove.jpg',
+    accentColor: '#38bdf8',
+    promptDesc: 'Paloma celestial y unción santa del Espíritu de Dios'
+  },
+  {
+    id: 'dove-2',
+    name: '🕊️ Fuego y Gloria',
+    category: 'peace',
+    badge: 'Unción Fresca',
+    url: '/sacred-assets/heavenly_dove_light_1787717258852.jpg',
+    accentColor: '#67e8f9',
+    promptDesc: 'Luz viva y presencia reconfortante del Consolador'
+  },
+  {
+    id: 'peace-1',
+    name: '🏞️ Aguas de Reposo',
+    category: 'peace',
+    badge: 'Calma Total',
+    url: '/sacred-assets/jesus-peace.jpg',
+    accentColor: '#34d399',
+    promptDesc: 'Aguas tranquilas y paz en medio de la tormenta con Jesús'
+  },
+  {
+    id: 'peace-2',
+    name: '🌊 Jesús Calma el Mar',
+    category: 'peace',
+    badge: 'Serenidad',
+    url: '/sacred-assets/jesus_peace_in_storm_1787716138284.jpg',
+    accentColor: '#38bdf8',
+    promptDesc: 'Paz sobrenatural que aquieta toda tormenta y temor'
+  },
+  // 4. SANIDAD & GRACIA
+  {
+    id: 'healing-1',
+    name: '🌿 Sanidad Divina',
+    category: 'healing',
+    badge: 'Restauración',
+    url: '/sacred-assets/jesus-healing.jpg',
+    accentColor: '#a7f3d0',
+    promptDesc: 'Luz viva de sanidad, restauración y nuevas fuerzas espirituales'
+  },
+  {
+    id: 'healing-2',
+    name: '💫 Rayos de Milagro',
+    category: 'healing',
+    badge: 'Vida Nueva',
+    url: '/sacred-assets/jesus_healing_light_1787716152719.jpg',
+    accentColor: '#86efac',
+    promptDesc: 'Poder de Cristo trayendo salud al cuerpo y al espíritu'
+  },
+  {
+    id: 'family-1',
+    name: '🏡 Hogar & Huerto',
+    category: 'healing',
+    badge: 'Bendición Hogar',
+    url: '/sacred-assets/olive-garden.jpg',
+    accentColor: '#fcd34d',
+    promptDesc: 'Bendición sobre el hogar, concordia y paz en el monte de los olivos'
+  },
+  {
+    id: 'family-2',
+    name: '🌿 Paz en el Huerto',
+    category: 'healing',
+    badge: 'Descanso',
+    url: '/sacred-assets/olive_garden_peace_1787717233225.jpg',
+    accentColor: '#a3e635',
+    promptDesc: 'Lugar sagrado de reposo donde Dios renueva el alma'
+  },
+  {
+    id: 'prayer-1',
+    name: '🕯️ Oración Sagrada',
+    category: 'healing',
+    badge: 'Intercesión',
+    url: '/sacred-assets/jesus-prayer.jpg',
+    accentColor: '#c084fc',
+    promptDesc: 'Comunión íntima y clamor ferviente en la presencia del Padre'
+  },
+  {
+    id: 'prayer-2',
+    name: '🔥 Fuego del Altar',
+    category: 'healing',
+    badge: 'Presencia Viva',
+    url: '/sacred-assets/jesus_sacred_prayer_1787717512349.jpg',
+    accentColor: '#e879f9',
+    promptDesc: 'Jesús intercediendo por ti ante el trono celestial'
+  },
+  // 5. CRUZ DE VICTORIA
+  {
+    id: 'cross-1',
+    name: '✝️ La Cruz de Gracia',
+    category: 'cross',
+    badge: 'Victoria',
+    url: '/sacred-assets/cross-sunrise.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Cruz de la victoria y gracia sobre el horizonte dorado'
+  },
+  {
+    id: 'cross-2',
+    name: '🌟 Cruz de Esperanza',
+    category: 'cross',
+    badge: 'Resplandor',
+    url: '/sacred-assets/cross_sunrise_hope_1787717245799.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'La cruz luminosa al alba proclamando salvación'
+  },
+  // 6. NOCHE CELESTIAL
+  {
+    id: 'night-1',
+    name: '🌌 Noche de Paz',
+    category: 'night',
+    badge: 'Paz Nocturna',
+    url: '/sacred-assets/jesus-night.jpg',
+    accentColor: '#38bdf8',
+    promptDesc: 'Noche estrellada celestial con reflejos de paz y descanso divino'
+  },
+  {
+    id: 'night-2',
+    name: '⭐ Santuario Nocturno',
+    category: 'night',
+    badge: 'Protección',
+    url: '/sacred-assets/jesus_night_sanctuary_1787716164249.jpg',
+    accentColor: '#60a5fa',
+    promptDesc: 'Jesús velando tus sueños y alejando todo insomnio'
   }
 ];
 
-// Procedural AI Sacred Canvas Synthesizer ensuring 100% unique visual composition per prompt
+// Procedural AI Sacred Canvas Synthesizer with High-Luminosity Radiant Atmosphere
 function generateDynamicProceduralArtwork(
   themeCategory: string, 
   promptSeed: string, 
@@ -181,118 +307,121 @@ function generateDynamicProceduralArtwork(
   const isNight = themeCategory === 'night' || promptSeed.toLowerCase().includes('noche') || promptSeed.toLowerCase().includes('dormir');
   const isMorning = themeCategory === 'dawn' || promptSeed.toLowerCase().includes('mañana') || promptSeed.toLowerCase().includes('buenos');
 
-  // 1. Deep Celestial Base Gradient
+  // 1. High-Luminosity Warm Base Gradient (avoiding pitch black)
   const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
   if (isNight) {
-    grad.addColorStop(0, '#020617');
-    grad.addColorStop(0.35, '#0b132b');
-    grad.addColorStop(0.7, '#1c1444');
-    grad.addColorStop(1, '#0f172a');
-  } else if (isMorning) {
     grad.addColorStop(0, '#0f172a');
-    grad.addColorStop(0.35, '#1e293b');
-    grad.addColorStop(0.7, '#451a03');
-    grad.addColorStop(1, '#78350f');
+    grad.addColorStop(0.35, '#1e1b4b');
+    grad.addColorStop(0.7, '#312e81');
+    grad.addColorStop(1, '#1e293b');
+  } else if (isMorning) {
+    grad.addColorStop(0, '#78350f');
+    grad.addColorStop(0.30, '#b45309');
+    grad.addColorStop(0.65, '#f59e0b');
+    grad.addColorStop(1, '#fef08a');
   } else {
-    grad.addColorStop(0, gradientStart || '#020617');
-    grad.addColorStop(0.5, '#0f172a');
-    grad.addColorStop(1, gradientEnd || '#1e1b4b');
+    grad.addColorStop(0, gradientStart || '#1e1b4b');
+    grad.addColorStop(0.45, '#3b82f6');
+    grad.addColorStop(0.85, '#f59e0b');
+    grad.addColorStop(1, gradientEnd || '#fef3c7');
   }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 1080, 1080);
 
-  // 2. Mountain silhouette in background
-  ctx.fillStyle = isNight ? '#030712' : '#0c0a09';
+  // 2. Mountain silhouette in background (warm deep silhouette, never pitch black)
+  ctx.fillStyle = isNight ? '#1e1b4b' : '#451a03';
   ctx.beginPath();
-  ctx.moveTo(0, 750);
-  ctx.lineTo(220, 620);
-  ctx.lineTo(440, 700);
-  ctx.lineTo(680, 580);
-  ctx.lineTo(880, 680);
-  ctx.lineTo(1080, 600);
+  ctx.moveTo(0, 780);
+  ctx.lineTo(220, 660);
+  ctx.lineTo(440, 730);
+  ctx.lineTo(680, 620);
+  ctx.lineTo(880, 710);
+  ctx.lineTo(1080, 640);
   ctx.lineTo(1080, 1080);
   ctx.lineTo(0, 1080);
   ctx.closePath();
   ctx.fill();
 
-  // 3. Divine Radiance / Central Source
+  // 3. Brilliant Divine Radiance / Central Source
   const sunX = 540 + (Math.sin(promptSeed.length + Date.now() * 0.001) * 60);
-  const sunY = isNight ? 320 : 380;
-  const sunGrad = ctx.createRadialGradient(sunX, sunY, 20, sunX, sunY, 650);
+  const sunY = isNight ? 320 : 360;
+  const sunGrad = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 680);
   
   if (isNight) {
-    sunGrad.addColorStop(0, 'rgba(224, 242, 254, 0.65)'); // Moonlight
-    sunGrad.addColorStop(0.25, 'rgba(56, 189, 248, 0.28)');
-    sunGrad.addColorStop(0.65, 'rgba(147, 51, 234, 0.12)');
+    sunGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)'); // Radiant Moonlight
+    sunGrad.addColorStop(0.25, 'rgba(186, 230, 253, 0.65)');
+    sunGrad.addColorStop(0.65, 'rgba(147, 197, 253, 0.25)');
   } else {
-    sunGrad.addColorStop(0, 'rgba(254, 240, 138, 0.75)'); // Golden sunrise
-    sunGrad.addColorStop(0.25, 'rgba(245, 158, 11, 0.35)');
-    sunGrad.addColorStop(0.65, 'rgba(217, 119, 6, 0.15)');
+    sunGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)'); // Intense Golden Sunlight
+    sunGrad.addColorStop(0.20, 'rgba(254, 240, 138, 0.85)');
+    sunGrad.addColorStop(0.55, 'rgba(245, 158, 11, 0.45)');
+    sunGrad.addColorStop(0.80, 'rgba(217, 119, 6, 0.20)');
   }
   sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = sunGrad;
   ctx.fillRect(0, 0, 1080, 1080);
 
-  // 4. Volumetric God-Rays
+  // 4. Volumetric God-Rays of Pure Light
   ctx.save();
   ctx.translate(sunX, sunY);
-  const raysCount = isNight ? 10 : 16;
+  const raysCount = isNight ? 12 : 20;
   for (let r = 0; r < raysCount; r++) {
     const angle = (r * (Math.PI * 2 / raysCount)) + (promptSeed.length * 0.12);
     ctx.save();
     ctx.rotate(angle);
-    const ray = ctx.createLinearGradient(0, 0, 0, 780);
+    const ray = ctx.createLinearGradient(0, 0, 0, 850);
     if (isNight) {
-      ray.addColorStop(0, 'rgba(224, 242, 254, 0.22)');
-      ray.addColorStop(0.4, 'rgba(147, 197, 253, 0.08)');
+      ray.addColorStop(0, 'rgba(224, 242, 254, 0.35)');
+      ray.addColorStop(0.4, 'rgba(147, 197, 253, 0.15)');
     } else {
-      ray.addColorStop(0, 'rgba(254, 240, 138, 0.35)');
-      ray.addColorStop(0.4, 'rgba(245, 158, 11, 0.12)');
+      ray.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+      ray.addColorStop(0.3, 'rgba(254, 240, 138, 0.35)');
+      ray.addColorStop(0.6, 'rgba(245, 158, 11, 0.18)');
     }
     ray.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = ray;
     ctx.beginPath();
-    ctx.moveTo(-40, 0);
-    ctx.lineTo(40, 0);
-    ctx.lineTo(120, 780);
-    ctx.lineTo(-120, 780);
+    ctx.moveTo(-45, 0);
+    ctx.lineTo(45, 0);
+    ctx.lineTo(130, 850);
+    ctx.lineTo(-130, 850);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
   ctx.restore();
 
-  // 5. Sacred Cross / Halo of Light
+  // 5. Sacred Cross / Halo of Golden Light
   ctx.save();
-  ctx.strokeStyle = accentColor || (isNight ? '#38bdf8' : '#fbbf24');
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = accentColor || (isNight ? '#67e8f9' : '#fde047');
+  ctx.lineWidth = 2.5;
   ctx.shadowColor = accentColor || (isNight ? '#38bdf8' : '#fbbf24');
-  ctx.shadowBlur = 25;
+  ctx.shadowBlur = 35;
   ctx.beginPath();
   ctx.arc(sunX, sunY, 190, 0, Math.PI * 2);
   ctx.stroke();
 
   // Draw delicate Holy Cross in background
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
   ctx.beginPath();
-  ctx.moveTo(sunX, sunY - 70);
-  ctx.lineTo(sunX, sunY + 80);
-  ctx.moveTo(sunX - 45, sunY - 25);
-  ctx.lineTo(sunX + 45, sunY - 25);
+  ctx.moveTo(sunX, sunY - 75);
+  ctx.lineTo(sunX, sunY + 85);
+  ctx.moveTo(sunX - 50, sunY - 25);
+  ctx.lineTo(sunX + 50, sunY - 25);
   ctx.stroke();
   ctx.restore();
 
   // 6. Floating Star & Amber Particles
-  const particlesTotal = isNight ? 95 : 60;
+  const particlesTotal = isNight ? 95 : 75;
   for (let p = 0; p < particlesTotal; p++) {
     const px = (p * 83 + promptSeed.length * 41) % 1080;
     const py = (p * 109 + promptSeed.length * 59) % 1080;
-    const pSize = 1.2 + (p % 4) * 1.5;
-    const pAlpha = 0.3 + (p % 5) * 0.16;
+    const pSize = 1.4 + (p % 4) * 1.8;
+    const pAlpha = 0.4 + (p % 5) * 0.18;
     ctx.fillStyle = isNight 
       ? `rgba(224, 242, 254, ${pAlpha})` 
-      : `rgba(253, 224, 71, ${pAlpha})`;
+      : `rgba(254, 240, 138, ${pAlpha})`;
     ctx.beginPath();
     ctx.arc(px, py, pSize, 0, Math.PI * 2);
     ctx.fill();
@@ -357,8 +486,12 @@ export const BlessingCardStudio: React.FC = () => {
   const [isAutoSchedulerRunning, setIsAutoSchedulerRunning] = useState(true);
   const [isGeneratingDailyBatch, setIsGeneratingDailyBatch] = useState(false);
 
-  // Visual Customizer
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.60);
+  // Visual Customizer & Illumination System
+  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.22); // Reduced default from 0.60 to 0.22 so cards are bright and vibrant
+  const [cardBrightness, setCardBrightness] = useState<number>(1.25); // 125% brightness for divine radiance
+  const [cardContrast, setCardContrast] = useState<number>(1.05); // 105% crisp contrast
+  const [celestialAuraGlow, setCelestialAuraGlow] = useState<boolean>(true); // Radiant sunburst golden aura
+  const [galleryCategory, setGalleryCategory] = useState<string>('all');
   const [showGoldBorder, setShowGoldBorder] = useState(true);
   const [showParticles, setShowParticles] = useState(true);
   const [customAccentColor, setCustomAccentColor] = useState<string>('#fbbf24');
@@ -372,7 +505,7 @@ export const BlessingCardStudio: React.FC = () => {
   const [customImageInfo, setCustomImageInfo] = useState<{ name: string; size: string } | null>(null);
   const [imageZoom, setImageZoom] = useState<number>(1);
   const [imagePosition, setImagePosition] = useState<'center' | 'top' | 'bottom'>('center');
-  const [imageFilter, setImageFilter] = useState<'none' | 'warm' | 'golden' | 'sepia' | 'mono'>('none');
+  const [imageFilter, setImageFilter] = useState<'none' | 'radiant' | 'warm' | 'golden' | 'sepia' | 'mono'>('none');
 
   // Card Content & Typography State
   const [cardIcon, setCardIcon] = useState<string>('🕊️');
@@ -474,8 +607,30 @@ export const BlessingCardStudio: React.FC = () => {
       const pickM = mPool[Math.floor(Math.random() * mPool.length)];
       const pickN = nPool[Math.floor(Math.random() * nPool.length)];
 
-      const morningArtList = ['/sacred-assets/celestial-sunrise.jpg', '/sacred-assets/cross-sunrise.jpg', '/sacred-assets/jesus-blessing.jpg'];
-      const nightArtList = ['/sacred-assets/jesus-night.jpg', '/sacred-assets/jesus-peace.jpg', '/sacred-assets/jesus-prayer.jpg'];
+      const morningArtList = [
+        '/sacred-assets/celestial-sunrise.jpg',
+        '/sacred-assets/celestial_sunrise_dawn_1787717221920.jpg',
+        '/sacred-assets/cross-sunrise.jpg',
+        '/sacred-assets/cross_sunrise_hope_1787717245799.jpg',
+        '/sacred-assets/jesus-blessing.jpg',
+        '/sacred-assets/jesus_divine_blessing_1787716123982.jpg',
+        '/sacred-assets/jesus-resurrected.jpg',
+        '/sacred-assets/jesus_resurrected_king_1787717534726.jpg',
+        '/sacred-assets/jesus-shepherd.jpg',
+        '/sacred-assets/jesus_shepherd_love_1787717500827.jpg'
+      ];
+      const nightArtList = [
+        '/sacred-assets/jesus-night.jpg',
+        '/sacred-assets/jesus_night_sanctuary_1787716164249.jpg',
+        '/sacred-assets/jesus-peace.jpg',
+        '/sacred-assets/jesus_peace_in_storm_1787716138284.jpg',
+        '/sacred-assets/jesus-prayer.jpg',
+        '/sacred-assets/jesus_sacred_prayer_1787717512349.jpg',
+        '/sacred-assets/heavenly-dove.jpg',
+        '/sacred-assets/heavenly_dove_light_1787717258852.jpg',
+        '/sacred-assets/olive-garden.jpg',
+        '/sacred-assets/olive_garden_peace_1787717233225.jpg'
+      ];
 
       const fallbackRecords: DailyAutomatedCardRecord[] = [
         {
@@ -492,8 +647,8 @@ export const BlessingCardStudio: React.FC = () => {
             themeCategory: 'dawn',
             imagePrompt: "Amanecer celestial dorado con rayos de gloria y bendición matutina",
             suggestedColors: {
-              gradientStart: "#020617",
-              gradientEnd: "#1e1b4b",
+              gradientStart: "#78350f",
+              gradientEnd: "#f59e0b",
               accentColor: pickM.accentColor || "#fbbf24"
             }
           },
@@ -514,8 +669,8 @@ export const BlessingCardStudio: React.FC = () => {
             themeCategory: 'night',
             imagePrompt: "Noche celestial serena bajo el amparo de Cristo",
             suggestedColors: {
-              gradientStart: "#020617",
-              gradientEnd: "#0f172a",
+              gradientStart: "#0f172a",
+              gradientEnd: "#312e81",
               accentColor: pickN.accentColor || "#38bdf8"
             }
           },
@@ -681,12 +836,14 @@ export const BlessingCardStudio: React.FC = () => {
   };
 
   const getCssFilter = (filterType: string) => {
+    const base = `brightness(${cardBrightness}) contrast(${cardContrast})`;
     switch (filterType) {
-      case 'warm': return 'sepia(0.25) saturate(1.3) hue-rotate(-10deg)';
-      case 'golden': return 'sepia(0.4) saturate(1.5) brightness(1.05)';
-      case 'sepia': return 'sepia(0.7) contrast(1.1)';
-      case 'mono': return 'grayscale(1) contrast(1.2)';
-      default: return 'none';
+      case 'radiant': return `${base} saturate(1.35) brightness(1.25)`;
+      case 'warm': return `${base} sepia(0.2) saturate(1.3) brightness(1.1) hue-rotate(-10deg)`;
+      case 'golden': return `${base} sepia(0.35) saturate(1.4) brightness(1.15)`;
+      case 'sepia': return `${base} sepia(0.6) contrast(1.1)`;
+      case 'mono': return `${base} grayscale(1) contrast(1.15)`;
+      default: return base;
     }
   };
 
@@ -875,38 +1032,46 @@ export const BlessingCardStudio: React.FC = () => {
       if (imagePosition === 'top') offsetY = 0;
       if (imagePosition === 'bottom') offsetY = 1080 - targetH;
 
+      const baseFilter = `brightness(${cardBrightness}) contrast(${cardContrast})`;
       if (imageFilter !== 'none') {
-        if (imageFilter === 'warm') ctx.filter = 'sepia(0.25) saturate(1.3) hue-rotate(-10deg)';
-        else if (imageFilter === 'golden') ctx.filter = 'sepia(0.4) saturate(1.5) brightness(1.05)';
-        else if (imageFilter === 'sepia') ctx.filter = 'sepia(0.7) contrast(1.1)';
-        else if (imageFilter === 'mono') ctx.filter = 'grayscale(1) contrast(1.2)';
+        if (imageFilter === 'warm') ctx.filter = `${baseFilter} sepia(0.2) saturate(1.3) brightness(1.1) hue-rotate(-10deg)`;
+        else if (imageFilter === 'golden') ctx.filter = `${baseFilter} sepia(0.35) saturate(1.4) brightness(1.15)`;
+        else if (imageFilter === 'sepia') ctx.filter = `${baseFilter} sepia(0.6) contrast(1.1)`;
+        else if (imageFilter === 'mono') ctx.filter = `${baseFilter} grayscale(1) contrast(1.15)`;
+        else if (imageFilter === 'radiant') ctx.filter = `${baseFilter} saturate(1.35) brightness(1.25)`;
+      } else {
+        ctx.filter = baseFilter;
       }
       ctx.drawImage(bgImg, offsetX, offsetY, targetW, targetH);
       ctx.filter = 'none';
     } catch (e) {
       const fallbackGrad = ctx.createLinearGradient(0, 0, 0, 1080);
-      fallbackGrad.addColorStop(0, '#090d16');
-      fallbackGrad.addColorStop(1, '#1e293b');
+      fallbackGrad.addColorStop(0, '#78350f');
+      fallbackGrad.addColorStop(0.5, '#b45309');
+      fallbackGrad.addColorStop(1, '#fbbf24');
       ctx.fillStyle = fallbackGrad;
       ctx.fillRect(0, 0, 1080, 1080);
     }
 
-    // 2. Cinematic Vignette & Holy Dark Gradient Overlay for perfect text contrast
+    // 2. High-Luminosity Soft Overlay for text contrast without making the card dark
     const vignette = ctx.createLinearGradient(0, 0, 0, 1080);
-    vignette.addColorStop(0, `rgba(2, 6, 23, ${Math.min(0.9, overlayOpacity * 0.85)})`);
-    vignette.addColorStop(0.25, `rgba(2, 6, 23, ${Math.min(0.85, overlayOpacity * 0.65)})`);
-    vignette.addColorStop(0.60, `rgba(2, 6, 23, ${Math.min(0.92, overlayOpacity * 0.90)})`);
-    vignette.addColorStop(1, `rgba(2, 6, 23, ${Math.min(0.98, overlayOpacity * 1.1)})`);
+    vignette.addColorStop(0, `rgba(15, 23, 42, ${Math.min(0.45, overlayOpacity * 0.45)})`);
+    vignette.addColorStop(0.30, `rgba(15, 23, 42, ${Math.min(0.25, overlayOpacity * 0.25)})`);
+    vignette.addColorStop(0.65, `rgba(15, 23, 42, ${Math.min(0.55, overlayOpacity * 0.65)})`);
+    vignette.addColorStop(1, `rgba(15, 23, 42, ${Math.min(0.75, overlayOpacity * 0.85)})`);
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, 1080, 1080);
 
-    // Central radiant aura glow
-    const aura = ctx.createRadialGradient(540, 420, 30, 540, 420, 600);
-    aura.addColorStop(0, customAccentColor === '#38bdf8' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(251, 191, 36, 0.18)');
-    aura.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
-    aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = aura;
-    ctx.fillRect(0, 0, 1080, 1080);
+    // Central radiant aura glow (Divine Illumination)
+    if (celestialAuraGlow) {
+      const aura = ctx.createRadialGradient(540, 400, 25, 540, 400, 680);
+      aura.addColorStop(0, customAccentColor === '#38bdf8' ? 'rgba(186, 230, 253, 0.40)' : 'rgba(254, 240, 138, 0.40)');
+      aura.addColorStop(0.35, customAccentColor === '#38bdf8' ? 'rgba(56, 189, 248, 0.22)' : 'rgba(251, 191, 36, 0.22)');
+      aura.addColorStop(0.70, customAccentColor === '#38bdf8' ? 'rgba(14, 165, 233, 0.08)' : 'rgba(245, 158, 11, 0.08)');
+      aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = aura;
+      ctx.fillRect(0, 0, 1080, 1080);
+    }
 
     // 3. Floating celestial particles
     if (showParticles) {
@@ -1391,25 +1556,85 @@ _«${verse}»_
                       />
                     </div>
 
-                    {/* Contrast / Dark Overlay Slider */}
+                    {/* Illumination / Brightness Slider */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-amber-400/20 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-amber-300 font-medium flex items-center gap-1">
+                          <Sun className="w-3 h-3 text-amber-400" />
+                          <span>Iluminación / Brillo</span>
+                        </span>
+                        <span className="text-amber-400 font-mono font-bold">{Math.round(cardBrightness * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.8"
+                        max="1.8"
+                        step="0.05"
+                        value={cardBrightness}
+                        onChange={(e) => setCardBrightness(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
+                        title="Aumenta el brillo general de la tarjeta sagrada"
+                      />
+                    </div>
+
+                    {/* Contrast / Soft Veil Overlay Slider */}
                     <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-slate-400 font-medium flex items-center gap-1">
                           <Sliders className="w-3 h-3 text-amber-400" />
-                          <span>Contraste</span>
+                          <span>Tinte de Sombra (Velo)</span>
                         </span>
                         <span className="text-amber-400 font-mono font-bold">{Math.round(overlayOpacity * 100)}%</span>
                       </div>
                       <input
                         type="range"
-                        min="0.2"
-                        max="0.9"
+                        min="0.05"
+                        max="0.75"
                         step="0.05"
                         value={overlayOpacity}
                         onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
-                        title="Ajusta el velo oscuro para que las letras doradas resalten sobre cualquier foto"
+                        className="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
+                        title="Ajusta la sombra para contraste: a menor porcentaje, mayor luminosidad"
                       />
+                    </div>
+
+                    {/* Contrast Level */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-400 font-medium flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          <span>Contraste & Nitidez</span>
+                        </span>
+                        <span className="text-amber-400 font-mono font-bold">{Math.round(cardContrast * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.85"
+                        max="1.35"
+                        step="0.05"
+                        value={cardContrast}
+                        onChange={(e) => setCardContrast(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400"
+                      />
+                    </div>
+
+                    {/* Filter Atmosphere */}
+                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        Filtro Sagrado
+                      </span>
+                      <select
+                        value={imageFilter}
+                        onChange={(e) => setImageFilter(e.target.value as any)}
+                        className="w-full bg-slate-800 text-slate-200 text-[10px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-amber-400 cursor-pointer"
+                      >
+                        <option value="none">✨ Original Luminous</option>
+                        <option value="radiant">🌟 Máxima Luz Radiante</option>
+                        <option value="golden">👑 Gloria Dorada</option>
+                        <option value="warm">🌅 Amanecer Cálido</option>
+                        <option value="sepia">📜 Pergamino Sagrado</option>
+                        <option value="mono">🕊️ Pureza B & N</option>
+                      </select>
                     </div>
 
                     {/* Vertical Alignment */}
@@ -1434,51 +1659,116 @@ _«${verse}»_
                         ))}
                       </div>
                     </div>
-
-                    {/* Filter Atmosphere */}
-                    <div className="bg-slate-900/60 p-2 rounded-xl border border-white/5 space-y-1">
-                      <span className="text-[10px] text-slate-400 font-medium block">
-                        Filtro Sagrado
-                      </span>
-                      <select
-                        value={imageFilter}
-                        onChange={(e) => setImageFilter(e.target.value as any)}
-                        className="w-full bg-slate-800 text-slate-200 text-[10px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-amber-400 cursor-pointer"
-                      >
-                        <option value="none">✨ Original</option>
-                        <option value="warm">🌅 Cálido</option>
-                        <option value="golden">👑 Dorado</option>
-                        <option value="sepia">📜 Sepia</option>
-                        <option value="mono">🕊️ B & N</option>
-                      </select>
-                    </div>
                   </div>
 
-                  {/* Sacred Preset Mini-Gallery */}
-                  <div className="pt-2 border-t border-white/5 space-y-1.5">
-                    <span className="text-[10px] text-slate-400 font-semibold block">
-                      O escoge un fondo sagrado predefinido:
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {SACRED_THEME_PRESETS.map((preset) => {
+                  {/* Quick Divine Lighting Presets */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCardBrightness(1.40);
+                        setOverlayOpacity(0.15);
+                        setCardContrast(1.10);
+                        setImageFilter('radiant');
+                        setCelestialAuraGlow(true);
+                      }}
+                      className="flex-1 py-1 px-2 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-300 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Sun className="w-3 h-3 text-amber-400" />
+                      <span>✨ Máxima Luz (+35% Brillo)</span>
+                    </button>
+                    <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={celestialAuraGlow}
+                        onChange={(e) => setCelestialAuraGlow(e.target.checked)}
+                        className="rounded border-white/20 text-amber-400 focus:ring-0 cursor-pointer"
+                      />
+                      <span>🌟 Aureola Divina</span>
+                    </label>
+                  </div>
+
+                  {/* Sacred Preset Visual Gallery (24 Curated High-Definition Artworks) */}
+                  <div className="pt-3 border-t border-white/10 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Galería Visual de Obras Sagradas ({SACRED_THEME_PRESETS.length} Disponibles)</span>
+                      </span>
+                      <span className="text-[9px] text-slate-400">
+                        Haz clic para aplicar fondo con iluminación perfecta
+                      </span>
+                    </div>
+
+                    {/* Category Filter Pills */}
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        { id: 'all', label: '✨ Todas (24)' },
+                        { id: 'dawn', label: '🌅 Luz & Alba' },
+                        { id: 'jesus', label: '👑 Jesús en Gloria' },
+                        { id: 'peace', label: '🕊️ Paz & Espíritu' },
+                        { id: 'healing', label: '🌿 Sanidad & Oración' },
+                        { id: 'cross', label: '✝️ Cruz de Victoria' },
+                        { id: 'night', label: '🌌 Noche Celestial' }
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setGalleryCategory(tab.id)}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                            galleryCategory === tab.id
+                              ? 'bg-amber-400 text-slate-950 border-amber-400 font-bold shadow-sm'
+                              : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Visual Artwork Thumbnail Cards */}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-56 overflow-y-auto pr-1">
+                      {SACRED_THEME_PRESETS.filter(p => galleryCategory === 'all' || p.category === galleryCategory).map((preset) => {
                         const isSelected = activeArtworkSrc === preset.url && !customImageInfo;
                         return (
-                          <button
+                          <div
                             key={preset.id}
-                            type="button"
                             onClick={() => {
                               handleSelectPresetArtwork(preset);
                               setCustomImageInfo(null);
                             }}
-                            className={`text-[10px] py-1 px-1.5 rounded-lg border text-left truncate transition-all cursor-pointer ${
+                            className={`group relative rounded-xl overflow-hidden border transition-all cursor-pointer text-left flex flex-col ${
                               isSelected 
-                                ? 'bg-amber-400/20 border-amber-400 text-amber-200 font-bold shadow-sm' 
-                                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                                ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/20' 
+                                : 'border-white/10 hover:border-amber-400/50 hover:shadow-md'
                             }`}
                             title={preset.promptDesc}
                           >
-                            {preset.name}
-                          </button>
+                            <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
+                              <img
+                                src={preset.url}
+                                alt={preset.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                              {preset.badge && (
+                                <span className="absolute top-1 right-1 text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-amber-400/90 text-slate-950">
+                                  {preset.badge}
+                                </span>
+                              )}
+                              {isSelected && (
+                                <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-1.5 bg-slate-950/90 flex flex-col justify-between">
+                              <span className="text-[10px] font-medium text-slate-200 truncate group-hover:text-amber-300">
+                                {preset.name}
+                              </span>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
@@ -2128,13 +2418,35 @@ _«${verse}»_
                   filter: getCssFilter(imageFilter)
                 }}
               >
-                {/* Vignette Overlay */}
+                {/* High-Luminosity Soft Overlay (allows background artwork and divine light to shine through) */}
                 <div 
-                  className="absolute inset-0 transition-opacity duration-300"
+                  className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
                   style={{
-                    backgroundColor: `rgba(2, 6, 23, ${overlayOpacity})`
+                    background: `linear-gradient(to bottom, rgba(15, 23, 42, ${overlayOpacity * 0.45}) 0%, rgba(15, 23, 42, ${overlayOpacity * 0.20}) 35%, rgba(15, 23, 42, ${overlayOpacity * 0.55}) 70%, rgba(15, 23, 42, ${overlayOpacity * 0.80}) 100%)`
                   }}
                 />
+
+                {/* Central Radiant Sunburst / Celestial Aura Glow */}
+                {celestialAuraGlow && (
+                  <div 
+                    className="absolute inset-0 pointer-events-none transition-all duration-500"
+                    style={{
+                      background: customAccentColor === '#38bdf8'
+                        ? 'radial-gradient(circle at 50% 40%, rgba(186, 230, 253, 0.35) 0%, rgba(56, 189, 248, 0.18) 40%, transparent 75%)'
+                        : 'radial-gradient(circle at 50% 40%, rgba(254, 240, 138, 0.35) 0%, rgba(245, 158, 11, 0.18) 40%, transparent 75%)'
+                    }}
+                  />
+                )}
+
+                {/* Floating Celestial Light Particles */}
+                {showParticles && (
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute w-2 h-2 rounded-full bg-amber-200/40 blur-[1px] top-1/4 left-1/5 animate-pulse" />
+                    <div className="absolute w-3 h-3 rounded-full bg-amber-300/30 blur-[2px] top-1/3 right-1/4 animate-pulse delay-75" />
+                    <div className="absolute w-1.5 h-1.5 rounded-full bg-white/50 top-1/2 left-1/3 animate-ping" />
+                    <div className="absolute w-2.5 h-2.5 rounded-full bg-amber-100/40 blur-[1px] bottom-1/3 right-1/5 animate-pulse delay-150" />
+                  </div>
+                )}
 
                 {/* Golden Border */}
                 {showGoldBorder && (

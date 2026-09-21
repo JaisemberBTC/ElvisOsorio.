@@ -1,3 +1,5 @@
+import { Aprende30Package, Aprende30SeriesTemplate, Aprende30SeriesEpisode } from '../types';
+
 export interface Aprende30CategoryMeta {
   id: string;
   name: string;
@@ -436,3 +438,631 @@ export const INITIAL_DAILY_CAPSULES = [
     }
   }
 ];
+
+export const PRELOADED_APRENDE_30_SERIES: Aprende30SeriesTemplate[] = [
+  {
+    id: 'serie-ventas-30s',
+    seriesTitle: 'Ventas de Alto Rendimiento: El Secreto de los Mejores Cerradores',
+    logline: 'Miniserie de 3 partes serializadas de 30 segundos revelando los 3 principios psicológicos para cerrar ventas complejas sin rogar ni parecer insistente.',
+    category: 'ventas_negocios',
+    categoryLabel: 'Ventas y Negocios de Alto Rendimiento',
+    totalPartsPlanned: 3,
+    bannerHook: '🔴 APRENDE A VENDER EN 30s',
+    targetAudience: 'Emprendedores, cerradores y vendedores que buscan aumentar su tasa de conversión de forma inmediata.',
+    episodes: [
+      {
+        episodeNumber: 1,
+        episodeTitle: 'Parte 1: El Error Fatal del 95% al Vender',
+        durationSec: 30,
+        banner_hook_superior: '🔴 ERROR FATAL AL VENDER',
+        hook: '¿Sabías que el 95% de la gente comete este error mortal al vender? Dejan de escuchar y solo hablan de su producto.',
+        conflict: 'El cliente se siente acorralado y desconfía cuando el vendedor no para de hablar sin entender el verdadero dolor.',
+        secretRevealed: 'No vendas el producto, vende la transformación. La venta se gana cuando descubres su problema más urgente.',
+        cliffhanger: 'En la Parte 2 te revelo la pregunta exacta de 7 palabras que desarma a cualquier cliente escéptico. Síguenos para no perdértela.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'High contrast cinematic shot of confident professional in modern dark studio looking directly into camera with intense focus, neon amber subtle light rim, 9:16 vertical 8k',
+            narration: '¿Sabías que el noventa y cinco por ciento de las personas comete este error fatal al vender? Se enfocan en hablar del producto en vez de escuchar la necesidad real del cliente.',
+            onScreenText: 'NO VENDAS EL PRODUCTO',
+            secondaryTitle: '💡 El Gran Error',
+            imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Whoosh digital inicial + Pop de texto de impacto',
+            transitionToNext: 'Whip Pan horizontal rápido conectando al plano 2'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'El Secreto Revelado (10-20s)',
+            visualPrompt: 'Close up of a luxury business desk with holographic glowing client pain points connecting to a simple solution bridge, dramatic lighting, 9:16 vertical',
+            narration: 'La gente no compra características técnicas, compra el puente que elimina su dolor. Cuando dejas de hablar y preguntas por su mayor obstáculo, el cliente se convence solo.',
+            onScreenText: 'VENDE LA TRANSFORMACIÓN',
+            secondaryTitle: '⚡ El Puente de Dolor',
+            imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Tick sonoro de reloj + Campana de revelación',
+            transitionToNext: 'Match Cut suave al plano 3'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre Viral & Cliffhanger (20-30s)',
+            visualPrompt: 'Excited client shaking hands with golden glowing success aura, YouTube subscribe bell ringing animation in lower third, 9:16 vertical 8k',
+            narration: 'En la parte dos te revelo la pregunta exacta de siete palabras que desarma cualquier objeción. Guarda este video y suscríbete a @Aprendeen30segundos para no perdértela.',
+            onScreenText: 'PARTE 2 EN EL CANAL',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Ding de campana de YouTube + Swish de suscripción'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'El ERROR FATAL del 95% al Vender 🛑 (Parte 1/3) #Aprendeen30segundos',
+          tiktokTitle: 'No vendas el producto, vende esto! #ventas #negocios',
+          facebookTitle: 'El error que arruina tus ventas explicado en 30 segundos',
+          caption: '⚡ Parte 1 de nuestra miniserie de ventas en 30 segundos. Deja de cometer este error si quieres cerrar más clientes.\n\n👉 Suscríbete a @Aprendeen30segundos para la Parte 2.\n\n#Aprendeen30segundos #shorts #ventas #negocios #emprendimiento',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#ventas', '#negocios', '#tips', '#educacion'],
+          pinnedComment: '👇 ¿Cuántas veces has hablado de más en una venta? Deja tu comentario y guarda este video para ver la Parte 2.'
+        },
+        tarjeta_flash: {
+          titulo: 'No Vendas el Producto',
+          subtitulo: 'La regla número 1 del cierre consultivo',
+          categoriaLabel: 'Ventas y Negocios',
+          errorComun: 'El 95% presume características de su producto y aburre al cliente.',
+          puntosClave: [
+            '1. La gente no compra productos: compra soluciones a sus dolores.',
+            '2. Guarda silencio y haz que tu cliente hable el 80% del tiempo.',
+            '3. Posiciona tu oferta únicamente como el puente de transformación.'
+          ],
+          accionInmediata: 'En tu próxima reunión: pregunta por su mayor dolor antes de decir el precio.',
+          quoteDestacada: '"La gente odia que le vendan, pero ama comprar soluciones a sus problemas."',
+          badgeCanal: '@Aprendeen30segundos',
+          colorTema: 'rojo_ambar'
+        }
+      },
+      {
+        episodeNumber: 2,
+        episodeTitle: 'Parte 2: La Pregunta Quirúrgica de los $10,000 Dólares',
+        durationSec: 30,
+        banner_hook_superior: '🔴 LA PREGUNTA QUIRÚRGICA',
+        hook: 'Si el cliente te dice "está muy caro", nunca bajes el precio. Hazle exactamente esta pregunta de 7 palabras.',
+        conflict: 'Bajar tu precio destruye tu margen de ganancia y hace que el cliente dude de la calidad de lo que ofreces.',
+        secretRevealed: 'Pregúntale con calma: "¿Caro comparado con qué?". Esta pregunta obliga a su cerebro a confesar su verdadera referencia mental.',
+        cliffhanger: 'En la Parte 3 te enseñaré qué hacer cuando se produce el incómodo silencio tras decir tu precio. Suscríbete para verlo.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Businessman looking skeptical crossing arms across negotiation table, cinematic lighting, sharp depth of field, 9:16 vertical 8k',
+            narration: 'Cuando un cliente te diga "está muy caro", jamás cometas el error de bajar tu precio. En los próximos treinta segundos vas a dominar la respuesta perfecta.',
+            onScreenText: 'NUNCA BAJES EL PRECIO',
+            secondaryTitle: '💡 Objeción Típica',
+            imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Whoosh de impacto + Alarma sutil'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'La Pregunta de Oro (10-20s)',
+            visualPrompt: 'Glowing neon words "¿CARO COMPARADO CON QUÉ?" appearing in bold 3D in front of luxury negotiation room, ultra realistic 9:16 vertical',
+            narration: 'Míralo a los ojos y pregúntale con una sonrisa tranquila: "¿Caro comparado con qué exactamente?". Esto desactiva la objeción y te revela su verdadera comparación.',
+            onScreenText: '¿CARO COMPARADO CON QUÉ?',
+            secondaryTitle: '⚡ La Pregunta Clave',
+            imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Ding de revelación + Pop de texto 3D'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre Viral (20-30s)',
+            visualPrompt: 'Confident negotiator shaking hands with successful closing agreement, bright studio lighting, subscribe icon, 9:16 vertical',
+            narration: 'Si no tiene punto de comparación, el precio deja de ser el problema. Guarda este truco para tu próxima venta y síguenos en @Aprendeen30segundos para ver la Parte tres.',
+            onScreenText: 'PARTE 3 EN EL CANAL',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Campana de suscripción YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'Cómo responder cuando te dicen "ESTÁ MUY CARO" 💰 (Parte 2/3) #Aprendeen30segundos',
+          tiktokTitle: 'Nunca bajes tu precio! Di esto en 30s #ventas #negocios',
+          facebookTitle: 'La respuesta de 7 palabras que salva cualquier venta difícil',
+          caption: '⚡ Parte 2 de ventas en 30 segundos. Cómo responder a la objeción más común sin perder ni un dólar.\n\n👉 Suscríbete a @Aprendeen30segundos.\n\n#Aprendeen30segundos #shorts #ventas #tips',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#ventas', '#precios', '#negociacion'],
+          pinnedComment: '💬 ¿Cuál es la objeción que más te dicen tus clientes? Coméntala abajo.'
+        }
+      },
+      {
+        episodeNumber: 3,
+        episodeTitle: 'Parte 3: El Poder del Silencio tras Decir tu Precio',
+        durationSec: 30,
+        banner_hook_superior: '🔴 EL SECRETO DEL SILENCIO',
+        hook: '¿Sabes quién pierde en una negociación millonaria? El primero que habla después de decir la cifra.',
+        conflict: 'El nerviosismo hace que el 90% de los vendedores empiece a justificarse inmediatamente después de dar su precio, arruinando su autoridad.',
+        secretRevealed: 'Di tu precio con total seguridad y cállate por completo. El silencio genera tensión psicológica que la otra parte resolverá aceptando o negociando con seriedad.',
+        cliffhanger: 'Guarda esta serie completa y ponla en práctica hoy. Suscríbete a @Aprendeen30segundos para dominar un nuevo truco cada día.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Intense cinematic close-up of a master negotiator looking calm and steady, cinematic rim lighting, 9:16 vertical 8k',
+            narration: 'En una negociación de un millón de dólares existe una regla de oro inviolable: quien habla primero después de decir el precio, pierde la partida.',
+            onScreenText: 'QUIEN HABLA PRIMERO PIERDE',
+            secondaryTitle: '💡 Ley de Negociación',
+            imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Whoosh tenso + Latido sutil'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'El Silencio Estratégico (10-20s)',
+            visualPrompt: 'Clock ticking with golden seconds passing over a calm confident posture, 9:16 vertical cinematic render',
+            narration: 'Cuando digas tu número, no agregues ni una sola palabra de justificación. Mantén el contacto visual y guarda silencio absoluto. La incomodidad obligará al cliente a responder.',
+            onScreenText: 'GUARDA SILENCIO ABSOLUTO',
+            secondaryTitle: '⚡ El Arte de Callar',
+            imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Tictac sonoro + Pop de tensión'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre de la Miniserie (20-30s)',
+            visualPrompt: 'Contract being signed with golden fountain pen, celebration confetti, YouTube subscribe banner floating, 9:16 vertical',
+            narration: 'Aplica esto en tu próxima llamada y nota cómo el respeto por tu oferta se duplica. Guarda esta serie completa y suscríbete a @Aprendeen30segundos para más hacks diarios.',
+            onScreenText: 'SERIE COMPLETA GUARDADA',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Ding de éxito + Campana de suscripción'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'El SECRETO del Silencio al Vender 🤫 (Parte 3/3) #Aprendeen30segundos',
+          tiktokTitle: 'Quien habla primero pierde la negociación! #ventas #trucos',
+          facebookTitle: 'Por qué callarse después de decir tu precio te hace ganar más dinero',
+          caption: '⚡ Parte 3 y final de la miniserie de ventas en 30 segundos.\n\n👉 Suscríbete a @Aprendeen30segundos para no perderte la serie de mañana.\n\n#Aprendeen30segundos #shorts #ventas #negocios',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#ventas', '#dinero', '#negociacion'],
+          pinnedComment: '🔥 ¿Eres capaz de aguantar 10 segundos de silencio tras decir tu precio? Cuéntanos tu experiencia.'
+        }
+      }
+    ]
+  },
+  {
+    id: 'serie-productividad-30s',
+    seriesTitle: 'Productividad Atómica: Vence la Procrastinación en 30 Segundos',
+    logline: 'Miniserie de 3 micro-cápsulas de 30 segundos revelando los 3 métodos científicos para activar el cerebro en 120 segundos y no postergar jamás.',
+    category: 'productividad_habitos',
+    categoryLabel: 'Productividad y Hábitos Atómicos',
+    totalPartsPlanned: 3,
+    bannerHook: '🔴 HACK DE PRODUCTIVIDAD EN 30s',
+    targetAudience: 'Estudiantes, profesionales y creadores que quieren eliminar la flojera y multiplicar su foco diario.',
+    episodes: [
+      {
+        episodeNumber: 1,
+        episodeTitle: 'Parte 1: La Regla de los 2 Minutos',
+        durationSec: 30,
+        banner_hook_superior: '🔴 REGLA DE LOS 2 MINUTOS',
+        hook: '¿Sabías que tu cerebro solo necesita 120 segundos para engañar a la pereza? En 30 segundos te explico cómo activarlo.',
+        conflict: 'La fricción mental de empezar un proyecto grande hace que tu cerebro busque dopamina barata en el celular.',
+        secretRevealed: 'Si toma menos de dos minutos, hazlo ya. Y si es gigantesco, comprométete solo a los primeros 2 minutos.',
+        cliffhanger: 'En la Parte 2 te revelaré la técnica de Pomodoro visual que triplica tu tiempo de foco. Síguenos.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Glowing digital hourglass countdown clock displaying 02:00 with neon red and amber sparks, cinematic dark atmospheric studio, 9:16 vertical 8k',
+            narration: '¿Sabías que tu mente solo necesita ciento veinte segundos para hackear la pereza? Si algo toma menos de dos minutos, no lo pienses: hazlo ya.',
+            onScreenText: 'LA REGLA DE LOS 2 MINUTOS',
+            secondaryTitle: '⚡ Hack de Enfoque',
+            imageUrl: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Whoosh dinámico + Tictac rápido'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'La Inercia Atómica (10-20s)',
+            visualPrompt: 'Dynamic 3D glowing domino effect pushing a massive boulder effortlessly, hyperrealistic physics visualization, cinematic lighting, 9:16 vertical',
+            narration: 'Para proyectos gigantescos, haz solo los primeros dos minutos. Una vez que rompes el estado de reposo, el principio físico de inercia te empuja a terminar la tarea.',
+            onScreenText: 'ROMPE LA FRICCIÓN',
+            secondaryTitle: '💡 Principio Físico',
+            imageUrl: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Efecto dominó sonoro + Brillo'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Aplicación Inmediata (20-30s)',
+            visualPrompt: 'Person in focused flow state at clean futuristic desk with golden checked todo list floating, YouTube subscribe button with bell, 9:16 8k',
+            narration: 'Pruébalo ahora mismo con esa tarea pendiente. Guarda este video antes de olvidarlo y suscríbete a @Aprendeen30segundos para ver la Parte dos mañana.',
+            onScreenText: 'PARTE 2 EN EL CANAL',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Campana de suscripción YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'Vence la Procrastinación en 30 Segundos ⏳ (Parte 1/3) #Aprendeen30segundos',
+          tiktokTitle: 'La regla de los 2 minutos que cambia tu vida #productividad',
+          facebookTitle: 'Cómo activar tu cerebro en 120 segundos y no postergar más',
+          caption: '⚡ Miniserie de Productividad Atómica (Parte 1). La regla de los 2 minutos explicada al detalle.\n\n👉 Suscríbete a @Aprendeen30segundos.\n\n#Aprendeen30segundos #shorts #productividad #habitos',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#productividad', '#habitos', '#trucos'],
+          pinnedComment: '⚡ ¿Qué tarea estás postergando hoy? Haz solo 2 minutos de ella ahora y comenta cómo te fue.'
+        },
+        tarjeta_flash: {
+          titulo: 'La Regla de los 2 Minutos',
+          subtitulo: 'Destruye la pereza en 120 segundos',
+          categoriaLabel: 'Productividad y Hábitos',
+          errorComun: 'Esperar a "tener motivación" para arrancar un trabajo difícil.',
+          puntosClave: [
+            '1. Si toma menos de 2 minutos: ejecútalo inmediatamente.',
+            '2. Si es una meta enorme: arranca únicamente con 120 segundos.',
+            '3. La inercia mental hace que continuar sea más fácil que parar.'
+          ],
+          accionInmediata: 'Abre tu tarea pendiente y pon un temporizador de 2 minutos ya.',
+          quoteDestacada: '"Es más fácil actuar para sentir ganas, que esperar las ganas para actuar."',
+          badgeCanal: '@Aprendeen30segundos',
+          colorTema: 'rojo_ambar'
+        }
+      },
+      {
+        episodeNumber: 2,
+        episodeTitle: 'Parte 2: La Matriz de Eisenhower Visual',
+        durationSec: 30,
+        banner_hook_superior: '🔴 MATRIZ DE EISENHOWER',
+        hook: '¿Vives apagando fuegos todo el día? Estás confundiendo lo urgente con lo verdaderamente importante.',
+        conflict: 'Pasar todo el día ocupado no significa ser productivo. La trampa de las urgencias ajenas te deja sin tiempo para tus metas.',
+        secretRevealed: 'Divide tu día en 4 cuadrantes: Lo urgente que importa lo haces ya, lo que no importa lo delegas, y lo importante sin prisa lo agendas con candado.',
+        cliffhanger: 'En la Parte 3 te enseñaré la técnica de "No Romper la Cadena" de Jerry Seinfeld para ser imparable. Suscríbete.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Stressed professional overwhelmed by notifications with red alarm lights, modern office, 9:16 vertical 8k',
+            narration: 'Estar ocupado todo el día no es lo mismo que ser productivo. El noventa por ciento de la gente pasa su vida resolviendo urgencias de otros.',
+            onScreenText: 'URGENTE VS IMPORTANTE',
+            secondaryTitle: '💡 El Gran Error',
+            imageUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Alarma de notificaciones + Whoosh'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'Los 4 Cuadrantes (10-20s)',
+            visualPrompt: 'Glowing 3D 4-quadrant matrix diagram organizing tasks with green checkmarks and laser precision, 9:16 vertical',
+            narration: 'Aplica la matriz de Eisenhower: lo importante y urgente se hace hoy. Lo importante sin urgencia se agenda en tu calendario como prioridad sagrada.',
+            onScreenText: 'AGENDA LO IMPORTANTE',
+            secondaryTitle: '⚡ Matriz Clave',
+            imageUrl: 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Pop de 4 cuadrantes + Ding'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre Viral (20-30s)',
+            visualPrompt: 'Calm relaxed entrepreneur looking at clean organized agenda with glowing success stats, YouTube bell animation, 9:16 vertical',
+            narration: 'Elimina lo que no aporta valor y recupera tres horas diarias. Guarda este video y suscríbete a @Aprendeen30segundos para no perderte la Parte tres.',
+            onScreenText: 'PARTE 3 EN EL CANAL',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Campana de suscripción YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'Deja de estar ocupado y sé PRODUCTIVO ⚡ (Parte 2/3) #Aprendeen30segundos',
+          tiktokTitle: 'Matriz de Eisenhower en 30 segundos #productividad',
+          facebookTitle: 'El truco para ordenar tu día en 4 cuadrantes simples',
+          caption: '⚡ Parte 2 de Productividad Atómica en 30 segundos.\n\n👉 Suscríbete a @Aprendeen30segundos.\n\n#Aprendeen30segundos #shorts #enfoque #tiempo',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#productividad', '#metas', '#tiempo'],
+          pinnedComment: '📅 ¿Cuánto tiempo al día pierdes en urgencias ajenas? Deja tu respuesta abajo.'
+        }
+      },
+      {
+        episodeNumber: 3,
+        episodeTitle: 'Parte 3: La Regla de "No Romper la Cadena"',
+        durationSec: 30,
+        banner_hook_superior: '🔴 NO ROMPAS LA CADENA',
+        hook: 'El secreto del comediante Jerry Seinfeld para volverse multimillonario cabe en un calendario de pared.',
+        conflict: 'Esperar momentos de inspiración esporádica produce inconsistencia y abandono de metas a las dos semanas.',
+        secretRevealed: 'Consigue un calendario y marca una gran cruz roja cada día que cumplas tu hábito. Tu único trabajo diario es no romper la cadena de cruces rojas.',
+        cliffhanger: 'Guarda esta serie completa para tus días de poca energía. Suscríbete a @Aprendeen30segundos para un truco nuevo cada día.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Vintage wall calendar with glowing red X marks forming an unbroken chain, dramatic lighting, 9:16 vertical 8k',
+            narration: '¿Cuál es el secreto de los profesionales más exitosos del mundo? No es la motivación infinita, es la regla de no romper la cadena.',
+            onScreenText: 'NO ROMPAS LA CADENA',
+            secondaryTitle: '💡 La Regla de Seinfeld',
+            imageUrl: 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Marcador en papel sonoro + Whoosh'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'La Cruz Roja Diaria (10-20s)',
+            visualPrompt: 'Hand drawing bold red X with thick marker across today date on calendar, golden sparkles radiating, 9:16 vertical',
+            narration: 'Elige tu hábito diario clave. Cada día que lo cumplas, dibuja una cruz roja gigante en tu calendario. Después de unos días, tu única obsesión será no romper la cadena.',
+            onScreenText: '1 HÁBITO = 1 CRUZ ROJA',
+            secondaryTitle: '⚡ Efecto Psicológico',
+            imageUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Sonido de marcador + Brillo victorioso'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre de la Miniserie (20-30s)',
+            visualPrompt: 'Victorious person looking at long streak of accomplishments with celebration particle effects, YouTube subscribe banner, 9:16 vertical',
+            narration: 'La constancia vence al talento cuando el talento se vuelve perezoso. Guarda esta serie completa y suscríbete a @Aprendeen30segundos para dominar un hack diario.',
+            onScreenText: 'SERIE COMPLETA GUARDADA',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Ding de campana de YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'El Truco de Seinfeld para ser IMPARABLE 🗓️ (Parte 3/3) #Aprendeen30segundos',
+          tiktokTitle: 'No rompas la cadena! El truco para crear hábitos #shorts',
+          facebookTitle: 'Cómo crear cualquier hábito usando solo un calendario de pared',
+          caption: '⚡ Parte 3 y final de la miniserie de Productividad Atómica.\n\n👉 Suscríbete a @Aprendeen30segundos para más contenido viral en 30 segundos.\n\n#Aprendeen30segundos #shorts #habitos #exito',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#habitos', '#disciplina', '#trucos'],
+          pinnedComment: '🔥 ¿Cuál es el hábito que empezarás a registrar hoy? Cuéntanos en los comentarios.'
+        }
+      }
+    ]
+  },
+  {
+    id: 'serie-psicologia-30s',
+    seriesTitle: 'Psicología Oculta: Sesgos Mentales y Persuasión en 30s',
+    logline: 'Miniserie de 2 partes de 30 segundos para dominar el anclaje de precios y el poder de la palabra mágica para persuadir éticamente.',
+    category: 'psicologia_mente',
+    categoryLabel: 'Psicología Humana y Sesgos Mentales',
+    totalPartsPlanned: 2,
+    bannerHook: '🔴 PSICOLOGÍA OSCURA EN 30s',
+    targetAudience: 'Negociadores, líderes y comunicadores que quieren entender cómo funciona la mente humana en decisiones de compra.',
+    episodes: [
+      {
+        episodeNumber: 1,
+        episodeTitle: 'Parte 1: El Sesgo de Anclaje',
+        durationSec: 30,
+        banner_hook_superior: '🔴 EL SESGO DE ANCLAJE',
+        hook: '¿Sabías que el primer número que dices en una negociación controla el 80% del resultado final?',
+        conflict: 'Tener miedo a decir el primer precio hace que la otra parte fije un ancla baja de la cual es casi imposible subir.',
+        secretRevealed: 'En psicología humana, el primer número mencionado fija el estándar mental de referencia. Quien ancla primero, controla la mesa.',
+        cliffhanger: 'En la Parte 2 te revelaré la palabra mágica descubierta en Harvard que aumenta un 50% la aceptación de favores.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Cinematic glowing anchor sinking into glowing digital currency pool, high contrast dramatic lighting, 9:16 vertical 8k',
+            narration: '¿Sabías que el primer número que se menciona en una negociación controla el ochenta por ciento del resultado final? En treinta segundos sabrás cómo usarlo a tu favor.',
+            onScreenText: 'EL PRIMER NÚMERO MANDA',
+            secondaryTitle: '💡 Ancla Mental',
+            imageUrl: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Sonido metálico de ancla + Whoosh'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'El Poder del Ancla (10-20s)',
+            visualPrompt: 'Mind profile with glowing numbers comparing $4,950 vs $5,000 with scientific data charts, 9:16 vertical',
+            narration: 'El cerebro humano compara todo con el primer dato recibido. Si anclas primero con un número ambicioso y específico, la otra parte negociará alrededor de tu cifra, no de la suya.',
+            onScreenText: 'ANCLA TÚ PRIMERO',
+            secondaryTitle: '⚡ Regla de Oro',
+            imageUrl: 'https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Ding de cálculo + Swish'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre Viral (20-30s)',
+            visualPrompt: 'Smiling professional closing handshake with golden winning aura, YouTube subscribe bell floating, 9:16 vertical',
+            narration: 'En tu próxima negociación sé el primero en fijar el ancla. Guarda este video y suscríbete a @Aprendeen30segundos para no perderte la Parte dos mañana.',
+            onScreenText: 'PARTE 2 EN EL CANAL',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Campana de suscripción YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'El TRUCO PSICOLÓGICO del Anclaje 🧠 (Parte 1/2) #Aprendeen30segundos',
+          tiktokTitle: 'El sesgo de anclaje que usan las tiendas contigo #psicologia',
+          facebookTitle: 'Cómo negociar cualquier cifra usando el sesgo de anclaje mental',
+          caption: '⚡ Parte 1 de Psicología Oculta en 30 segundos: El sesgo de anclaje.\n\n👉 Suscríbete a @Aprendeen30segundos.\n\n#Aprendeen30segundos #shorts #psicologia #persuasion',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#psicologia', '#mente', '#trucos'],
+          pinnedComment: '🧠 ¿Sabías de este truco mental? Comenta abajo cómo lo aplicarás.'
+        }
+      },
+      {
+        episodeNumber: 2,
+        episodeTitle: 'Parte 2: La Palabra Mágica "Porque"',
+        durationSec: 30,
+        banner_hook_superior: '🔴 LA PALABRA MÁGICA',
+        hook: 'Científicos de Harvard descubrieron una sola palabra que aumenta un 50% las probabilidades de que te digan que sí.',
+        conflict: 'Pedir cosas sin dar una razón produce resistencia automática en la mente de la otra persona.',
+        secretRevealed: 'La palabra es "PORQUE". El cerebro humano está programado para aceptar peticiones en cuanto escucha la palabra "porque", incluso si la razón es obvia.',
+        cliffhanger: 'Guarda esta serie de trucos mentales. Suscríbete a @Aprendeen30segundos para dominar un hack psicológico nuevo cada día.',
+        scenes: [
+          {
+            sceneNumber: 1,
+            durationSec: 10,
+            inicio_segundo: 0,
+            fin_segundo: 10,
+            stageTitle: 'Gancho Disruptivo (0-10s)',
+            visualPrompt: 'Harvard university historic library corridor with glowing golden text "THE MAGIC WORD", 9:16 vertical 8k',
+            narration: 'Un famoso experimento en la universidad de Harvard demostró que una sola palabra de seis letras aumenta en un cincuenta por ciento la aceptación de favores.',
+            onScreenText: 'EL ESTUDIO DE HARVARD',
+            secondaryTitle: '💡 Ciencia Social',
+            imageUrl: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=1080&q=85',
+            cameraMovement: 'zoom_in_suave',
+            sfx: 'Whoosh misterioso + Campana'
+          },
+          {
+            sceneNumber: 2,
+            durationSec: 10,
+            inicio_segundo: 10,
+            fin_segundo: 20,
+            stageTitle: 'La Palabra Revelada (10-20s)',
+            visualPrompt: 'Glowing neon 3D letters "PORQUE" bursting with psychological energy waves, 9:16 vertical cinematic',
+            narration: 'La palabra mágica es "PORQUE". Cuando pidas algo diciendo "porque tengo que hacer esto", el cerebro de la otra persona valida la razón de forma automática.',
+            onScreenText: 'USA SIEMPRE "PORQUE"',
+            secondaryTitle: '⚡ El Gatillo Mental',
+            imageUrl: 'https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?w=1080&q=85',
+            cameraMovement: 'paneo_dinamico',
+            sfx: 'Pop de palabra mágica + Resplandor'
+          },
+          {
+            sceneNumber: 3,
+            durationSec: 10,
+            inicio_segundo: 20,
+            fin_segundo: 30,
+            stageTitle: 'Cierre Viral (20-30s)',
+            visualPrompt: 'Charismatic speaker receiving approval from audience with celebratory light rays, YouTube subscribe bell, 9:16 vertical',
+            narration: 'Pruébalo hoy mismo en tus correos o llamadas y nota la diferencia. Guarda esta serie completa y suscríbete a @Aprendeen30segundos para más secretos de la mente.',
+            onScreenText: 'SERIE COMPLETA GUARDADA',
+            secondaryTitle: '🚀 Cierre Viral',
+            imageUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=1080&q=85',
+            cameraMovement: 'zoom_out_suave',
+            sfx: 'Ding de campana de YouTube'
+          }
+        ],
+        socialPackage: {
+          youtubeTitle: 'La PALABRA MÁGICA de Harvard para Persuadir 🤯 (Parte 2/2) #Aprendeen30segundos',
+          tiktokTitle: 'Usa esta palabra y te dirán que sí a todo! #persuasion',
+          facebookTitle: 'El experimento de la fotocopiadora de Harvard explicado en 30s',
+          caption: '⚡ Parte 2 y final de la miniserie de Psicología Oculta en 30 segundos.\n\n👉 Suscríbete a @Aprendeen30segundos.\n\n#Aprendeen30segundos #shorts #psicologia #trucos',
+          hashtags: ['#Aprendeen30segundos', '#shorts', '#psicologia', '#persuasion', '#tips'],
+          pinnedComment: '💬 ¿Sabías del poder de la palabra "porque"? Pruébala hoy y cuéntanos si funcionó.'
+        }
+      }
+    ]
+  }
+];
+
+export function episodeToAprende30Package(series: Aprende30SeriesTemplate, episode: Aprende30SeriesEpisode): Aprende30Package {
+  const fullScript = (episode.scenes || []).map(s => s.narration).join(' ');
+  return {
+    id: `pkg-${series.id}-ep${episode.episodeNumber}`,
+    channelHandle: '@Aprendeen30segundos',
+    channelUrl: 'https://www.youtube.com/@Aprendeen30segundos',
+    titulo: `${series.seriesTitle} (${episode.episodeTitle})`,
+    categoria: series.category,
+    duracion_segundos: 30,
+    banner_hook_superior: episode.banner_hook_superior || series.bannerHook || '🔴 APRENDE EN 30s',
+    gancho_inicial: episode.hook,
+    guion_completo: fullScript,
+    escenas: episode.scenes,
+    miniatura_texto: episode.scenes[0]?.onScreenText || 'TRUCO EN 30s',
+    miniatura_visual: episode.scenes[0]?.visualPrompt || 'Sujeto expresivo con tipografía 3D de alto impacto',
+    ctr_estimado: 15.8,
+    retencion_proyectada: 91,
+    musica_sugerida: 'Lo-Fi Focus Beat 124 BPM con sintetizador nítido',
+    descripcion_youtube: `${episode.socialPackage?.caption || episode.hook}\n\n👉 Suscríbete a @Aprendeen30segundos\n\n${(episode.socialPackage?.hashtags || []).join(' ')}`,
+    hashtags: episode.socialPackage?.hashtags || ['#Aprendeen30segundos', '#shorts', '#trucos', '#educacion'],
+    llamado_accion: episode.cliffhanger || 'Guarda este video y suscríbete a @Aprendeen30segundos para no perderte la siguiente parte.',
+    tarjeta_flash: episode.tarjeta_flash
+  };
+}
+
+export function packageToAprende30Series(pkg: Aprende30Package): Aprende30SeriesTemplate {
+  return {
+    id: `serie-${pkg.id}`,
+    seriesTitle: pkg.titulo,
+    logline: pkg.gancho_inicial,
+    category: pkg.categoria,
+    categoryLabel: APRENDE_30_CATEGORIES[pkg.categoria]?.name || pkg.categoria,
+    totalPartsPlanned: 1,
+    bannerHook: pkg.banner_hook_superior,
+    targetAudience: 'Audiencia interesada en micro-aprendizaje de alto impacto.',
+    episodes: [
+      {
+        episodeNumber: 1,
+        episodeTitle: pkg.titulo,
+        durationSec: 30,
+        banner_hook_superior: pkg.banner_hook_superior,
+        hook: pkg.gancho_inicial,
+        conflict: pkg.escenas[0]?.narration || 'El problema o error común.',
+        secretRevealed: pkg.escenas[1]?.narration || 'El truco o principio revelado.',
+        cliffhanger: pkg.llamado_accion,
+        scenes: pkg.escenas,
+        socialPackage: {
+          youtubeTitle: pkg.titulo,
+          tiktokTitle: pkg.banner_hook_superior,
+          facebookTitle: pkg.titulo,
+          caption: pkg.descripcion_youtube,
+          hashtags: pkg.hashtags,
+          pinnedComment: pkg.llamado_accion
+        },
+        tarjeta_flash: pkg.tarjeta_flash
+      }
+    ]
+  };
+}
+

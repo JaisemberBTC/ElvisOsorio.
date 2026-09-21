@@ -5,10 +5,12 @@ import { DailyDevotionalView } from './components/DailyDevotionalView';
 import { DevotionalSceneGenerator } from './components/DevotionalSceneGenerator';
 import { BiblicalCounselor } from './components/BiblicalCounselor';
 import { GoogleFlowVideoCreator } from './components/GoogleFlowVideoCreator';
+import { MiniseriesFeFlowStudio } from './components/MiniseriesFeFlowStudio';
 import { BlessingCardStudio } from './components/BlessingCardStudio';
 import { SpiritualVideoCreator } from './components/SpiritualVideoCreator';
 import { Aprende30SegundosStudio } from './components/Aprende30SegundosStudio';
 import { SocialMediaManager } from './components/SocialMediaManager';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Flame, Heart, Sparkles, Radio } from 'lucide-react';
 
 export default function App() {
@@ -143,6 +145,23 @@ export default function App() {
                   }
                 }}
               />
+            )}
+            {activeTab === 'flow-video' && (
+              <ErrorBoundary fallbackTitle="Ocurrió un error en el Estudio de Miniseries">
+                <MiniseriesFeFlowStudio
+                  onNavigateToSpiritualCreator={() => setActiveTab('spiritual-video-creator')}
+                  onSendToVideoStudio={(pkg) => {
+                    if (pkg) {
+                      try {
+                        sessionStorage.setItem('devotional_to_video_transfer', JSON.stringify(pkg));
+                        setActiveTab('spiritual-video-creator');
+                      } catch (e) {
+                        console.error('Error saving transfer to studio:', e);
+                      }
+                    }
+                  }}
+                />
+              </ErrorBoundary>
             )}
           </main>
         </div>

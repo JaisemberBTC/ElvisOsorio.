@@ -21,7 +21,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, UserSubscription> = {
     tier: 'free',
     planName: 'Plan Semilla (Básico)',
     status: 'free',
-    geminiModel: 'gemini-3.7-flash',
+    geminiModel: 'gemini-3.8-flash',
     flowPipelinesLimit: 5,
     driveSyncEnabled: true,
     youtubeChannelsLimit: 1,
@@ -32,7 +32,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, UserSubscription> = {
     planName: 'Plan Pro Ministerial (Ecosistema Google AI)',
     status: 'active',
     renewDate: '2026-12-31',
-    geminiModel: 'gemini-3.7-pro',
+    geminiModel: 'gemini-3.1-pro-preview',
     flowPipelinesLimit: 9999,
     driveSyncEnabled: true,
     youtubeChannelsLimit: 10,
@@ -43,7 +43,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, UserSubscription> = {
     planName: 'Plan Altar Global (Google Cloud & 100 Canales)',
     status: 'active',
     renewDate: '2027-12-31',
-    geminiModel: 'gemini-3.7-pro',
+    geminiModel: 'gemini-3.1-pro-preview',
     flowPipelinesLimit: 99999,
     driveSyncEnabled: true,
     youtubeChannelsLimit: 100,
@@ -54,8 +54,8 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, UserSubscription> = {
 export const PLAN_FEATURES: PlanFeature[] = [
   {
     id: 'gemini_engine',
-    title: 'Motor Central Gemini 3.7 (Google AI)',
-    description: 'Acceso directo a la API de Gemini 3.7 Flash y Gemini 3.7 Pro con razonamiento teológico profundo.',
+    title: 'Motor Central Gemini 3 (Google AI)',
+    description: 'Acceso directo a la API de Gemini 3.8 Flash y Gemini 3.1 Pro con razonamiento teológico profundo.',
     includedIn: ['free', 'pro', 'unlimited']
   },
   {

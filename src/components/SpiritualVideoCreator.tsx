@@ -2399,10 +2399,10 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
               : `Cierre Sagrado (${startSec}-${endSec}s)`;
 
             return (
-              <div
-                key={scene.sceneNumber || idx}
-                onClick={() => setActivePromptSceneIdx(idx)}
-                className={`p-5 sm:p-6 rounded-3xl border transition-all ${
+              <React.Fragment key={scene.sceneNumber || idx}>
+                <div
+                  onClick={() => setActivePromptSceneIdx(idx)}
+                  className={`p-5 sm:p-6 rounded-3xl border transition-all ${
                   isActive
                     ? 'bg-slate-900/90 border-amber-400/60 shadow-[0_0_30px_rgba(245,158,11,0.15)] ring-1 ring-amber-400/30'
                     : 'bg-slate-950/60 border-white/10 hover:border-white/20'
@@ -2947,11 +2947,124 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
                         </button>
                       </div>
                     </div>
+
+                    {/* Cronograma de Efectos de Sonido SFX (Cada 2s - Cero Silencios) */}
+                    <div className="pt-3 border-t border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                          <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                          <span>⏱️ Cronograma SFX cada 2s (Cero Silencios · Retención Viral):</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const text = (scene.sfxTimeline && scene.sfxTimeline.length > 0)
+                              ? scene.sfxTimeline.map((s: any) => `[${s.atSecond}] ${s.sound} (${s.purpose})`).join('\n')
+                              : `SFX: ${scene.sfx || 'Whoosh celestial y shimmer armónico'}`;
+                            handleCopy(text, `sfx_${idx}`);
+                          }}
+                          className="text-[10px] text-amber-300 hover:text-amber-200 flex items-center gap-1 cursor-pointer font-semibold bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-lg border border-white/5"
+                        >
+                          {copiedKey === `sfx_${idx}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedKey === `sfx_${idx}` ? '¡Copiado!' : 'Copiar SFX'}</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        {((scene.sfxTimeline && scene.sfxTimeline.length > 0) ? scene.sfxTimeline : [
+                          { atSecond: "00:00 - 00:02", sound: idx === 0 ? "Whoosh celestial envolvente e impacto de piano cálido" : "Gong sutil y respiración de luz divina", purpose: "Detención de scroll y apertura reverente" },
+                          { atSecond: "00:03 - 00:05", sound: "Pad atmosférico orquestal elevándose con shimmer", purpose: "Subida emocional sobre la promesa" },
+                          { atSecond: "00:06 - 00:08", sound: "Campanas de gloria y destello agudo armónico", purpose: "Enfoque devocional sin vacíos" },
+                          { atSecond: "00:08 - 00:10", sound: "Crescendo orquestal y disolvencia continua", purpose: "Puente continuo sin silencios" }
+                        ]).map((item: any, itIdx: number) => (
+                          <div key={itIdx} className="p-2 rounded-xl bg-slate-950/80 border border-white/5 flex items-start gap-2">
+                            <span className="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono text-[10px] font-bold shrink-0">
+                              {item.atSecond}
+                            </span>
+                            <div className="space-y-0.5 min-w-0">
+                              <p className="text-slate-200 font-medium truncate">{item.sound}</p>
+                              <p className="text-[9px] text-slate-400 truncate">🎯 {item.purpose}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
-            );
-          })}
+
+              {/* Conector Visual de Transición Fluida entre Videos (Cero Saltos / Cero Cortes Negros) */}
+              {idx < scenes.length - 1 && (
+                <div className="my-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900/90 to-amber-500/15 border border-amber-500/30 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-sm shrink-0 border border-amber-400/30 shadow-inner">
+                      <ArrowDown className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30">
+                          Transición Fluida Continua (Escena {idx + 1} ➔ {idx + 2})
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">0.3s - 0.5s sin cortes en negro</span>
+                      </div>
+                      <p className="text-xs text-slate-200 font-medium">
+                        🎬 {scene.transitionToNext || (scene as any).transicion || (idx === 0 ? 'Whip Pan Dinámico Horizontal (0.3s) con desenfoque direccional celestial hacia la escena 2' : 'Match Cut Continuo de Luz Dorada (0.4s) acelerando hacia la revelación')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden md:flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-white/5 text-[10px]">
+                      {[
+                        { label: 'Whip Pan', val: 'Whip Pan dinámico horizontal (0.3s) con desenfoque de velocidad hacia la siguiente escena', type: 'whip_pan' },
+                        { label: 'Match Cut', val: 'Match Cut continuo de luz y mirada hacia la siguiente escena sagrada', type: 'match_cut' },
+                        { label: 'Luz Dorada', val: 'Disolvencia luminosa de gloria celestial (0.4s) continua', type: 'resplandor_triunfal' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCustomSceneOverrides(prev => ({
+                              ...prev,
+                              [idx]: {
+                                ...(prev[idx] || {}),
+                                transitionToNext: preset.val,
+                                transitionType: preset.type
+                              }
+                            }));
+                          }}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer transition-all ${
+                            ((scene.transitionType === preset.type) || (scene.transitionToNext && scene.transitionToNext.includes(preset.label)))
+                              ? 'bg-amber-400 text-slate-950 font-bold'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(scene.transitionToNext || (scene as any).transicion || 'Whip Pan Dinámico Horizontal (0.3s)', `trans_${idx}`);
+                      }}
+                      className="px-2.5 py-1 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      title="Copiar instrucción de transición para Premiere / CapCut / Runway"
+                    >
+                      {copiedKey === `trans_${idx}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>Copiar</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
         </div>
 
       </div>

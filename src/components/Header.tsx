@@ -183,6 +183,26 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             </span>
           </button>
 
+          {/* DEDICATED MINISERIES & MINI TELENOVELAS DE FE (FLOW VIDEO) */}
+          <button
+            onClick={() => setActiveTab('flow-video')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'flow-video'
+                ? 'bg-gradient-to-r from-purple-600/40 via-indigo-600/30 to-purple-800/40 text-purple-100 border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)] font-bold'
+                : 'text-slate-300 hover:text-white hover:bg-purple-500/10 border border-transparent'
+            }`}
+          >
+            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] text-white font-black">
+              🎬
+            </div>
+            <span className="font-bold">Miniseries de Fe</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              activeTab === 'flow-video' ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-500/20 text-purple-300'
+            }`}>
+              Telenovelas 3D
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('devotional')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${

@@ -35,6 +35,14 @@ export interface StoryboardScene {
     shot2?: string;
     shot3?: string;
   };
+  sfx?: string;
+  sfxTimeline?: {
+    atSecond: string;
+    sound: string;
+    purpose: string;
+  }[];
+  transitionToNext?: string;
+  transitionType?: string;
 }
 
 export type SceneScript = StoryboardScene;
@@ -537,7 +545,7 @@ export interface UserSubscription {
   planName: string;
   status: 'active' | 'trial' | 'free';
   renewDate?: string;
-  geminiModel: 'gemini-3.7-flash' | 'gemini-3.7-pro';
+  geminiModel: 'gemini-3.8-flash' | 'gemini-3.1-pro-preview' | 'gemini-3.7-flash' | 'gemini-3.7-pro' | string;
   flowPipelinesLimit: number;
   driveSyncEnabled: boolean;
   youtubeChannelsLimit: number;
@@ -761,6 +769,14 @@ export interface Aprende30Scene {
   mediaType?: 'image' | 'video';
   cameraMovement?: string;
   masterVideoPrompt?: string;
+  sfx?: string;
+  sfxTimeline?: {
+    atSecond: string;
+    sound: string;
+    purpose: string;
+  }[];
+  transitionToNext?: string;
+  transitionType?: string;
 }
 
 export interface Aprende30FlashCard {
@@ -815,6 +831,39 @@ export interface Aprende30Package {
   tarjeta_flash?: Aprende30FlashCard;
   fecha_programada?: string;
   created_at?: string;
+}
+
+export interface Aprende30SeriesEpisode {
+  episodeNumber: number;
+  episodeTitle: string;
+  durationSec: number;
+  banner_hook_superior: string;
+  hook: string;
+  conflict: string;
+  secretRevealed: string;
+  cliffhanger: string;
+  scenes: Aprende30Scene[];
+  socialPackage: {
+    youtubeTitle: string;
+    tiktokTitle: string;
+    facebookTitle: string;
+    caption: string;
+    hashtags: string[];
+    pinnedComment: string;
+  };
+  tarjeta_flash?: Aprende30FlashCard;
+}
+
+export interface Aprende30SeriesTemplate {
+  id: string;
+  seriesTitle: string;
+  logline: string;
+  category: Aprende30Category;
+  categoryLabel: string;
+  totalPartsPlanned: number;
+  bannerHook: string;
+  targetAudience?: string;
+  episodes: Aprende30SeriesEpisode[];
 }
 
 
