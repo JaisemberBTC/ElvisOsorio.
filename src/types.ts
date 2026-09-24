@@ -184,7 +184,7 @@ export interface BlessingCard {
   backgroundImageId?: string;
   imagePrompt?: string;
   generatedImageUrl?: string;
-  themeCategory?: 'dawn' | 'jesus' | 'cross' | 'dove' | 'olive' | 'healing' | 'night' | 'peace';
+  themeCategory?: 'dawn' | 'jesus' | 'cross' | 'dove' | 'olive' | 'healing' | 'night' | 'peace' | 'worship';
 }
 
 export type ActiveTab = 'studio' | 'scene-generator' | 'spiritual-video-creator' | 'aprende-30s' | 'veo-video' | 'social-connect' | 'sanctuary' | 'devotional' | 'flow-video' | 'counselor' | 'card-creator';
@@ -749,7 +749,9 @@ export type Aprende30Category =
   | 'psicologia_mente'
   | 'ciencia_curiosidades'
   | 'tecnologia_ia'
-  | 'historia_cultura';
+  | 'historia_cultura'
+  | 'salud_bienestar'
+  | 'fe_espiritualidad';
 
 export type Aprende30Pace = 'ultra_rapido' | 'dinamico' | 'pausado_impacto';
 

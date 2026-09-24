@@ -8,7 +8,7 @@ export interface BibleVerseItem {
   headerTitle: string;
   blessingQuote: string;
   prayer: string;
-  recommendedTheme: 'dawn' | 'night' | 'jesus' | 'cross' | 'peace' | 'healing' | 'olive' | 'worship';
+  recommendedTheme: 'dawn' | 'night' | 'jesus' | 'cross' | 'peace' | 'healing' | 'olive' | 'worship' | 'dove';
   accentColor: string;
   keywords: string[];
 }
@@ -641,3 +641,136 @@ export function getRandomBibleVerses(count: number = 4): BibleVerseItem[] {
   const shuffled = [...BIBLICAL_VERSES_COLLECTION].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
+
+export interface VerseMatchOptions {
+  topic?: string;
+  category?: string;
+  timeOfDay?: 'morning' | 'night' | 'custom';
+  themeCategory?: 'dawn' | 'night' | 'jesus' | 'cross' | 'peace' | 'healing' | 'olive' | 'worship' | 'dove';
+  headerTitle?: string;
+  excludedReferences?: string[];
+}
+
+/**
+ * Normalizes text for lenient keyword matching (lowercase, strips accents)
+ */
+function cleanText(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Finds the most spiritually aligned, contextual Bible verse for a card
+ * without repeating previously used or active verses.
+ */
+export function findBestMatchingVerse(options: VerseMatchOptions = {}): BibleVerseItem {
+  const {
+    topic = '',
+    category,
+    timeOfDay,
+    themeCategory,
+    headerTitle = '',
+    excludedReferences = []
+  } = options;
+
+  const rawCombined = cleanText(`${topic} ${category || ''} ${headerTitle} ${themeCategory || ''}`);
+  const isNight = timeOfDay === 'night' || rawCombined.includes('noche') || rawCombined.includes('dormir') || rawCombined.includes('descanso') || rawCombined.includes('insomnio');
+  const isMorning = timeOfDay === 'morning' || rawCombined.includes('buenos dias') || rawCombined.includes('manana') || rawCombined.includes('amanecer') || rawCombined.includes('despertar');
+  const isHealing = rawCombined.includes('sanidad') || rawCombined.includes('salud') || rawCombined.includes('enfermedad') || rawCombined.includes('medico') || rawCombined.includes('dolor') || rawCombined.includes('restauracion');
+  const isPeace = rawCombined.includes('paz') || rawCombined.includes('tormenta') || rawCombined.includes('ansiedad') || rawCombined.includes('afliccion') || rawCombined.includes('angustia') || rawCombined.includes('calma') || rawCombined.includes('consuelo');
+  const isProtection = rawCombined.includes('proteccion') || rawCombined.includes('amparo') || rawCombined.includes('escudo') || rawCombined.includes('salmo 91') || rawCombined.includes('refugio') || rawCombined.includes('castillo') || rawCombined.includes('angeles');
+  const isFamily = rawCombined.includes('familia') || rawCombined.includes('hogar') || rawCombined.includes('hijos') || rawCombined.includes('esposa') || rawCombined.includes('padres') || rawCombined.includes('casa') || rawCombined.includes('matrimonio');
+  const isCross = rawCombined.includes('cruz') || rawCombined.includes('jesus') || rawCombined.includes('cristo') || rawCombined.includes('gracia') || rawCombined.includes('redencion') || rawCombined.includes('perdon') || rawCombined.includes('salvacion');
+  const isWisdom = rawCombined.includes('sabiduria') || rawCombined.includes('guia') || rawCombined.includes('direccion') || rawCombined.includes('consejo') || rawCombined.includes('inteligencia') || rawCombined.includes('prudencia');
+  const isPraise = rawCombined.includes('alabanza') || rawCombined.includes('gratitud') || rawCombined.includes('gracias') || rawCombined.includes('victoria') || rawCombined.includes('gozo') || rawCombined.includes('alegria');
+
+  // Filter pool excluding recent references
+  const excludedClean = (excludedReferences || []).map(r => cleanText(r));
+  let availablePool = BIBLICAL_VERSES_COLLECTION.filter(v => 
+    !excludedClean.some(ex => cleanText(v.reference).includes(ex) || ex.includes(cleanText(v.reference)))
+  );
+
+  // If all were excluded, fall back to entire collection
+  if (availablePool.length === 0) {
+    availablePool = BIBLICAL_VERSES_COLLECTION;
+  }
+
+  // Score candidate verses based on thematic affinity
+  const scored = availablePool.map(verse => {
+    let score = 0;
+    const vCat = verse.category;
+    const vTheme = verse.recommendedTheme;
+    const vText = cleanText(`${verse.text} ${verse.headerTitle} ${verse.blessingQuote} ${verse.keywords.join(' ')}`);
+
+    if (isHealing) {
+      if (vCat === 'sanidad') score += 50;
+      if (vTheme === 'healing') score += 30;
+      if (vText.includes('sana') || vText.includes('herida') || vText.includes('medicina')) score += 20;
+    }
+    if (isPeace) {
+      if (vCat === 'paz') score += 45;
+      if (vTheme === 'peace') score += 25;
+      if (vText.includes('paz') || vText.includes('quietud') || vText.includes('reposo')) score += 15;
+    }
+    if (isProtection) {
+      if (vCat === 'salmos-proteccion') score += 50;
+      if (vText.includes('refugio') || vText.includes('escudo') || vText.includes('angeles') || vText.includes('amparo')) score += 25;
+    }
+    if (isFamily) {
+      if (vCat === 'familia') score += 50;
+      if (vTheme === 'olive') score += 25;
+      if (vText.includes('casa') || vText.includes('hijos') || vText.includes('familia') || vText.includes('generacion')) score += 20;
+    }
+    if (isNight) {
+      if (vCat === 'salmos-noche') score += 50;
+      if (vTheme === 'night') score += 35;
+      if (vText.includes('noche') || vText.includes('dormire') || vText.includes('sueno') || vText.includes('acostare')) score += 20;
+    }
+    if (isMorning) {
+      if (vCat === 'salmos-manana' || vCat === 'fortaleza' || vCat === 'promesas') score += 35;
+      if (vTheme === 'dawn') score += 25;
+      if (vText.includes('manana') || vText.includes('amanecer') || vText.includes('fuerzas') || vText.includes('dia')) score += 15;
+    }
+    if (isCross) {
+      if (vCat === 'amor' || vCat === 'promesas') score += 35;
+      if (vTheme === 'cross' || vTheme === 'jesus') score += 25;
+    }
+    if (isWisdom) {
+      if (vCat === 'sabiduria') score += 50;
+    }
+    if (isPraise) {
+      if (vCat === 'alabanza') score += 50;
+      if (vTheme === 'worship') score += 25;
+    }
+
+    // Direct keyword match in query words
+    const queryTokens = rawCombined.split(/\s+/).filter(t => t.length > 3);
+    for (const token of queryTokens) {
+      if (vText.includes(token)) score += 10;
+    }
+
+    // Add small random jitter so equally matching verses rotate dynamically
+    score += Math.random() * 5;
+
+    return { verse, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // Return the best matching verse
+  return scored[0]?.verse || availablePool[Math.floor(Math.random() * availablePool.length)];
+}
+
+/**
+ * Cycles to the next diverse verse that fits the card's context, never repeating the current one
+ */
+export function getNextMatchingVerse(currentReference: string, options: VerseMatchOptions = {}): BibleVerseItem {
+  const mergedOptions: VerseMatchOptions = {
+    ...options,
+    excludedReferences: [...(options.excludedReferences || []), currentReference]
+  };
+  return findBestMatchingVerse(mergedOptions);
+}
+

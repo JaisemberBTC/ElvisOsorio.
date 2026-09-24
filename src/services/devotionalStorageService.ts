@@ -1,76 +1,71 @@
-import { DevotionalVideoProductionDoc } from '../types';
-
-const STORAGE_KEY = 'devotional_cinematic_scenes_history';
+import { DevotionalVideoProductionDoc, DevotionalSceneItem } from '../types';
 
 export interface SavedDevotionalProject {
   id: string;
   title: string;
-  originalPrompt: string;
-  masterCharacterDescription: string;
-  aspectRatio: '9:16' | '16:9' | '1:1';
-  totalDurationSec: number;
-  productionDoc: DevotionalVideoProductionDoc;
   createdAt: string;
-  status: 'completed' | 'draft' | 'archived';
+  totalDurationSec: number;
+  prompt: string;
+  originalPrompt?: string;
+  aspectRatio: '9:16' | '16:9' | '1:1';
+  scenes: DevotionalSceneItem[];
+  productionDoc: DevotionalVideoProductionDoc;
 }
 
-/**
- * Devotional Storage Service
- * Handles persistence to localStorage with ready hooks for Firestore/Firebase.
- */
+const DEVOTIONAL_STORAGE_KEY = 'fe_oracion_devotional_saved_projects_v1';
+
 class DevotionalStorageService {
-  public getAllProjects(): SavedDevotionalProject[] {
+  getAllProjects(): SavedDevotionalProject[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      return JSON.parse(raw);
+      const data = localStorage.getItem(DEVOTIONAL_STORAGE_KEY);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (err) {
-      console.warn('Error reading devotional scene projects from storage', err);
+      console.error('Error loading devotional projects:', err);
       return [];
     }
   }
 
-  public saveProject(doc: DevotionalVideoProductionDoc, originalPrompt: string): SavedDevotionalProject {
-    const projects = this.getAllProjects();
+  saveProject(productionDoc: DevotionalVideoProductionDoc, promptText?: string): SavedDevotionalProject {
+    const existing = this.getAllProjects();
+    const id = `dev_proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
     const newProject: SavedDevotionalProject = {
-      id: `devotional-project-${Date.now()}`,
-      title: doc.videoTitle || 'Video Devocional',
-      originalPrompt,
-      masterCharacterDescription: doc.masterCharacterDescription,
-      aspectRatio: doc.aspectRatio,
-      totalDurationSec: doc.totalDurationSec,
-      productionDoc: doc,
+      id,
+      title: productionDoc.videoTitle || 'Devocional Sagrado',
       createdAt: new Date().toISOString(),
-      status: 'completed'
+      totalDurationSec: productionDoc.totalDurationSec || 10,
+      prompt: promptText || productionDoc.environmentOverview || '',
+      originalPrompt: promptText || productionDoc.environmentOverview || '',
+      aspectRatio: productionDoc.aspectRatio || '9:16',
+      scenes: productionDoc.scenes || [],
+      productionDoc
     };
 
-    const updated = [newProject, ...projects.slice(0, 19)]; // Keep latest 20
+    const updated = [newProject, ...existing.filter(p => p.title !== newProject.title)].slice(0, 30);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(DEVOTIONAL_STORAGE_KEY, JSON.stringify(updated));
     } catch (err) {
-      console.warn('Error saving to localStorage', err);
+      console.error('Error saving devotional project to localStorage:', err);
     }
 
     return newProject;
   }
 
-  public deleteProject(id: string): void {
-    const projects = this.getAllProjects();
-    const filtered = projects.filter(p => p.id !== id);
+  deleteProject(id: string): void {
+    const existing = this.getAllProjects();
+    const filtered = existing.filter(p => p.id !== id);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+      localStorage.setItem(DEVOTIONAL_STORAGE_KEY, JSON.stringify(filtered));
     } catch (err) {
-      console.warn('Error updating localStorage', err);
+      console.error('Error deleting devotional project:', err);
     }
   }
 
-  /**
-   * Prepared method for cloud sync when Firebase is connected
-   */
-  public async syncToCloudFirestore(userId: string, project: SavedDevotionalProject): Promise<boolean> {
-    // Ready for Firestore collection('devotional_scene_projects').doc(project.id).set(...)
-    console.info(`[DevotionalStorageService] Cloud sync prepared for user: ${userId}, project: ${project.id}`);
-    return true;
+  getProjectById(id: string): SavedDevotionalProject | null {
+    const list = this.getAllProjects();
+    return list.find(p => p.id === id) || null;
   }
 }
 

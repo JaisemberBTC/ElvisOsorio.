@@ -50,6 +50,12 @@ export interface DialogueTurn {
   dialogueSpanish: string;
   emotionalTone: string;
   voicePresetName?: string;
+  timeWindow?: string;
+  allocatedSeconds?: number;
+  role?: string;
+  wordCount?: number;
+  wordsPerSecond?: number;
+  pacingStatus?: 'perfecto' | 'óptimo' | 'ajustado';
 }
 
 export interface MiniserieEpisodeScene {
@@ -175,6 +181,8 @@ export interface MiniserieTemplate {
   totalPartsPlanned: number;
   bannerHook: string;
   primaryCharacterIds: string[];
+  characters?: CartoonCharacter[];
+  castCount?: number;
   lockedEnvironmentId?: string;
   lockedEnvironmentName?: string;
   lockedEnvironmentPromptEn?: string;

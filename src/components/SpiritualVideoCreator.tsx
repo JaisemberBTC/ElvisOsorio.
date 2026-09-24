@@ -76,6 +76,7 @@ import { spiritualVideoStorage } from '../services/spiritualVideoStorageService'
 import { INITIAL_SCRIPT_DATA } from '../data/initialData';
 import { 
   generateMasterVideoPrompt, 
+  getSynchronizedMasterVideoPrompt,
   downloadImageFile,
   getThematicSacredImageForScene
 } from '../services/videoGenerator';
@@ -331,7 +332,7 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
             }
           }
 
-          return {
+          const constructedScene = {
             sceneNumber: i + 1,
             durationSec: dur,
             visualPrompt: sc.visual || fallbackScene.visualPrompt,
@@ -341,8 +342,15 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
             atmosphere: fallbackScene.atmosphere,
             imageUrl: sc.imageUrl || sceneArtworks[i % sceneArtworks.length]?.imageUrl || fallbackScene.imageUrl,
             mediaUrl: sc.mediaUrl || sc.imageUrl || sceneArtworks[i % sceneArtworks.length]?.imageUrl || fallbackScene.imageUrl,
-            mediaType: sc.mediaType || 'image'
+            mediaType: sc.mediaType || 'image',
+            masterVideoPrompt: generateMasterVideoPrompt({
+              sceneNumber: i + 1,
+              durationSec: dur,
+              cameraMovement: fallbackScene.cameraMovement,
+              narrationText: narr
+            }, i)
           };
+          return constructedScene;
         }),
         socialMetadata: {
           hashtags: currentPackage.hashtags && currentPackage.hashtags.length > 0 ? currentPackage.hashtags : INITIAL_SCRIPT_DATA.socialMetadata.hashtags,
@@ -357,7 +365,8 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
           ...sc,
           imageUrl: sc.imageUrl || sceneArtworks[i % sceneArtworks.length]?.imageUrl,
           mediaUrl: sc.mediaUrl || sc.imageUrl || sceneArtworks[i % sceneArtworks.length]?.imageUrl,
-          mediaType: sc.mediaType || 'image'
+          mediaType: sc.mediaType || 'image',
+          masterVideoPrompt: generateMasterVideoPrompt(sc, i)
         }))
       };
     }
@@ -2356,7 +2365,7 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
               type="button"
               onClick={() => {
                 const allPromptsText = scenes.map((sc, i) => {
-                  const p = generateMasterVideoPrompt(sc, i);
+                  const p = getSynchronizedMasterVideoPrompt(sc, i);
                   return `=== PROMPT OFICIAL ESCENA ${i + 1} DE ${scenes.length} (DURACIÓN: ${sc.durationSec || 10}s) ===\n${p}\n`;
                 }).join('\n----------------------------------------\n\n');
                 handleCopy(allPromptsText, 'all-scenes-prompts');
@@ -2382,7 +2391,7 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
         {/* Scene Cards Grid / List - Diseño del Segundo Video */}
         <div className="space-y-6">
           {scenes.map((scene, idx) => {
-            const masterPrompt = scene.masterVideoPrompt || generateMasterVideoPrompt(scene, idx);
+            const masterPrompt = getSynchronizedMasterVideoPrompt(scene, idx);
             const isActive = activePromptSceneIdx === idx;
             const isVideoMedia = scene.mediaType === 'video';
             const sceneWords = (scene.narrationText || '').trim().split(/\s+/).filter(Boolean);
@@ -2626,13 +2635,19 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
                         rows={3}
                         value={scene.narrationText || ''}
                         onChange={(e) => {
-                          setCustomSceneOverrides(prev => ({
-                            ...prev,
-                            [idx]: {
-                              ...(prev[idx] || {}),
-                              narrationText: e.target.value
-                            }
-                          }));
+                          const newText = e.target.value;
+                          setCustomSceneOverrides(prev => {
+                            const prevOver = prev[idx] || {};
+                            const updatedSc = { ...scene, ...prevOver, narrationText: newText };
+                            return {
+                              ...prev,
+                              [idx]: {
+                                ...prevOver,
+                                narrationText: newText,
+                                masterVideoPrompt: generateMasterVideoPrompt(updatedSc, idx)
+                              }
+                            };
+                          });
                         }}
                         className="w-full bg-slate-950/90 border border-white/10 focus:border-amber-400 rounded-xl p-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 resize-none leading-relaxed focus:outline-none"
                         placeholder="Escribe la narración que Jesús proclamará en esta escena..."
@@ -2649,13 +2664,19 @@ export const SpiritualVideoCreator: React.FC<SpiritualVideoCreatorProps> = ({ on
                               const defaultCta = "Escribe 'Amén', guarda este video y compártelo con alguien que necesite paz hoy.";
                               const currentText = scene.narrationText || '';
                               if (!currentText.includes('Amén') && !currentText.includes('guarda')) {
-                                setCustomSceneOverrides(prev => ({
-                                  ...prev,
-                                  [idx]: {
-                                    ...(prev[idx] || {}),
-                                    narrationText: `${currentText.trim()} ${defaultCta}`
-                                  }
-                                }));
+                                const newText = `${currentText.trim()} ${defaultCta}`.trim();
+                                setCustomSceneOverrides(prev => {
+                                  const prevOver = prev[idx] || {};
+                                  const updatedSc = { ...scene, ...prevOver, narrationText: newText };
+                                  return {
+                                    ...prev,
+                                    [idx]: {
+                                      ...prevOver,
+                                      narrationText: newText,
+                                      masterVideoPrompt: generateMasterVideoPrompt(updatedSc, idx)
+                                    }
+                                  };
+                                });
                               }
                             }}
                             className="text-[10px] font-bold text-amber-300 hover:text-amber-200 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-0.5 rounded-lg border border-amber-400/20 cursor-pointer"

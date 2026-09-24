@@ -11,6 +11,9 @@ export interface Aprende30CategoryMeta {
   sampleTopics: string[];
   bannerPrefix: string;
   defaultImages: string[];
+  melodyTitle?: string;
+  melodyBpm?: number;
+  melodyPrompt?: string;
 }
 
 export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
@@ -23,6 +26,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-amber-500/15 text-amber-300',
     borderColor: 'border-amber-500/30',
     bannerPrefix: '🔴 APRENDE A VENDER EN 30s',
+    melodyTitle: "The Closer's Groove (124 BPM)",
+    melodyBpm: 124,
+    melodyPrompt: 'Lo-Fi Synthwave & Neo-Soul Ambition, Rhodes piano, punchy groovy bass',
     sampleTopics: [
       'Aprende a vender en 30 segundos',
       'Cómo cerrar una venta cuando te dicen "está muy caro"',
@@ -45,6 +51,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-emerald-500/15 text-emerald-300',
     borderColor: 'border-emerald-500/30',
     bannerPrefix: '🔴 TRUCO DE DINERO EN 30s',
+    melodyTitle: 'Wealth Cadence & Gold Chimes (120 BPM)',
+    melodyBpm: 120,
+    melodyPrompt: 'Minimal Tech-Piano & Crystalline Prosperity, subtle 880Hz bell chime, ascending bass',
     sampleTopics: [
       'La regla 50/30/20 explicada en 30 segundos',
       'Interés compuesto: Cómo convertir $100 en $100,000',
@@ -67,6 +76,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-blue-500/15 text-blue-300',
     borderColor: 'border-blue-500/30',
     bannerPrefix: '🔴 HACK DE PRODUCTIVIDAD EN 30s',
+    melodyTitle: 'Atomic Clockwork (128 BPM)',
+    melodyBpm: 128,
+    melodyPrompt: 'Clockwork Minimal Electro, mechanical clock tick, driving electro-pulse in E minor',
     sampleTopics: [
       'La regla de los 2 minutos para eliminar la flojera',
       'El método Pomodoro visual que triplica tu concentración',
@@ -89,6 +101,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-purple-500/15 text-purple-300',
     borderColor: 'border-purple-500/30',
     bannerPrefix: '🔴 PSICOLOGÍA OSCURA EN 30s',
+    melodyTitle: 'Subconscious Revelation (116 BPM)',
+    melodyBpm: 116,
+    melodyPrompt: 'Cinematic Dark Ambient, binaural sub-bass, mysterious glass marimba arpeggio in C minor',
     sampleTopics: [
       'Cómo saber si alguien te está mintiendo en 30 segundos',
       'El efecto Pratfall: Por qué equivocarse te hace más simpático',
@@ -111,6 +126,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-cyan-500/15 text-cyan-300',
     borderColor: 'border-cyan-500/30',
     bannerPrefix: '🔴 DATO CIENTÍFICO EN 30s',
+    melodyTitle: 'Quantum Cosmic Wonder (122 BPM)',
+    melodyBpm: 122,
+    melodyPrompt: 'Space Synthwave, shimmering starlight arpeggios, cosmic sine pads, quantum discovery pulse',
     sampleTopics: [
       'Lo que le pasa a tu cerebro cuando tomas café',
       'El lugar más silencioso de la Tierra donde puedes oír tu sangre',
@@ -133,6 +151,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-indigo-500/15 text-indigo-300',
     borderColor: 'border-indigo-500/30',
     bannerPrefix: '🔴 HACK DE IA EN 30s',
+    melodyTitle: 'Cyber Matrix Flow (130 BPM)',
+    melodyBpm: 130,
+    melodyPrompt: 'Cyberpunk Future Glitch & High-Tech Sawtooth Bass, digital arpeggios in F# minor',
     sampleTopics: [
       '3 Prompts de IA que te ahorran 5 horas de trabajo',
       'La web secreta para resumir PDFs de 200 páginas en 10 segundos',
@@ -155,6 +176,9 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
     badgeBg: 'bg-amber-600/15 text-amber-200',
     borderColor: 'border-amber-600/30',
     bannerPrefix: '🔴 HISTORIA EXPRESS EN 30s',
+    melodyTitle: 'Chronicles of Empires (118 BPM)',
+    melodyBpm: 118,
+    melodyPrompt: 'Cinematic Historical Drama, orchestral war drums in G minor, spiccato strings tension',
     sampleTopics: [
       'El invento accidental del microondas por un chocolate derretido',
       'Cómo los romanos enfriaban sus bebidas sin electricidad',
@@ -166,6 +190,56 @@ export const APRENDE_30_CATEGORIES: Record<string, Aprende30CategoryMeta> = {
       'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=1080&q=85',
       'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1080&q=85',
       'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1080&q=85'
+    ]
+  },
+  salud_bienestar: {
+    id: 'salud_bienestar',
+    name: 'Salud y Bienestar Rápido',
+    shortName: 'Salud & Bienestar',
+    icon: '🌿',
+    color: 'from-emerald-400 to-teal-500',
+    badgeBg: 'bg-emerald-500/15 text-emerald-200',
+    borderColor: 'border-emerald-500/30',
+    bannerPrefix: '🔴 HACK DE SALUD EN 30s',
+    melodyTitle: 'Vital Resonance (112 BPM)',
+    melodyBpm: 112,
+    melodyPrompt: 'Organic Chillwave & 432Hz Breathing Rhythm, warm acoustic piano, soothing revitalizing energy',
+    sampleTopics: [
+      'La técnica 4-7-8 para calmar la ansiedad en 30 segundos',
+      'El vaso de agua con sal del Himalaya en ayunas',
+      'Por qué mirar la luz solar los primeros 10 minutos cambia tu día',
+      'La postura de 30 segundos para resetear tu columna',
+      'El peligro de la luz azul en la retina antes de dormir'
+    ],
+    defaultImages: [
+      'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1080&q=85',
+      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1080&q=85',
+      'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1080&q=85'
+    ]
+  },
+  fe_espiritualidad: {
+    id: 'fe_espiritualidad',
+    name: 'Miniserie de Fe, Oración y Milagros',
+    shortName: 'Fe & Milagros',
+    icon: '✝️',
+    color: 'from-amber-400 to-yellow-600',
+    badgeBg: 'bg-amber-400/15 text-amber-200',
+    borderColor: 'border-amber-400/30',
+    bannerPrefix: '🔴 MINISERIE DE FE EN 30s',
+    melodyTitle: 'Divine Grace & Sacred Strings (108 BPM / 432Hz)',
+    melodyBpm: 108,
+    melodyPrompt: 'Worship Cinematic Ambient 432Hz, reverent acoustic grand piano, emotional weeping strings',
+    sampleTopics: [
+      'Lo que Jesús hizo cuando todo parecía el final',
+      'El clamor de la madrugada que rompió el diagnóstico',
+      'Jesús entra en tu hogar en tu peor momento',
+      'La oración que abre puertas cerradas por años',
+      'Paz sobrenatural en medio de la tormenta'
+    ],
+    defaultImages: [
+      'https://images.unsplash.com/photo-1519817650390-64a93db51149?w=1080&q=85',
+      'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=1080&q=85',
+      'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=1080&q=85'
     ]
   }
 };

@@ -151,6 +151,7 @@ export const DailyDevotionalView: React.FC<DailyDevotionalViewProps> = ({
 
     const cachedData = localStorage.getItem('saved_daily_devotional_data');
     const cachedDate = localStorage.getItem('saved_daily_devotional_date');
+    const cachedSong = localStorage.getItem('saved_daily_devotional_song');
 
     if (cachedData && cachedDate === todayStr) {
       try {
@@ -158,6 +159,11 @@ export const DailyDevotionalView: React.FC<DailyDevotionalViewProps> = ({
         setDevotional(parsed);
         if (parsed.lastUpdated) {
           setLastUpdatedTime(parsed.lastUpdated);
+        }
+        if (cachedSong) {
+          setSong(JSON.parse(cachedSong));
+        } else {
+          generateInspiredSong(parsed);
         }
       } catch (e) {
         handleGenerateDevotional(undefined, true);
@@ -216,7 +222,7 @@ export const DailyDevotionalView: React.FC<DailyDevotionalViewProps> = ({
         showToast('¡Devocional Actualizado con Éxito!', 'Se ha generado un nuevo mensaje de fe, oración y alabanza para hoy.');
       }
     } catch (err) {
-      console.error("Error devotional:", err);
+      console.warn("[DailyDevotional] Handled notice:", err);
     } finally {
       setIsLoading(false);
     }
@@ -246,8 +252,9 @@ export const DailyDevotionalView: React.FC<DailyDevotionalViewProps> = ({
       if (!res.ok) throw new Error("Error al componer alabanza");
       const songData = await res.json();
       setSong(songData);
+      localStorage.setItem('saved_daily_devotional_song', JSON.stringify(songData));
     } catch (err) {
-      console.error("Error generating song:", err);
+      console.warn("[DevotionalSong] Handled notice:", err);
     } finally {
       setIsGeneratingSong(false);
     }

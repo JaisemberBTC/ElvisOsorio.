@@ -310,6 +310,7 @@ export function generateMasterVideoPrompt(
     cameraMovement?: string;
     atmosphere?: string;
     durationSec?: number;
+    masterVideoPrompt?: string;
   },
   _sceneIdx: number = 0
 ): string {
@@ -332,6 +333,44 @@ Movimiento de cámara: ${camMovement}
 Diálogo de ${duration} segundos en español con la compasiva voz de Jesús (locución de mínimo 9 segundos): ${formattedDialogue}
 
 ${MANDATORY_VISUAL_EDITING_INSTRUCTION}`;
+}
+
+/**
+ * Ensures any existing or generated masterVideoPrompt has the exact same character dialogue
+ * as scene.narrationText, preventing stale, un-synced, or placeholder dialogue in video AI prompts.
+ */
+export function getSynchronizedMasterVideoPrompt(
+  scene: {
+    sceneNumber?: number;
+    visualPrompt?: string;
+    onScreenText?: string;
+    narrationText?: string;
+    cameraMovement?: string;
+    atmosphere?: string;
+    durationSec?: number;
+    masterVideoPrompt?: string;
+  },
+  sceneIdx: number = 0
+): string {
+  const spanishVoiceText = (scene.narrationText || OFFICIAL_DEFAULT_JESUS_DIALOGUE).trim();
+  const duration = Math.max(10, scene.durationSec || 10);
+  const formattedDialogue = spanishVoiceText.startsWith('"') && spanishVoiceText.endsWith('"') 
+    ? spanishVoiceText 
+    : `"${spanishVoiceText}"`;
+
+  if (scene.masterVideoPrompt && scene.masterVideoPrompt.includes('Dale vida al personaje')) {
+    let synced = scene.masterVideoPrompt;
+    if (synced.includes('{narration}')) {
+      synced = synced.replace(/\{narration\}/g, spanishVoiceText);
+    }
+    const dialogueLinePattern = /Diálogo de \d+ segundos en español[^:\n]*:\s*"[^"]*"/i;
+    const replacement = `Diálogo de ${duration} segundos en español con la compasiva voz de Jesús (locución de mínimo 9 segundos): ${formattedDialogue}`;
+    if (dialogueLinePattern.test(synced)) {
+      return synced.replace(dialogueLinePattern, replacement);
+    }
+  }
+
+  return generateMasterVideoPrompt(scene, sceneIdx);
 }
 
 /**

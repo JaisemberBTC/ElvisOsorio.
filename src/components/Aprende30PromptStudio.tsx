@@ -37,16 +37,26 @@ const STYLE_ENHANCERS = [
 export const MANDATORY_VISUAL_EDITING_INSTRUCTION = "Instrucción obligatoria de edición visual: Al crear el guion y las indicaciones de video, debes estructurar la sincronización de manera que se produzca un corte o cambio visual exactamente cada 2 o 3 segundos. Estos cortes deben ser dinámicos pero elegantes, alternando aleatoriamente entre: acercamientos sutiles, alejamientos, ligeros paneos o cambios de ángulo";
 
 export function formatMasterVideoPromptForScene(scene: Aprende30Scene, idx: number): string {
-  if (scene.masterVideoPrompt && scene.masterVideoPrompt.includes('Dale vida al personaje')) {
-    return scene.masterVideoPrompt;
-  }
   const duration = scene.durationSec || 10;
+  const dialogue = (scene.narration || '').trim();
   const cam = scene.cameraMovement || (idx === 0 
     ? `Primer plano con zoom lento y continuo durante ${duration} segundos para conectar profundamente con el espectador, con un movimiento suave, natural y fluido.`
     : idx === 1
       ? `Paneo dinámico de enfoque con iluminación de contraste suave y contacto visual penetrante.`
       : `Acercamiento lento con iluminación gloriosa y apertura de resolución triunfante.`);
-  const dialogue = (scene.narration || '').trim();
+
+  // If scene already has a custom masterVideoPrompt, ensure the dialogue inside is synchronized verbatim with scene.narration!
+  if (scene.masterVideoPrompt && scene.masterVideoPrompt.includes('Dale vida al personaje')) {
+    let synced = scene.masterVideoPrompt;
+    if (synced.includes('{narration}')) {
+      synced = synced.replace(/\{narration\}/g, dialogue);
+    }
+    const dialogueLinePattern = /Diálogo de \d+ segundos en español[^:\n]*:\s*"[^"]*"/i;
+    const replacement = `Diálogo de ${duration} segundos en español con voz clara y empática (locución de mínimo 9 segundos): "${dialogue}"`;
+    if (dialogueLinePattern.test(synced)) {
+      return synced.replace(dialogueLinePattern, replacement);
+    }
+  }
 
   return `Dale vida al personaje de las imagenes ten en cuenta las tres y alternalas:
 Duración: ${duration} segundos (movimiento continuo sin interrupciones).

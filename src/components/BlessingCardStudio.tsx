@@ -48,7 +48,9 @@ import { BlessingCard } from '../types';
 import { uploadBlobToDrive } from '../services/googleDriveService';
 import { 
   BIBLICAL_VERSES_COLLECTION,
-  BibleVerseItem
+  BibleVerseItem,
+  findBestMatchingVerse,
+  getNextMatchingVerse
 } from '../data/biblicalVersesLibrary';
 
 export const BIBLICAL_CATEGORIES = [
@@ -287,6 +289,124 @@ export const SACRED_THEME_PRESETS = [
     url: '/sacred-assets/jesus_night_sanctuary_1787716164249.jpg',
     accentColor: '#60a5fa',
     promptDesc: 'Jesús velando tus sueños y alejando todo insomnio'
+  },
+  // 7. NOVELDADES SACRAS EXCLUSIVAS (ALTA RESOLUCIÓN 1080x1080)
+  {
+    id: 'novel-jesus-arms',
+    name: '✨ Jesús de Brazos Abiertos',
+    category: 'jesus',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_open_arms_glory.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'Jesús resplandeciente en gloria y bienvenida con brazos abiertos de gracia'
+  },
+  {
+    id: 'novel-dawn-walk',
+    name: '🌅 Luz Radiante del Alba',
+    category: 'dawn',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_walking_light_dawn.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Jesús caminando en la luz viva del amanecer sobre verdes pastos de paz'
+  },
+  {
+    id: 'novel-compassion',
+    name: '💧 Compasión y Consuelo',
+    category: 'healing',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_compassion_tears.jpg',
+    accentColor: '#c084fc',
+    promptDesc: 'Mirada viva de compasión profunda que seca las lágrimas y da aliento'
+  },
+  {
+    id: 'novel-embrace',
+    name: '🕊️ Manos de Amparo Divino',
+    category: 'healing',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_divine_hands_embrace.jpg',
+    accentColor: '#fcd34d',
+    promptDesc: 'Abrazo y manos protectoras del Altísimo cubriendo a tu familia'
+  },
+  {
+    id: 'novel-sanctuary',
+    name: '🏛️ Luz Viva en el Santuario',
+    category: 'healing',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_miracle_light_sanctuary.jpg',
+    accentColor: '#38bdf8',
+    promptDesc: 'Rayos celestiales de milagro y presencia santa en el altar'
+  },
+  {
+    id: 'novel-peace-solace',
+    name: '🌿 Paz que Sobrepasa Entendimiento',
+    category: 'peace',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_peace_solace.jpg',
+    accentColor: '#34d399',
+    promptDesc: 'Paz inmutable de Cristo que aquieta toda ansiedad y temor'
+  },
+  {
+    id: 'novel-cross-radiant',
+    name: '✝️ Cruz Radiante de Salvación',
+    category: 'cross',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_radiant_cross_salvation.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'Cruz de gloria y redención iluminando todo el horizonte con luz divina'
+  },
+  {
+    id: 'novel-morning-glory',
+    name: '☀️ Victoria de Resurrección',
+    category: 'dawn',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_morning_resurrection_glory.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Amanecer triunfante proclamando que Cristo vive y reina para siempre'
+  },
+  {
+    id: 'novel-starry-refuge',
+    name: '🌌 Refugio Bajo las Estrellas',
+    category: 'night',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_night_starry_refuge.jpg',
+    accentColor: '#818cf8',
+    promptDesc: 'Noche celestial con Jesús como refugio seguro velando tu descanso'
+  },
+  {
+    id: 'novel-living-waters',
+    name: '🌊 Manantial de Aguas Vivas',
+    category: 'healing',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_healing_hands_living_waters.jpg',
+    accentColor: '#38bdf8',
+    promptDesc: 'Ríos de agua viva y salud fluyendo de las manos santas de Jesús'
+  },
+  {
+    id: 'novel-counselor-hope',
+    name: '🌟 Consejero de Esperanza',
+    category: 'jesus',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_counselor_hope.jpg',
+    accentColor: '#fbbf24',
+    promptDesc: 'Cristo consejero admirable trayendo dirección certera y gozo'
+  },
+  {
+    id: 'novel-triumphant-light',
+    name: '👑 Resplandor Triunfante',
+    category: 'jesus',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_triumphant_light.jpg',
+    accentColor: '#f59e0b',
+    promptDesc: 'Luz soberana que disipa toda tiniebla e ilumina tu camino'
+  },
+  {
+    id: 'novel-infinite-mercy',
+    name: '💖 Misericordia Eterna',
+    category: 'jesus',
+    badge: '🔥 Novedad',
+    url: '/sacred-assets/jesus_infinite_mercy.jpg',
+    accentColor: '#f43f5e',
+    promptDesc: 'Amor incondicional de Jesús derramando perdón y bendición sobre tu vida'
   }
 ];
 
@@ -430,20 +550,33 @@ function generateDynamicProceduralArtwork(
   return canvas.toDataURL('image/jpeg', 0.95);
 }
 
-const INITIAL_CARD: BlessingCard = {
-  cardHeader: "UN NUEVO AMANECER DE ESPERANZA",
-  blessingQuote: "Que la luz de este nuevo día ilumine cada paso que des, recordándote que las misericordias de Dios son nuevas cada mañana.",
-  verseReference: "Lamentaciones 3:22-23",
-  verseText: "El gran amor del Señor nunca se acaba, y su compasión jamás se agota. Cada mañana se renuevan sus bondades; ¡muy grande es su fidelidad!",
-  shortPrayer: "Señor, gracias por este nuevo día. Que tu luz guíe mis pensamientos y que tu paz inunde mi corazón mientras camino bajo tu gracia. Amén.",
-  suggestedColors: {
-    gradientStart: "#020617",
-    gradientEnd: "#1e1b4b",
-    accentColor: "#fbbf24"
-  },
-  themeCategory: "dawn",
-  imagePrompt: "A breathtaking celestial golden sunrise with glorious divine rays",
-  generatedImageUrl: "/sacred-assets/celestial-sunrise.jpg"
+const getInitialDynamicCard = (): BlessingCard => {
+  const hour = new Date().getHours();
+  const isNight = hour >= 19 || hour < 6;
+  const initialVerse = findBestMatchingVerse({
+    timeOfDay: isNight ? 'night' : 'morning',
+    topic: isNight ? 'Paz y descanso en Dios' : 'Fuerzas, fe y nuevo día'
+  });
+
+  return {
+    cardHeader: initialVerse.headerTitle,
+    blessingQuote: initialVerse.blessingQuote,
+    verseReference: initialVerse.reference,
+    verseText: initialVerse.text,
+    shortPrayer: initialVerse.prayer,
+    suggestedColors: {
+      gradientStart: isNight ? "#020617" : "#0f172a",
+      gradientEnd: isNight ? "#1e1b4b" : "#312e81",
+      accentColor: initialVerse.accentColor || (isNight ? "#38bdf8" : "#fbbf24")
+    },
+    themeCategory: initialVerse.recommendedTheme,
+    imagePrompt: isNight 
+      ? "Celestial starry night with calm moonlit waters and divine serenity" 
+      : "A breathtaking celestial golden sunrise with glorious divine rays",
+    generatedImageUrl: isNight 
+      ? "/sacred-assets/jesus-night.jpg"
+      : "/sacred-assets/celestial-sunrise.jpg"
+  };
 };
 
 export interface DailyAutomatedCardRecord {
@@ -455,14 +588,16 @@ export interface DailyAutomatedCardRecord {
 }
 
 export const BlessingCardStudio: React.FC = () => {
-  const [card, setCard] = useState<BlessingCard>(INITIAL_CARD);
+  const [card, setCard] = useState<BlessingCard>(getInitialDynamicCard);
+  const initialHour = new Date().getHours();
+  const isInitialNight = initialHour >= 19 || initialHour < 6;
   const [recipient, setRecipient] = useState('Mi amada familia');
-  const [occasion, setOccasion] = useState('Bendición de Buenos Días y Renovación');
-  const [timeOfDayContext, setTimeOfDayContext] = useState<'morning' | 'night' | 'custom'>('morning');
+  const [occasion, setOccasion] = useState(isInitialNight ? 'Bendición de Buenas Noches y Paz' : 'Bendición de Buenos Días y Fortaleza');
+  const [timeOfDayContext, setTimeOfDayContext] = useState<'morning' | 'night' | 'custom'>(isInitialNight ? 'night' : 'morning');
   
   // Dynamic Active Artwork (Replaces static gallery)
   const [activeArtworkSrc, setActiveArtworkSrc] = useState<string>(
-    INITIAL_CARD.generatedImageUrl || '/sacred-assets/celestial-sunrise.jpg'
+    isInitialNight ? '/sacred-assets/jesus-night.jpg' : '/sacred-assets/celestial-sunrise.jpg'
   );
   const [artworkPromptDescription, setArtworkPromptDescription] = useState<string>(
     'Amanecer celestial con rayos dorados de gloria y luz viva generada para este mensaje'
@@ -617,7 +752,13 @@ export const BlessingCardStudio: React.FC = () => {
         '/sacred-assets/jesus-resurrected.jpg',
         '/sacred-assets/jesus_resurrected_king_1787717534726.jpg',
         '/sacred-assets/jesus-shepherd.jpg',
-        '/sacred-assets/jesus_shepherd_love_1787717500827.jpg'
+        '/sacred-assets/jesus_shepherd_love_1787717500827.jpg',
+        '/sacred-assets/jesus_open_arms_glory.jpg',
+        '/sacred-assets/jesus_walking_light_dawn.jpg',
+        '/sacred-assets/jesus_morning_resurrection_glory.jpg',
+        '/sacred-assets/jesus_radiant_cross_salvation.jpg',
+        '/sacred-assets/jesus_counselor_hope.jpg',
+        '/sacred-assets/jesus_triumphant_light.jpg'
       ];
       const nightArtList = [
         '/sacred-assets/jesus-night.jpg',
@@ -629,7 +770,13 @@ export const BlessingCardStudio: React.FC = () => {
         '/sacred-assets/heavenly-dove.jpg',
         '/sacred-assets/heavenly_dove_light_1787717258852.jpg',
         '/sacred-assets/olive-garden.jpg',
-        '/sacred-assets/olive_garden_peace_1787717233225.jpg'
+        '/sacred-assets/olive_garden_peace_1787717233225.jpg',
+        '/sacred-assets/jesus_night_starry_refuge.jpg',
+        '/sacred-assets/jesus_compassion_tears.jpg',
+        '/sacred-assets/jesus_divine_hands_embrace.jpg',
+        '/sacred-assets/jesus_peace_solace.jpg',
+        '/sacred-assets/jesus_healing_hands_living_waters.jpg',
+        '/sacred-assets/jesus_infinite_mercy.jpg'
       ];
 
       const fallbackRecords: DailyAutomatedCardRecord[] = [
@@ -768,6 +915,23 @@ export const BlessingCardStudio: React.FC = () => {
     setIsGenerativeModelImage(true);
   };
 
+  // Assign a novel sacred artwork automatically with guaranteed freshness
+  const handleAssignRandomNovelArtwork = () => {
+    const novelPresets = SACRED_THEME_PRESETS.filter(p => p.badge?.includes('Novedad') || p.id.startsWith('novel-'));
+    const pool = novelPresets.length > 0 ? novelPresets : SACRED_THEME_PRESETS;
+    const candidates = pool.filter(p => p.url !== activeArtworkSrc);
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
+    
+    handleSelectPresetArtwork(chosen);
+    setCustomImageInfo(null);
+    confetti({
+      particleCount: 35,
+      spread: 60,
+      origin: { y: 0.65 },
+      colors: ['#fbbf24', '#f59e0b', '#38bdf8', '#c084fc']
+    });
+  };
+
   // Handle custom image file processing (drag & drop or file input)
   const handleProcessCustomImageFile = (file: File) => {
     if (!file || !file.type.startsWith('image/')) return;
@@ -883,7 +1047,8 @@ export const BlessingCardStudio: React.FC = () => {
           occasion: occasion || (activeTime === 'morning' ? "Bendición de Buenos Días" : activeTime === 'night' ? "Bendición de Buenas Noches" : "Bendición de Paz"),
           recipient: recipient || "Mi amada familia",
           timeOfDay: activeTime,
-          style: "Elegante, reconfortante, luminoso y profundamente espiritual"
+          style: "Elegante, reconfortante, luminoso y profundamente espiritual",
+          excludedVerses: [card.verseReference]
         })
       });
 
@@ -933,6 +1098,113 @@ export const BlessingCardStudio: React.FC = () => {
     } finally {
       setIsLoading(false);
       setIsGeneratingImage(false);
+    }
+  };
+
+  // Thematic Preset Click: Instantly changes verse, colors, and content aligned to the theme
+  const handleThematicPresetClick = (
+    val: string,
+    time: 'morning' | 'night' | 'custom',
+    categoryTheme?: 'dawn' | 'night' | 'jesus' | 'cross' | 'peace' | 'healing' | 'olive' | 'worship'
+  ) => {
+    setOccasion(val);
+    setTimeOfDayContext(time);
+
+    // Automatically find and assign a contextually matched verse
+    const matched = findBestMatchingVerse({
+      topic: val,
+      timeOfDay: time,
+      themeCategory: categoryTheme,
+      excludedReferences: [card.verseReference]
+    });
+
+    if (matched) {
+      const isNightTheme = time === 'night' || matched.recommendedTheme === 'night';
+      setCard(prev => ({
+        ...prev,
+        verseReference: matched.reference,
+        verseText: matched.text,
+        cardHeader: matched.headerTitle,
+        blessingQuote: matched.blessingQuote,
+        shortPrayer: matched.prayer,
+        themeCategory: matched.recommendedTheme,
+        suggestedColors: {
+          gradientStart: isNightTheme ? '#020617' : '#0f172a',
+          gradientEnd: isNightTheme ? '#0f172a' : '#1e1b4b',
+          accentColor: matched.accentColor || (isNightTheme ? '#38bdf8' : '#fbbf24')
+        }
+      }));
+
+      if (matched.accentColor) {
+        setCustomAccentColor(matched.accentColor);
+      }
+
+      const artMap: Record<string, string> = {
+        healing: '/sacred-assets/jesus_healing_light_1787716152719.jpg',
+        night: '/sacred-assets/jesus-night.jpg',
+        peace: '/sacred-assets/jesus_peace_in_storm_1787716138284.jpg',
+        cross: '/sacred-assets/cross_sunrise_hope_1787717245799.jpg',
+        jesus: '/sacred-assets/jesus_divine_blessing_1787716123982.jpg',
+        olive: '/sacred-assets/olive_garden_peace_1787717233225.jpg',
+        dawn: '/sacred-assets/celestial-sunrise.jpg',
+        worship: '/sacred-assets/heavenly_dove_light_1787717258852.jpg'
+      };
+      const matchingArt = artMap[matched.recommendedTheme] || (isNightTheme ? '/sacred-assets/jesus-night.jpg' : '/sacred-assets/celestial-sunrise.jpg');
+      setActiveArtworkSrc(matchingArt);
+      setIsGenerativeModelImage(true);
+    }
+  };
+
+  // Rotates dynamically to the next contextual Bible verse without repeating
+  const handleCycleNextVerse = () => {
+    const nextVerse = getNextMatchingVerse(card.verseReference, {
+      topic: occasion || card.cardHeader,
+      timeOfDay: timeOfDayContext,
+      themeCategory: card.themeCategory,
+      headerTitle: card.cardHeader
+    });
+
+    if (nextVerse) {
+      setCard(prev => ({
+        ...prev,
+        verseReference: nextVerse.reference,
+        verseText: nextVerse.text,
+        cardHeader: nextVerse.headerTitle,
+        blessingQuote: nextVerse.blessingQuote,
+        shortPrayer: nextVerse.prayer
+      }));
+      if (nextVerse.accentColor) {
+        setCustomAccentColor(nextVerse.accentColor);
+      }
+    }
+  };
+
+  // Header preset click: changes header and immediately aligns the verse
+  const handleHeaderPresetClick = (hdr: string) => {
+    const isNightHdr = hdr.includes('NOCHE');
+    const matched = findBestMatchingVerse({
+      headerTitle: hdr,
+      topic: hdr,
+      timeOfDay: isNightHdr ? 'night' : 'morning',
+      excludedReferences: [card.verseReference]
+    });
+
+    setCard(prev => ({
+      ...prev,
+      cardHeader: hdr,
+      verseReference: matched.reference,
+      verseText: matched.text,
+      blessingQuote: matched.blessingQuote,
+      shortPrayer: matched.prayer,
+      themeCategory: matched.recommendedTheme,
+      suggestedColors: {
+        gradientStart: isNightHdr ? '#020617' : '#0f172a',
+        gradientEnd: isNightHdr ? '#0f172a' : '#1e1b4b',
+        accentColor: matched.accentColor || (isNightHdr ? '#38bdf8' : '#fbbf24')
+      }
+    }));
+    if (matched.accentColor) {
+      setCustomAccentColor(matched.accentColor);
     }
   };
 
@@ -1513,7 +1785,16 @@ _«${verse}»_
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <button
+                        type="button"
+                        onClick={handleAssignRandomNovelArtwork}
+                        className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500/25 to-purple-500/25 hover:from-amber-500/35 hover:to-purple-500/35 text-amber-200 border border-amber-400/40 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm active:scale-95"
+                        title="Asignar automáticamente una nueva imagen sagrada novedosa a la tarjeta"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                        <span>🎲 Asignar Novedad</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -1703,7 +1984,8 @@ _«${verse}»_
                     {/* Category Filter Pills */}
                     <div className="flex flex-wrap gap-1">
                       {[
-                        { id: 'all', label: '✨ Todas (24)' },
+                        { id: 'all', label: `✨ Todas (${SACRED_THEME_PRESETS.length})` },
+                        { id: 'novel', label: `🔥 Novedades (${SACRED_THEME_PRESETS.filter(p => p.badge?.includes('Novedad') || p.id.startsWith('novel-')).length})` },
                         { id: 'dawn', label: '🌅 Luz & Alba' },
                         { id: 'jesus', label: '👑 Jesús en Gloria' },
                         { id: 'peace', label: '🕊️ Paz & Espíritu' },
@@ -1728,7 +2010,11 @@ _«${verse}»_
 
                     {/* Visual Artwork Thumbnail Cards */}
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-56 overflow-y-auto pr-1">
-                      {SACRED_THEME_PRESETS.filter(p => galleryCategory === 'all' || p.category === galleryCategory).map((preset) => {
+                      {SACRED_THEME_PRESETS.filter(p => {
+                        if (galleryCategory === 'all') return true;
+                        if (galleryCategory === 'novel') return p.badge?.includes('Novedad') || p.id.startsWith('novel-');
+                        return p.category === galleryCategory;
+                      }).map((preset) => {
                         const isSelected = activeArtworkSrc === preset.url && !customImageInfo;
                         return (
                           <div
@@ -1818,8 +2104,9 @@ _«${verse}»_
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => setCard(c => ({ ...c, cardHeader: hdr }))}
-                        className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/5 cursor-pointer"
+                        onClick={() => handleHeaderPresetClick(hdr)}
+                        title={`Aplicar título y versículo bíblico acorde a ${hdr}`}
+                        className="text-[9px] px-2 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/5 cursor-pointer transition-colors"
                       >
                         {hdr}
                       </button>
@@ -1918,13 +2205,24 @@ _«${verse}»_
                       <BookOpen className="w-3.5 h-3.5" />
                       <span>Versículo Bíblico</span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsVerseModalOpen(true)}
-                      className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold hover:underline cursor-pointer"
-                    >
-                      📖 Cambiar desde Biblioteca
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCycleNextVerse}
+                        title="Cambiar automáticamente a otro versículo bíblico acorde a la temática de esta tarjeta"
+                        className="text-[10px] text-amber-300 hover:text-amber-200 bg-amber-400/15 hover:bg-amber-400/25 px-2 py-0.5 rounded-lg border border-amber-400/25 font-semibold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                      >
+                        <RefreshCw className="w-3 h-3 text-amber-400" />
+                        <span>Rotar Versículo Acorde</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsVerseModalOpen(true)}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold hover:underline cursor-pointer"
+                      >
+                        📖 Biblioteca
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <input
@@ -2152,10 +2450,7 @@ _«${verse}»_
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setTimeOfDayContext('morning');
-                        setOccasion('Bendición de Buenos Días y Renovación');
-                      }}
+                      onClick={() => handleThematicPresetClick('Bendición de Buenos Días y Renovación', 'morning', 'dawn')}
                       className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         timeOfDayContext === 'morning'
                           ? 'bg-amber-400/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
@@ -2168,10 +2463,7 @@ _«${verse}»_
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setTimeOfDayContext('night');
-                        setOccasion('Bendición de Buenas Noches y Paz para Dormir');
-                      }}
+                      onClick={() => handleThematicPresetClick('Bendición de Buenas Noches y Paz para Dormir', 'night', 'night')}
                       className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         timeOfDayContext === 'night'
                           ? 'bg-sky-400/20 border-sky-400 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
@@ -2268,21 +2560,18 @@ _«${verse}»_
                   {/* Thematic Quick Buttons */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[
-                      { label: '🌅 Buenos Días', val: 'Bendición de Buenos Días y Renovación de Fe', time: 'morning' as const },
-                      { label: '🌙 Buenas Noches', val: 'Bendición de Buenas Noches y Paz para Dormir', time: 'night' as const },
-                      { label: '🌿 Sanidad', val: 'Oración de Sanidad, Restauración y Salud Divina', time: 'morning' as const },
-                      { label: '🕊️ Paz en Tormenta', val: 'Paz y Confianza en medio de la Prueba', time: 'custom' as const },
-                      { label: '✝️ Gracia & Cruz', val: 'La Gracia Redentora de Jesucristo en la Cruz', time: 'custom' as const },
-                      { label: '🏡 Familia', val: 'Bendición, Protección y Unidad Familiar', time: 'morning' as const },
-                      { label: '🛡️ Salmo 91', val: 'Amparo y Protección Divina del Salmo 91', time: 'custom' as const }
+                      { label: '🌅 Buenos Días', val: 'Bendición de Buenos Días y Renovación de Fe', time: 'morning' as const, theme: 'dawn' as const },
+                      { label: '🌙 Buenas Noches', val: 'Bendición de Buenas Noches y Paz para Dormir', time: 'night' as const, theme: 'night' as const },
+                      { label: '🌿 Sanidad', val: 'Oración de Sanidad, Restauración y Salud Divina', time: 'morning' as const, theme: 'healing' as const },
+                      { label: '🕊️ Paz en Tormenta', val: 'Paz y Confianza en medio de la Prueba', time: 'custom' as const, theme: 'peace' as const },
+                      { label: '✝️ Gracia & Cruz', val: 'La Gracia Redentora de Jesucristo en la Cruz', time: 'custom' as const, theme: 'cross' as const },
+                      { label: '🏡 Familia', val: 'Bendición, Protección y Unidad Familiar', time: 'morning' as const, theme: 'olive' as const },
+                      { label: '🛡️ Salmo 91', val: 'Amparo y Protección Divina del Salmo 91', time: 'custom' as const, theme: 'peace' as const }
                     ].map((item, idx) => (
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => {
-                          setOccasion(item.val);
-                          setTimeOfDayContext(item.time);
-                        }}
+                        onClick={() => handleThematicPresetClick(item.val, item.time, item.theme)}
                         className="text-[10px] px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-400/20 text-slate-300 hover:text-amber-200 border border-white/10 transition-all cursor-pointer"
                       >
                         {item.label}

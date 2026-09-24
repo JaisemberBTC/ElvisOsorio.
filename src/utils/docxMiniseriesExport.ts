@@ -118,6 +118,10 @@ function createPromptBox(title: string, content: string) {
 export function buildMiniseriesWordDocument(series: MiniserieTemplate | GeneratedMiniseriesPackage): Document {
   const episodes = series.episodes || [];
   const primaryChars = (series.primaryCharacterIds || []).map(id => {
+    if (series.characters && series.characters.length > 0) {
+      const match = series.characters.find(c => c.id === id);
+      if (match) return match;
+    }
     return CARTOON_CHARACTERS_FE.find(c => c.id === id) || {
       id,
       name: id === 'jesus_cartoon_3d' ? 'Maestro Jesús' : 'Personaje Principal',

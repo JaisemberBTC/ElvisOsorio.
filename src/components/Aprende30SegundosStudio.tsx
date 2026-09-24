@@ -44,9 +44,12 @@ import {
   Radio,
   BarChart3,
   Compass,
-  Sparkle
+  Sparkle,
+  Music
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { nicheMelodyEngine, NICHE_MELODIES } from '../utils/nicheMelodyEngine';
+import { stripAllDialogueFromPrompt } from '../utils/dialoguePromptSync';
 import { 
   Aprende30Package, 
   Aprende30Category, 
@@ -164,7 +167,16 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
   const [currentTimeSec, setCurrentTimeSec] = useState(0);
   const [currentSceneIdx, setCurrentSceneIdx] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [isMelodyActive, setIsMelodyActive] = useState(true);
+  const [melodyVolume, setMelodyVolume] = useState(0.35);
   const [subtitleStyle, setSubtitleStyle] = useState<ViralSubtitleStyle>('capcut_yellow');
+
+  // Stop melody on unmount
+  useEffect(() => {
+    return () => {
+      nicheMelodyEngine.stop();
+    };
+  }, []);
 
   // Export state
   const [exportResolution, setExportResolution] = useState<VideoResolutionQuality>('1080p');
@@ -218,6 +230,7 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
         setCurrentTimeSec(30);
         setIsPlaying(false);
         stopSpeech();
+        nicheMelodyEngine.pause();
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
         return;
       }
@@ -269,13 +282,19 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
     if (isPlaying) {
       setIsPlaying(false);
       stopSpeech();
+      nicheMelodyEngine.pause();
     } else {
       if (currentTimeSec >= 30) {
         setCurrentTimeSec(0);
         setCurrentSceneIdx(0);
       }
       setIsPlaying(true);
-      if (!isMuted) startSpeech(currentTimeSec >= 30 ? 0 : currentTimeSec);
+      if (!isMuted) {
+        startSpeech(currentTimeSec >= 30 ? 0 : currentTimeSec);
+        if (isMelodyActive) {
+          nicheMelodyEngine.playNiche(currentSeries?.category || 'productividad_habitos');
+        }
+      }
     }
   };
 
@@ -284,6 +303,7 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
     setCurrentTimeSec(0);
     setCurrentSceneIdx(0);
     stopSpeech();
+    nicheMelodyEngine.stop();
   };
 
   // Helper to ensure that the Spanish narration/dialogue is integrated into the visual prompt for AI video lip sync
@@ -291,10 +311,13 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
     visualPrompt: string,
     narration: string = ''
   ): string => {
-    const cleanNarration = (narration || '').trim();
-    const cleanPrompt = (visualPrompt || '').trim();
+    const cleanNarration = (narration || '').trim().replace(/^["']|["']$/g, '');
+    let cleanPrompt = (visualPrompt || '').trim();
     if (!cleanNarration) return cleanPrompt;
-    if (cleanPrompt.includes(cleanNarration)) return cleanPrompt;
+
+    // Clean out any previous speech clause or dialogue to avoid truncation or duplicated clauses
+    cleanPrompt = stripAllDialogueFromPrompt(cleanPrompt);
+    cleanPrompt = cleanPrompt.replace(/\s*The character looks directly into camera speaking fluently and expressively in Spanish:[\s\S]*?(?=(?:--duration|\[Runway|\[Luma|\[Google Veo|$))/i, '').trim();
 
     const speechClause = ` The character looks directly into camera speaking fluently and expressively in Spanish: "${cleanNarration}" with natural mouth lip sync, realistic facial articulation and charismatic gestures.`;
     return cleanPrompt.endsWith('.') ? `${cleanPrompt}${speechClause}` : `${cleanPrompt}.${speechClause}`;
@@ -657,7 +680,19 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
   // Update a scene in the editable episode
   const handleUpdateScene = (index: number, updatedFields: Partial<Aprende30Scene>) => {
     const newScenes = [...editableEpisode.scenes];
-    newScenes[index] = { ...newScenes[index], ...updatedFields };
+    const oldScene = newScenes[index];
+    const newNarration = updatedFields.narration !== undefined ? updatedFields.narration : oldScene.narration;
+
+    let updatedVisual = updatedFields.visualPrompt !== undefined ? updatedFields.visualPrompt : oldScene.visualPrompt;
+    if (updatedFields.narration !== undefined && updatedFields.visualPrompt === undefined) {
+      updatedVisual = formatMasterVideoPromptWithSpanishSpeech(oldScene.visualPrompt, newNarration);
+    }
+
+    newScenes[index] = {
+      ...oldScene,
+      ...updatedFields,
+      visualPrompt: updatedVisual
+    };
 
     const updatedEp = { ...editableEpisode, scenes: newScenes };
     setEditableEpisode(updatedEp);
@@ -1862,12 +1897,87 @@ export const Aprende30SegundosStudio: React.FC<Aprende30SegundosStudioProps> = (
 
                   <button
                     type="button"
-                    onClick={() => setIsMuted(!isMuted)}
+                    onClick={() => {
+                      const next = !isMuted;
+                      setIsMuted(next);
+                      nicheMelodyEngine.setMuted(next);
+                      if (!next && isPlaying && isMelodyActive) {
+                        nicheMelodyEngine.playNiche(currentSeries?.category || 'productividad_habitos');
+                      }
+                    }}
                     className="p-3 rounded-full bg-slate-900 border border-white/10 text-slate-300 hover:text-white cursor-pointer"
                     title={isMuted ? 'Activar Sonido' : 'Silenciar'}
                   >
                     {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 text-amber-400" />}
                   </button>
+                </div>
+
+                {/* Unique Background Melody for Active Niche */}
+                <div className="mt-4 w-full max-w-[370px] p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-red-950/40 to-slate-900 border border-red-500/30 space-y-2.5 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                        isPlaying && isMelodyActive
+                          ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.5)] animate-pulse'
+                          : 'bg-red-950/60 text-red-300'
+                      }`}>
+                        <Music className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
+                          🎵 Melodía Única del Nicho:
+                        </span>
+                        <span className="text-xs font-black text-white">
+                          {NICHE_MELODIES[currentSeries?.category || 'productividad_habitos']?.title || 'Groove Viral Dinámico'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-mono text-[10px] font-bold">
+                      {NICHE_MELODIES[currentSeries?.category || 'productividad_habitos']?.bpm || 124} BPM
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                    <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/10">
+                      <span className="text-[10px] text-slate-400 font-bold">Vol:</span>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.8"
+                        step="0.05"
+                        value={melodyVolume}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setMelodyVolume(val);
+                          nicheMelodyEngine.setVolume(val);
+                        }}
+                        className="w-16 accent-amber-400 cursor-pointer"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !isMelodyActive;
+                        setIsMelodyActive(next);
+                        if (next) {
+                          if (isPlaying) nicheMelodyEngine.playNiche(currentSeries?.category || 'productividad_habitos');
+                          showNotification('🎵 Melodía única del nicho activada');
+                        } else {
+                          nicheMelodyEngine.pause();
+                          showNotification('🔇 Melodía de fondo silenciada');
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isMelodyActive
+                          ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 hover:bg-amber-400/30'
+                          : 'bg-white/5 text-slate-400 border border-white/10 hover:text-white'
+                      }`}
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{isMelodyActive ? 'Música ON' : 'Música OFF'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
