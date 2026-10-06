@@ -1,16 +1,9 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import type { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import {
-  generateImage,
-  generateFourScenes,
-  buildUniqueScenePrompt,
-  getGeminiServerClient,
-  GEMINI_IMAGE_MODELS,
-  ACTIVE_IMAGE_MODEL
-} from "./src/server/geminiConfig.js";
 import {
   generateMiniseriesWithGemini,
   buildFallbackMiniseries
@@ -19,7 +12,7 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = process.env.NODE_ENV === "production" ? (Number(process.env.PORT) || 8080) : 3000;
 
 // Enable complete CORS and Range streaming headers for Cloud Storage & Video Delivery
 app.use((req, res, next) => {
@@ -1027,7 +1020,13 @@ app.post("/api/gemini/generate-miniseries", async (req: Request, res: Response) 
       topic = "El perdón del padre ausente que volvió a las 3:00 AM", 
       totalParts = 3, 
       category = "milagro_familiar",
-      lockedEnvironmentId 
+      lockedEnvironmentId,
+      customCharacters,
+      audiencePlatform,
+      tone,
+      durationSec,
+      callToAction,
+      noInclude
     } = req.body;
     const ai = getGeminiClient();
 
@@ -1035,19 +1034,38 @@ app.post("/api/gemini/generate-miniseries", async (req: Request, res: Response) 
       topic,
       totalParts: Number(totalParts) || 3,
       category,
-      lockedEnvironmentId
+      lockedEnvironmentId,
+      customCharacters,
+      audiencePlatform,
+      tone,
+      durationSec: Number(durationSec) || 70,
+      callToAction,
+      noInclude
     });
 
     res.json({ success: true, miniseries });
   } catch (error: any) {
     console.info("[API Generate Miniseries] Serving tailored series with Jesus:", error?.message || error);
-    const fallback = buildFallbackMiniseries(
-      req.body?.topic || "El milagro que nadie esperaba",
-      Number(req.body?.totalParts) || 3,
-      req.body?.category || "milagro_familiar",
-      req.body?.lockedEnvironmentId
-    );
-    res.json({ success: true, miniseries: fallback, isFallback: true });
+    try {
+      const fallback = buildFallbackMiniseries(
+        req.body?.topic || "El milagro que nadie esperaba",
+        Number(req.body?.totalParts) || 3,
+        req.body?.category || "milagro_familiar",
+        req.body?.lockedEnvironmentId,
+        {
+          customCharacters: req.body?.customCharacters,
+          audiencePlatform: req.body?.audiencePlatform,
+          tone: req.body?.tone,
+          durationSec: Number(req.body?.durationSec) || 70,
+          callToAction: req.body?.callToAction,
+          noInclude: req.body?.noInclude
+        }
+      );
+      res.json({ success: true, miniseries: fallback, isFallback: true });
+    } catch (fallbackError: any) {
+      console.error("[API Generate Miniseries Fallback Error]:", fallbackError);
+      res.status(500).json({ success: false, error: fallbackError?.message || "Error al construir miniserie" });
+    }
   }
 });
 
@@ -1218,6 +1236,225 @@ Estilo: ${style} (Letterbox 2.39:1: ${letterbox ? 'SÍ' : 'NO'}).`;
         pinnedComment: "🕊️ ¿Qué parte de la vida de Jesús ha transformado más tu corazón? Déjalo en los comentarios."
       }
     });
+  }
+});
+
+// ============================================================================
+// HABILIDAD DE IA MAESTRA: ESTRATEGIA DE CONTENIDO, GUIONES (17 PUNTOS),
+// PROMPTS, MONETIZACIÓN ÉTICA Y CRECIMIENTO DIGITAL CRISTIANO
+// ============================================================================
+app.post("/api/gemini/faith-content-strategy", async (req: Request, res: Response) => {
+  try {
+    const {
+      mode = "generate_script_17",
+      topic = "Paz en medio de la tormenta y cómo no perder la fe",
+      verseReference = "Filipenses 4:6-7",
+      contentType = "descubrimiento", // descubrimiento | confianza | conversion
+      targetAudience = "Hispanos en EE.UU., España, México, Chile, Colombia",
+      dailyHours = 2,
+      planDays = 7,
+      specificProblem = "Ansiedad, estrés por el trabajo o la familia, dificultad para orar",
+      productToPromote = ""
+    } = req.body;
+
+    const ai = getGeminiClient();
+
+    const ethicalGuardrails = `
+DIRECTIVAS ÉTICAS Y BÍBLICAS OBLIGATORIAS (CONSTITUCIÓN CRISTIANA):
+1. CERO MANIPULACIÓN EMOCIONAL O CULPA: Jamás uses miedo, condenación o chantaje espiritual.
+2. CERO TEOLOGÍA DE LA PROSPERIDAD: NUNCA presentes el dinero o la riqueza como recompensa automática de Dios.
+3. CERO MILAGROS GARANTIZADOS EN FECHAS ESPECÍFICAS: Dios es soberano; no hagas promesas mágicas o falsas esperanzas.
+4. CONTEXTO BÍBLICO RIGUROSO: Cita libro, capítulo y versículo con precisión exegética; no saques versículos de contexto.
+5. LENGUAJE NATURAL Y HUMANO: Cero frases robotizadas, sermones mecánicos o clichés acartonados. Habla como una persona real conversando frente a cámara.
+6. ENFOQUE EN AUDIENCIAS HISPANAS CLAVE: EE.UU. (comunidad latina), España, México, Chile, Colombia y Latinoamérica, considerando el poder adquisitivo real de cada mercado.
+`;
+
+    if (mode === "generate_script_17") {
+      const prompt = `Actúa como Director Estratégico y Guionista Experto en Contenido Cristiano de Fe, Oración y Versículos Bíblicos.
+${ethicalGuardrails}
+
+TEMA / IDEA: "${topic}"
+VERSÍCULO SUGERIDO: "${verseReference}"
+TIPO DE CONTENIDO: "${contentType}" (Descubrimiento, Confianza o Conversión)
+PÚBLICO: "${targetAudience}"
+PROBLEMA A RESOLVER: "${specificProblem}"
+${productToPromote ? `PRODUCTO ÉTICO A PRESENTAR: "${productToPromote}"` : ''}
+
+Genera EXACTAMENTE los 17 PUNTOS OBLIGATORIOS en formato JSON:
+1. objetivoContenido: Meta clara del video.
+2. tipoContenido: descubrimiento | confianza | conversion.
+3. publicoEspecifico: Detalle del perfil hispanohablante.
+4. problemaONecesidad: Dolor real que atiende.
+5. gancho3Segundos: Gancho verbal y visual para los primeros 3 segundos (<3s) que atrape sin falsas promesas.
+6. guionCompleto: Texto completo palabra por palabra, conversacional, cálido, empático, sin palabras robotizadas.
+7. versiculoBiblico: { libro, capitulo, versiculo, traduccion, textoCompleto }.
+8. explicacionContexto: Contexto bíblico breve y aplicación práctica inmediata a la vida diaria.
+9. textoEnPantalla: Array de 4 a 6 frases cortas para subtítulos dinámicos o banners.
+10. ideasEscenasYFondo: Array de 3 a 5 descripciones visuales para los clips de fondo.
+11. duracionRecomendada: Ej "35-45 segundos".
+12. tituloPortada: Frase corta y llamativa para thumbnail o carátula.
+13. descripcionPublicacion: Copywriting para Instagram/TikTok/YouTube con llamada a la acción y espacio para comentarios.
+14. llamadaALaAccion: CTA natural, ética y orientada a la comunidad.
+15. hashtags: 6 a 10 hashtags relevantes del nicho de fe.
+16. promptIaImagenVideo: { klingRunwayPromptEn, midjourneyPromptEn, descripcionPlanoEs } optimizado para IA visual 9:16 vertical.
+17. metricaPrincipal: Indicador clave (ej: guardados, compartidos, retención >3s).`;
+
+      const response = await generateWithFallback(ai, {
+        preferredModel: "gemini-3.8-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              objetivoContenido: { type: Type.STRING },
+              tipoContenido: { type: Type.STRING },
+              publicoEspecifico: { type: Type.STRING },
+              problemaONecesidad: { type: Type.STRING },
+              gancho3Segundos: { type: Type.STRING },
+              guionCompleto: { type: Type.STRING },
+              versiculoBiblico: {
+                type: Type.OBJECT,
+                properties: {
+                  libro: { type: Type.STRING },
+                  capitulo: { type: Type.INTEGER },
+                  versiculo: { type: Type.STRING },
+                  traduccion: { type: Type.STRING },
+                  textoCompleto: { type: Type.STRING }
+                },
+                required: ["libro", "capitulo", "versiculo", "textoCompleto"]
+              },
+              explicacionContexto: { type: Type.STRING },
+              textoEnPantalla: { type: Type.ARRAY, items: { type: Type.STRING } },
+              ideasEscenasYFondo: { type: Type.ARRAY, items: { type: Type.STRING } },
+              duracionRecomendada: { type: Type.STRING },
+              tituloPortada: { type: Type.STRING },
+              descripcionPublicacion: { type: Type.STRING },
+              llamadaALaAccion: { type: Type.STRING },
+              hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+              promptIaImagenVideo: {
+                type: Type.OBJECT,
+                properties: {
+                  klingRunwayPromptEn: { type: Type.STRING },
+                  midjourneyPromptEn: { type: Type.STRING },
+                  descripcionPlanoEs: { type: Type.STRING }
+                },
+                required: ["klingRunwayPromptEn", "midjourneyPromptEn", "descripcionPlanoEs"]
+              },
+              metricaPrincipal: { type: Type.STRING }
+            },
+            required: [
+              "objetivoContenido", "tipoContenido", "publicoEspecifico", "problemaONecesidad",
+              "gancho3Segundos", "guionCompleto", "versiculoBiblico", "explicacionContexto",
+              "textoEnPantalla", "ideasEscenasYFondo", "duracionRecomendada", "tituloPortada",
+              "descripcionPublicacion", "llamadaALaAccion", "hashtags", "promptIaImagenVideo", "metricaPrincipal"
+            ]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text?.trim() || "{}");
+      return res.json({ success: true, mode, script: parsed });
+    }
+
+    if (mode === "strategic_diagnosis_aj") {
+      const prompt = `Actúa como Consultor Senior en Crecimiento de Canales Cristianos y Estrategia de Contenido Digital.
+${ethicalGuardrails}
+
+AUDIENCIA: "${targetAudience}"
+TIEMPO DISPONIBLE: ${dailyHours} horas diarias
+TEMA CENTRAL: "${topic}"
+
+Responde OBLIGATORIAMENTE en la estructura A - J exacta:
+A. Diagnóstico: Estado actual del nicho y cómo destacar con autenticidad.
+B. Público objetivo: Segmentos prioritarios (EE.UU., España, México, Chile, Colombia) y sus necesidades de fe.
+C. Oportunidad: Espacios desatendidos (ansiedad, oraciones nocturnas honestas, estudios bíblicos claros).
+D. Estrategia: Pilares de contenido, formato vertical 9:16 y sistema de producción en ${dailyHours}h al día.
+E. Ideas de contenido: 5 ideas ganadoras distribuidas en Descubrimiento, Confianza y Conversión.
+F. Guiones completos: 1 guion emblemático completo de 17 puntos.
+G. Productos o servicios relacionados: Propuesta ética de monetización según poder adquisitivo.
+H. Plan de publicación: Calendario semanal recomendado con horarios de alto impacto.
+I. Métricas: Indicadores a evaluar (retención, guardados, compartidos).
+J. Próximas acciones: 3 pasos accionables para empezar hoy.`;
+
+      const response = await generateWithFallback(ai, {
+        preferredModel: "gemini-3.8-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              diagnostico: { type: Type.STRING },
+              publicoObjetivo: { type: Type.STRING },
+              oportunidad: { type: Type.STRING },
+              estrategia: { type: Type.STRING },
+              ideasContenido: { type: Type.ARRAY, items: { type: Type.STRING } },
+              guionEmblematico17Puntos: {
+                type: Type.OBJECT,
+                properties: {
+                  objetivoContenido: { type: Type.STRING },
+                  tipoContenido: { type: Type.STRING },
+                  publicoEspecifico: { type: Type.STRING },
+                  problemaONecesidad: { type: Type.STRING },
+                  gancho3Segundos: { type: Type.STRING },
+                  guionCompleto: { type: Type.STRING },
+                  versiculoBiblico: {
+                    type: Type.OBJECT,
+                    properties: {
+                      libro: { type: Type.STRING },
+                      capitulo: { type: Type.INTEGER },
+                      versiculo: { type: Type.STRING },
+                      traduccion: { type: Type.STRING },
+                      textoCompleto: { type: Type.STRING }
+                    },
+                    required: ["libro", "capitulo", "versiculo", "textoCompleto"]
+                  },
+                  explicacionContexto: { type: Type.STRING },
+                  textoEnPantalla: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  ideasEscenasYFondo: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  duracionRecomendada: { type: Type.STRING },
+                  tituloPortada: { type: Type.STRING },
+                  descripcionPublicacion: { type: Type.STRING },
+                  llamadaALaAccion: { type: Type.STRING },
+                  hashtags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  promptIaImagenVideo: {
+                    type: Type.OBJECT,
+                    properties: {
+                      klingRunwayPromptEn: { type: Type.STRING },
+                      midjourneyPromptEn: { type: Type.STRING },
+                      descripcionPlanoEs: { type: Type.STRING }
+                    },
+                    required: ["klingRunwayPromptEn", "midjourneyPromptEn", "descripcionPlanoEs"]
+                  },
+                  metricaPrincipal: { type: Type.STRING }
+                }
+              },
+              productosRelacionados: { type: Type.ARRAY, items: { type: Type.STRING } },
+              planPublicacion: { type: Type.STRING },
+              metricas: { type: Type.ARRAY, items: { type: Type.STRING } },
+              proximasAcciones: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: [
+              "diagnostico", "publicoObjetivo", "oportunidad", "estrategia",
+              "ideasContenido", "productosRelacionados", "planPublicacion", "metricas", "proximasAcciones"
+            ]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text?.trim() || "{}");
+      return res.json({ success: true, mode, diagnosis: parsed });
+    }
+
+    // Default fallback response
+    res.json({
+      success: true,
+      message: "Faith Content Strategy engine active"
+    });
+  } catch (error: any) {
+    console.error("[API Faith Content Strategy Error]:", error);
+    res.status(500).json({ success: false, error: error?.message || "Error procesando estrategia de contenido" });
   }
 });
 

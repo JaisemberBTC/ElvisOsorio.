@@ -47,7 +47,15 @@ import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport';
 import { nicheMelodyEngine, NICHE_MELODIES } from '../utils/nicheMelodyEngine';
 import { syncScenePromptWithExactDialogue, buildCanonicalDialogueBlock } from '../utils/dialoguePromptSync';
 import { executeProductionSkill, MINISERIES_SKILL_MANIFEST } from '../skills/miniseriesProductionSkill';
-import { countWordsSpanish, calibrateAndPaceDialogue, MAX_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
+import { countWordsSpanish, calibrateAndPaceDialogue, ensureMultiCharacterDialogueExchange, MAX_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
+import {
+  VERTICAL_MICROFICTION_SKILLS,
+  SKILL_PRODUCTION_ARCHITECTURE,
+  SKILL_MICROFICTION_SCRIPT_ENGINE,
+  SKILL_FAST_PROMPT_TEMPLATE,
+  buildQualityChecklist,
+  type MicrofictionQualityChecklist
+} from '../skills/verticalMicrofictionSkill';
 import {
   CARTOON_CHARACTERS_FE,
   MINISERIES_TEMPLATES_FE,
@@ -105,13 +113,24 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [selectedAiEngine, setSelectedAiEngine] = useState<'kling' | 'runway' | 'luma' | 'sora'>('kling');
 
-  // AI Generator Form State (Builds complete series delivered all at once)
+  // AI Generator Form State (Impulsado por Prompts 1, 2 y 3 del documento)
   const [aiTopicInput, setAiTopicInput] = useState<string>('El perdón del padre ausente que volvió a las 3:00 AM');
   const [aiCategoryInput, setAiCategoryInput] = useState<any>('milagro_familiar');
+  const [aiToneInput, setAiToneInput] = useState<string>('melodrama + misterio + fe profunda');
   const [aiTotalParts, setAiTotalParts] = useState<number>(3);
+  const [aiDurationSec, setAiDurationSec] = useState<number>(70);
+  const [aiCustomCharacters, setAiCustomCharacters] = useState<string>('');
+  const [aiAudiencePlatform, setAiAudiencePlatform] = useState<'TikTok' | 'Instagram Reels' | 'YouTube Shorts' | 'Universal 9:16'>('Universal 9:16');
+  const [aiCallToAction, setAiCallToAction] = useState<string>('Escribe AMÉN si crees que Dios hace milagros imposibles');
+  const [aiNoInclude, setAiNoInclude] = useState<string>('violencia gráfica, armas, lenguaje vulgar, cambios de ropa');
   const [aiEnvironmentInput, setAiEnvironmentInput] = useState<string>('auto');
   const [expandedNetflixPromptSceneIdx, setExpandedNetflixPromptSceneIdx] = useState<number | null>(null);
   const [isGeneratingSeries, setIsGeneratingSeries] = useState<boolean>(false);
+
+  // AI Skills for Miniseries state (Documento Maestro: Prompts 1, 2, 3)
+  const [isSkillsPanelExpanded, setIsSkillsPanelExpanded] = useState<boolean>(true);
+  const [inspectingSkill, setInspectingSkill] = useState<any | null>(null);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(false);
 
   // Preview Player State
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -146,6 +165,75 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     setCopiedKey(key);
     showNotification(label);
     setTimeout(() => setCopiedKey(null), 2500);
+  };
+
+  // Modular Copy Handlers (Requisito de Prompt 1: Organizar para copiar por separado)
+  const handleCopyFullScript = (episode: MiniserieEpisode = editableEpisode) => {
+    const text = `GUION TÉCNICO Y NARRATIVA SERIALIZADA - ${currentSeries.seriesTitle} (${episode.episodeTitle})\n` +
+      `FORMATO: 9:16 Vertical • CADENCIA: ~2.0-2.2 pal/s • DURACIÓN TOTAL: ~${(episode.scenes || []).reduce((a, s) => a + (s.durationSec || 10), 0)}s\n` +
+      `GANCHO DE APERTURA (<3s): "${episode.hook}"\n\n` +
+      (episode.scenes || []).map((sc) => (
+        `===================================================\n` +
+        `PLANO ${sc.sceneNumber} [${sc.timeframe || '00:00-00:10'}] - DURACIÓN: ${sc.durationSec || 10}s\n` +
+        `TEXTO EN PANTALLA: ${sc.onScreenText}\n` +
+        `📖 HISTORIA DEL SEGMENTO (10s): "${sc.narration || ''}"\n` +
+        `🎬 ACCIÓN VISUAL: ${sc.action}\n` +
+        `🗣️ DIÁLOGO CORAL DE 10s (ENTRE VARIOS PERSONAJES):\n` +
+        (sc.dialogueExchange || []).map(d => `  * [${d.timeWindow || '00:00-00:03'}] ${d.speakerName}: "${d.dialogueSpanish}" (${d.allocatedSeconds || 3}s - Tono: ${d.emotionalTone})`).join('\n') + '\n' +
+        `🔊 SFX / FOLEY: ${sc.sfx}\n` +
+        `🎵 MÚSICA: ${sc.bgMusicMood || 'Piano sacral en 432Hz'}\n`
+      )).join('\n') +
+      `\nCLIFFHANGER / CIERRE DE RETENCIÓN: "${episode.cliffhanger}"\n` +
+      `LLAMADA A LA ACCIÓN: ${episode.socialPackage?.caption || ''}`;
+    handleCopy(text, 'copy_script_full', '📋 ¡Guion y narrativa de la historia copiados!');
+  };
+
+  const handleCopyVisualPrompts = (episode: MiniserieEpisode = editableEpisode) => {
+    const text = (episode.scenes || []).map((sc) => (
+      `// PROMPT VISUAL INDEPENDIENTE - PLANO ${sc.sceneNumber} (${sc.durationSec || 10}s 9:16)\n` +
+      `${sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt}\n`
+    )).join('\n---\n\n');
+    handleCopy(text, 'copy_prompts_visual', '🎨 ¡Prompts visuales individuales copiados!');
+  };
+
+  const handleCopyBibleContinuity = () => {
+    const text = `BIBLIA DE CONTINUIDAD Y MODEL SHEETS - ${currentSeries.seriesTitle}\n` +
+      `LOGLINE: ${currentSeries.logline}\n` +
+      `ENTORNO INMUTABLE: ${currentSeries.lockedEnvironmentName || 'Aposento Sagrado'} (${currentSeries.lockedEnvironmentId})\n` +
+      `PROMPT ARQUITECTURA:\n${currentSeries.lockedEnvironmentPromptEn || ''}\n\n` +
+      `ELENCO Y MODEL SHEETS:\n` +
+      (currentSeries.characters || CARTOON_CHARACTERS_FE).map(c => (
+        `[${c.name.toUpperCase()} - ${c.role}]\n` +
+        `Descripción: ${c.shortDescription}\n` +
+        `Vestuario Fijo: ${c.clothingStyle}\n` +
+        `Voz: ${c.voiceProfile.tone} (Preset: ${c.voiceProfile.elevenLabsPreset})\n` +
+        `Model Sheet Lock:\n${c.exactModelSheetLockEn || c.fixedIdentityPromptEn}\n`
+      )).join('\n');
+    handleCopy(text, 'copy_bible_continuity', '🛡️ ¡Biblia de continuidad y personajes copiada!');
+  };
+
+  const handleCopyQualityChecklist = (episode: MiniserieEpisode = editableEpisode) => {
+    const qc = (episode as any).qualityChecklist || buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger);
+    const text = `LISTA DE CONTROL DE CALIDAD Y VIABILIDAD (SECCIÓN H) - ${episode.episodeTitle}\n` +
+      `1. Gancho <3s: [${qc.ganchoPrimeros3s.status.toUpperCase()}] ${qc.ganchoPrimeros3s.detail}\n` +
+      `2. Conflicto claro: [${qc.claridadConflicto.status.toUpperCase()}] ${qc.claridadConflicto.detail}\n` +
+      `3. Giro y revelación: [${qc.coherenciaGiro.status.toUpperCase()}] ${qc.coherenciaGiro.detail}\n` +
+      `4. Viabilidad de producción: [${qc.viabilidadProduccion.status.toUpperCase()}] ${qc.viabilidadProduccion.detail}\n` +
+      `5. Presupuesto fonético: [${qc.presupuestoFonetico.status.toUpperCase()}] ${qc.presupuestoFonetico.detail}\n` +
+      `6. Continuidad visual: [${qc.continuidadVisual.status.toUpperCase()}] ${qc.continuidadVisual.detail}\n`;
+    handleCopy(text, 'copy_quality_checklist', '✅ ¡Lista de control de calidad (Sección H) copiada!');
+  };
+
+  const handleLoadDocSuggestedTest = () => {
+    const preset = SKILL_FAST_PROMPT_TEMPLATE.suggestedPresets[0];
+    setAiTopicInput(preset.topic);
+    setAiToneInput(preset.tone);
+    setAiCustomCharacters(preset.characters);
+    setAiNoInclude(preset.noInclude);
+    setAiTotalParts(3);
+    setAiDurationSec(70);
+    setAiCallToAction("Comenta qué harías si recibes ese recibo y escribe AMÉN");
+    showNotification("🧪 ¡Prueba sugerida del documento cargada! (Elena y el recibo del futuro)");
   };
 
   const handleDownloadWord = async (targetSeries?: MiniserieTemplate) => {
@@ -399,6 +487,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           ? `Interacción 2 Personajes: ${char.name} y ${secondaryChar.name}. ${sc.action}`
           : `${char.name}: ${sc.action}`;
 
+        const dialogueLines = (sc.dialogueExchange || []).map(d => `${d.speakerName}: "${d.dialogueSpanish}"`).join(' ');
+        const fullAudioScript = sc.narration && dialogueLines
+          ? `${sc.narration} • Diálogo: ${dialogueLines}`
+          : (dialogueLines || sc.narration || '');
+
         return {
           numero: idx + 1,
           sceneNumber: idx + 1,
@@ -408,8 +501,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           durationSec: sc.durationSec || 10,
           visual: visualDescription,
           visualPrompt: sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt,
-          narration: sc.narration,
-          narrationText: sc.narration,
+          narration: fullAudioScript,
+          narrationText: fullAudioScript,
+          storyNarration: sc.narration,
+          dialogueExchange: sc.dialogueExchange,
           onScreenText: sc.onScreenText,
           transicion: 'Corte cinematográfico suave 35mm',
           palabras_resaltadas: [sc.sfx],
@@ -475,25 +570,39 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     showNotification(`✨ Conectando con IA para generar la serie completa: "${(aiTopicInput || '').slice(0, 35)}..." con Jesús de Nazaret como protagonista`);
 
     try {
-      // 1. Try real server-side Gemini generation
-      const res = await fetch('/api/gemini/generate-miniseries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: aiTopicInput.trim(),
-          totalParts: aiTotalParts,
-          category: aiCategoryInput,
-          lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined
-        })
-      });
-
       let generatedTemplate: MiniserieTemplate | null = null;
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.miniseries) {
-          generatedTemplate = data.miniseries;
+      try {
+        // 1. Try real server-side Gemini generation with Vertical Microfiction Skills (Prompts 1, 2, 3)
+        const res = await fetch('/api/gemini/generate-miniseries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: aiTopicInput.trim(),
+            totalParts: aiTotalParts,
+            category: aiCategoryInput,
+            lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined,
+            customCharacters: aiCustomCharacters.trim() || undefined,
+            audiencePlatform: aiAudiencePlatform,
+            tone: aiToneInput.trim() || undefined,
+            durationSec: aiDurationSec,
+            callToAction: aiCallToAction.trim() || undefined,
+            noInclude: aiNoInclude.trim() || undefined
+          })
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data.success && data.miniseries) {
+            generatedTemplate = data.miniseries;
+          }
+        } else if (contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => null);
+          console.warn("[Miniseries API non-200 JSON]:", errData);
         }
+      } catch (fetchErr) {
+        console.warn("[Miniseries API network/parsing fallback]:", fetchErr);
       }
 
       // 2. If server couldn't connect or returned empty, execute open-source production skill
@@ -520,14 +629,17 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           negativePromptEn: 'no hospital machines, no modern clutter, no change of character clothing, no extra limbs'
         };
         const jesusChar = CARTOON_CHARACTERS_FE.find(c => c.id === 'jesus_cartoon_3d')!;
-        const secId = generatedTemplate.primaryCharacterIds.find(id => id !== 'jesus_cartoon_3d') || 'sara_madre_fe';
-        const secondaryChar = (generatedTemplate.characters && generatedTemplate.characters.find(c => c.id === secId))
-          || CARTOON_CHARACTERS_FE.find(c => c.id === secId) 
-          || CARTOON_CHARACTERS_FE[3];
+        const castChars = (generatedTemplate.characters && generatedTemplate.characters.length > 0)
+          ? generatedTemplate.characters.filter(c => c.id !== 'jesus_cartoon_3d')
+          : CARTOON_CHARACTERS_FE.filter(c => generatedTemplate.primaryCharacterIds.includes(c.id) && c.id !== 'jesus_cartoon_3d');
+        const secondaryChar = castChars[0] || CARTOON_CHARACTERS_FE[3];
 
         const envLockTag = `[LOCKED ENVIRONMENT - ${matchedEnv.shortTag.toUpperCase()}]: ${matchedEnv.architecturePromptEn} Lighting: ${matchedEnv.lightingSetup}. Props: ${matchedEnv.propsAndAtmosphere}. EXACT SAME ROOM AND PROPS IN ALL SCENES.`;
         const charJesusLock = `[LOCKED CHARACTER - JESUS]: ${jesusChar.exactModelSheetLockEn}`;
-        const charSecLock = `[LOCKED CHARACTER - ${secondaryChar.name.toUpperCase()}]: ${secondaryChar.exactModelSheetLockEn}`;
+        const allCharLocks = [
+          charJesusLock,
+          ...castChars.map(c => `[LOCKED CHARACTER - ${c.name.toUpperCase()}]: ${c.exactModelSheetLockEn || c.fixedIdentityPromptEn}`)
+        ].join('\n');
         const negativeLock = `[NEGATIVE CONTINUITY PROMPT: ${matchedEnv.negativePromptEn}, no changes in character clothing, no change of hairstyle, no facial morphing, no extra limbs, no camera jump cuts]`;
 
         generatedTemplate.lockedEnvironmentId = matchedEnv.id;
@@ -556,14 +668,51 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
             sc.imageToVideoPrompt = sc.imageToVideoPrompt || sc.englishPromptWithSpanishDialogue || '';
 
             if (!sc.masterNetflixPrompt) {
-              sc.masterNetflixPrompt = `${envLockTag}\n${charJesusLock}\n${charSecLock}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
+              sc.masterNetflixPrompt = `${envLockTag}\n${allCharLocks}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
             }
             if (!sc.englishPromptWithSpanishDialogue.includes('LOCKED ENVIRONMENT')) {
-              sc.englishPromptWithSpanishDialogue = `${envLockTag}\n${charJesusLock}\n${charSecLock}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
+              sc.englishPromptWithSpanishDialogue = `${envLockTag}\n${allCharLocks}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
             }
             if (!sc.imageToVideoPrompt.includes('LOCKED ENVIRONMENT')) {
-              sc.imageToVideoPrompt = `${envLockTag}\n${charJesusLock}\n${charSecLock}\n${sc.imageToVideoPrompt}\n${negativeLock}`;
+              sc.imageToVideoPrompt = `${envLockTag}\n${allCharLocks}\n${sc.imageToVideoPrompt}\n${negativeLock}`;
             }
+
+            // Strictly ensure multi-character dialogue exchange across all 10 seconds of the scene
+            const isFem = (secondaryChar as any).gender === 'female' || secondaryChar.voiceProfile?.gender === 'femenino';
+            const castForEnrichment = {
+              protagonist: {
+                id: secondaryChar.id,
+                name: secondaryChar.name,
+                gender: (isFem ? 'female' : 'male') as ('female' | 'male'),
+                archetype: secondaryChar.archetype,
+                vocative: isFem ? 'Hija mía' : 'Hijo mío',
+                pronoun: isFem ? 'ella' : 'él',
+                posture: 'en actitud de clamor',
+                modelSheetLockEn: secondaryChar.exactModelSheetLockEn,
+                voicePreset: secondaryChar.voiceProfile?.elevenLabsPreset || 'David - Confident & Clear'
+              },
+              supporting: {
+                id: castChars[1]?.id || CARTOON_CHARACTERS_FE[1].id,
+                name: castChars[1]?.name || CARTOON_CHARACTERS_FE[1].name,
+                gender: ((castChars[1] as any)?.gender === 'male' || castChars[1]?.voiceProfile?.gender === 'masculino' ? 'male' : 'female') as ('female' | 'male'),
+                role: castChars[1]?.role || 'Apoyo de fe',
+                modelSheetLockEn: castChars[1]?.exactModelSheetLockEn || CARTOON_CHARACTERS_FE[1].exactModelSheetLockEn,
+                voicePreset: castChars[1]?.voiceProfile?.elevenLabsPreset || 'Elena - Deeply Emotional & Sincere'
+              }
+            };
+
+            sc.dialogueExchange = ensureMultiCharacterDialogueExchange(
+              sc,
+              sc.sceneNumber || 1,
+              castForEnrichment,
+              aiTopicInput,
+              generatedTemplate.totalPartsPlanned || 3,
+              ep.episodeNumber || 1
+            );
+
+            // Update charactersInShot to reflect all active dialogue speakers
+            const activeSpeakerIds = (sc.dialogueExchange || []).map((d: any) => d.speakerId).filter(Boolean);
+            sc.charactersInShot = Array.from(new Set([...(sc.charactersInShot || []), ...activeSpeakerIds]));
 
             if (sc.dialogueExchange) {
               sc.dialogueExchange.forEach(d => {
@@ -577,7 +726,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 }
               });
 
-              // Strictly synchronize prompts with the exact dialogueExchange
+              // Strictly synchronize prompts with the exact multi-character dialogueExchange
               const synchronized = syncScenePromptWithExactDialogue(
                 sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt || '',
                 sc.dialogueExchange,
@@ -588,6 +737,9 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               sc.masterNetflixPrompt = synchronized;
             }
           });
+
+          // Ensure Quality Control Checklist is attached to each episode
+          (ep as any).qualityChecklist = buildQualityChecklist(ep.scenes, ep.hook, ep.cliffhanger, aiDurationSec);
         });
       }
 
@@ -714,6 +866,182 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 <span>Exportar / Renderizar Serie Completa</span>
               </button>
             </div>
+          </div>
+
+          {/* HABILIDADES DE INTELIGENCIA ARTIFICIAL PARA CREAR MINISERIES (DOCUMENTO MAESTRO: PROMPTS 1, 2 Y 3) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/40 border border-purple-500/40 shadow-xl space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-purple-600 flex items-center justify-center text-slate-950 font-bold shadow-md">
+                  <Brain className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-white font-cinzel tracking-wide">
+                      Habilidades de IA para Crear Miniseries
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold uppercase tracking-wider">
+                      3 Habilidades Integradas
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+                      Documento Maestro
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    Control técnico 9:16, guionista de microficción sin repeticiones de entorno y formulación de conflicto inmediato.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSkillsPanelExpanded(!isSkillsPanelExpanded)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+              >
+                <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                <span>{isSkillsPanelExpanded ? 'Ocultar Detalle' : 'Ver 3 Habilidades de IA'}</span>
+              </button>
+            </div>
+
+            {isSkillsPanelExpanded && (
+              <div className="space-y-3 animate-fadeIn">
+                {/* 3 Skill Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Habilidad 1 */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-amber-500/30 hover:border-amber-400/60 transition-all space-y-2 flex flex-col justify-between shadow-sm">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                          Prompt 1 • Arquitectura
+                        </span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Activa en IA" />
+                      </div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">
+                        Control Técnico y Producción 9:16
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Control de 1 a 10 capítulos (60-75s), planos continuos de 10s, exclusión estricta ("NO INCLUIR") y salida modular copiable por partes.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setInspectingSkill(SKILL_PRODUCTION_ARCHITECTURE)}
+                        className="flex-1 py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Ver Prompt 1</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAiGeneratorOpen(true)}
+                        className="py-1 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Sliders className="w-3 h-3" />
+                        <span>Ajustar</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Habilidad 2 */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-sky-500/30 hover:border-sky-400/60 transition-all space-y-2 flex flex-col justify-between shadow-sm">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
+                          Prompt 2 • Guion y Edición
+                        </span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Activa en IA" />
+                      </div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">
+                        Guionista de Microficción Vertical 9:16
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Gancho &lt;3s urgente ("quién quiere qué y qué puede perder"), originalidad absoluta de escenarios y ganchos, cadencia 2.0-2.5 pal/s y Lista de Control H.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setInspectingSkill(SKILL_MICROFICTION_SCRIPT_ENGINE)}
+                        className="flex-1 py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Ver Prompt 2</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyQualityChecklist()}
+                        className="py-1 px-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Lista H</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Habilidad 3 */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/80 border border-purple-500/30 hover:border-purple-400/60 transition-all space-y-2 flex flex-col justify-between shadow-sm">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                          Prompt 3 • Disparo Rápido
+                        </span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Activa en IA" />
+                      </div>
+                      <h4 className="font-bold text-white text-xs sm:text-sm">
+                        Formulación y Disparo Paramétrico
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Dispara cualquier idea formateada con parámetros de control y presets listos para verificar historias con 1 solo clic.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setInspectingSkill(SKILL_FAST_PROMPT_TEMPLATE)}
+                        className="flex-1 py-1 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Ver Prompt 3</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLoadDocSuggestedTest}
+                        className="py-1 px-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>Cargar Prueba</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Presets Rápidos de Disparo del Documento Maestro */}
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10 flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Presets de verificación del documento:</span>
+                  </span>
+                  {SKILL_FAST_PROMPT_TEMPLATE.suggestedPresets.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setAiTopicInput(preset.topic);
+                        setAiToneInput(preset.tone);
+                        setAiCustomCharacters(preset.characters);
+                        setAiNoInclude(preset.noInclude);
+                        setAiTotalParts(3);
+                        showNotification(`🧪 Preset cargado: "${preset.title}"`);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-950/60 text-slate-300 hover:text-amber-300 border border-white/10 text-[11px] font-medium transition-all cursor-pointer"
+                    >
+                      {preset.title.split(':')[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* BARRA DIRECTA: COLOCAR TEMA Y OPRIMIR GENERAR SERIE COMPLETA */}
@@ -936,6 +1264,16 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 type="button"
+                onClick={() => setIsStoryModalOpen(true)}
+                className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md"
+                title="Ver historia secuencial completa con diálogos entre varios personajes durante los 10 segundos de cada segmento"
+              >
+                <BookOpen className="w-4 h-4 text-amber-300" />
+                <span>Ver Historia y Diálogos de Cada 10s</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   const fullText = currentSeries.episodes.map(ep => (
                     `========================================\n${currentSeries.seriesTitle} - ${ep.episodeTitle}\n========================================\n\nGANCHO:\n${ep.hook}\n\nESCENAS E INTERACCIONES:\n${(ep.scenes || []).map(sc => (
@@ -945,10 +1283,31 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                   handleCopy(fullText, 'full_series_copy', '¡Guion de todos los capítulos copiado con éxito!');
                 }}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
+                title="Copiar guion maestro con todos los capítulos"
               >
                 {copiedKey === 'full_series_copy' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                <span>Copiar Todos los Capítulos (Guion Maestro)</span>
+                <span>Copiar Guion Maestro</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCopyVisualPrompts(currentSeries.episodes[0])}
+                className="px-3.5 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Copiar prompts visuales independientes"
+              >
+                <Video className="w-4 h-4 text-purple-300" />
+                <span>Prompts Visuales</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyBibleContinuity}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"
+                title="Copiar biblia de continuidad y model sheets"
+              >
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <span>Biblia Narrativa</span>
               </button>
 
               <button
@@ -997,7 +1356,27 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyFullScript(episode)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Copiar guion de este episodio"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copiar Guion</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyVisualPrompts(episode)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 text-purple-200 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Copiar prompts visuales del episodio"
+                    >
+                      <Video className="w-3.5 h-3.5 text-purple-300" />
+                      <span>Prompts</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -1008,7 +1387,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       className="px-3.5 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5" />
-                      <span>Simular en 9:16</span>
+                      <span>Simular 9:16</span>
                     </button>
 
                     <button
@@ -1044,6 +1423,54 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     </p>
                   </div>
                 </div>
+
+                {/* Quality Control Checklist (Sección H del Documento Maestro) */}
+                {(() => {
+                  const qc = (episode as any).qualityChecklist || buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger);
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-emerald-500/30 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-emerald-300 flex items-center gap-1.5 uppercase tracking-wider">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Habilidad IA: Control de Calidad y Viabilidad Técnica (Sección H)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyQualityChecklist(episode)}
+                          className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer font-bold"
+                        >
+                          <Copy className="w-3 h-3" /> Copiar Checklist
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px]">
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">1. Gancho &lt;3s</span>
+                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">2. Conflicto Claro</span>
+                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Explicado</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">3. Revelación/Giro</span>
+                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Preparada</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">4. Formato 9:16</span>
+                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Vertical 10s</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">5. Cadencia Oral</span>
+                          <span className="text-amber-300 font-bold flex items-center gap-1">✓ 2.0-2.5 pal/s</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">6. Continuidad</span>
+                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Model Sheet</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Scene Cards with Multi-Character Interaction & Spanish Dialogue Clarified in English */}
                 <div className="space-y-3">
@@ -1094,18 +1521,50 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                               </div>
                             </div>
 
-                            {/* Action Description */}
+                            {/* 1. Story Narrative Beat of the 10s Segment */}
+                            <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 space-y-1">
+                              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                                📖 Historia del Segmento (10s):
+                              </span>
+                              <p className="text-xs text-slate-100 leading-relaxed font-sans italic">
+                                "{sc.narration || 'El conflicto dramático avanza con tensión y emoción viva en este plano.'}"
+                              </p>
+                            </div>
+
+                            {/* 2. Visual Action Description */}
                             <p className="text-xs text-slate-300 leading-relaxed">
-                              <strong>Acción:</strong> {sc.action}
+                              <strong className="text-sky-300">🎬 Acción Visual:</strong> {sc.action}
                             </p>
 
-                            {/* Interactive Dialogue in Spanish with Speaker Labels */}
+                            {/* 3. Interactive Dialogue in Spanish with Speaker Labels and Audio Preview */}
                             {sc.dialogueExchange && sc.dialogueExchange.length > 0 && (
-                              <div className="p-2.5 rounded-xl bg-slate-900 border border-white/5 space-y-1.5 text-xs">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-                                  <MessageSquare className="w-3 h-3" />
-                                  Diálogo Interactivo en Español:
-                                </span>
+                              <div className="p-2.5 rounded-xl bg-slate-900 border border-white/5 space-y-2 text-xs">
+                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                                  <span className="flex items-center gap-1">
+                                    <MessageSquare className="w-3 h-3" />
+                                    🗣️ Diálogo Coral entre Personajes (10s):
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if ('speechSynthesis' in window) {
+                                        window.speechSynthesis.cancel();
+                                        sc.dialogueExchange.forEach(d => {
+                                          const isJ = d.speakerId === 'jesus_cartoon_3d' || (d.speakerName || '').toLowerCase().includes('jesús');
+                                          const utt = new SpeechSynthesisUtterance(d.dialogueSpanish);
+                                          utt.lang = 'es-MX';
+                                          utt.pitch = isJ ? 0.88 : 1.0;
+                                          utt.rate = 0.95;
+                                          window.speechSynthesis.speak(utt);
+                                        });
+                                      }
+                                    }}
+                                    className="text-[9px] text-amber-300 hover:text-amber-200 px-2 py-0.5 rounded bg-amber-400/20 border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Volume2 className="w-2.5 h-2.5" /> Escuchar Diálogos
+                                  </button>
+                                </div>
                                 {sc.dialogueExchange.map((d, dIdx) => {
                                   const isJesusSpeaker = d.speakerId === 'jesus_cartoon_3d' || (d.speakerName || '').toLowerCase().includes('jesús') || (d.speakerName || '').toLowerCase().includes('jesus');
                                   return (
@@ -1117,14 +1576,21 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                                           : 'border-purple-400/50 text-slate-200'
                                       }`}
                                     >
-                                      <strong className={isJesusSpeaker ? 'text-amber-300 flex items-center gap-1 font-black' : 'text-purple-300'}>
-                                        {isJesusSpeaker ? '✨ Maestro Jesús' : d.speakerName}
-                                        {isJesusSpeaker && (
-                                          <span className="px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 text-[9px] font-extrabold uppercase tracking-wider border border-amber-400/40">
-                                            Protagónico
+                                      <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                                        <strong className={isJesusSpeaker ? 'text-amber-300 flex items-center gap-1 font-black' : 'text-purple-300 font-bold'}>
+                                          {isJesusSpeaker ? '✨ Maestro Jesús' : d.speakerName}
+                                          {isJesusSpeaker && (
+                                            <span className="px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 text-[9px] font-extrabold uppercase tracking-wider border border-amber-400/40">
+                                              Protagónico
+                                            </span>
+                                          )}:
+                                        </strong>
+                                        {d.timeWindow && (
+                                          <span className="text-[9px] font-mono text-amber-400/80 bg-slate-950 px-1.5 py-0.2 rounded border border-white/5">
+                                            ⏱️ {d.timeWindow}
                                           </span>
-                                        )}:
-                                      </strong>{' '}
+                                        )}
+                                      </div>
                                       <span className="italic">"{d.dialogueSpanish}"</span>{' '}
                                       <span className={`text-[10px] font-normal ${isJesusSpeaker ? 'text-amber-200/80' : 'text-slate-400'}`}>[{d.emotionalTone}]</span>
                                     </div>
@@ -1421,6 +1887,134 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 </div>
               </div>
 
+              {/* MODULAR ACTIONS TOOLBAR (Requisito de Prompt 1: Secciones copiables por separado) */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-slate-950/80 border border-purple-500/20 text-xs">
+                <div className="flex items-center gap-2 text-slate-300 font-semibold">
+                  <Layers className="w-4 h-4 text-purple-400" />
+                  <span>Acciones Modulares del Episodio (Habilidad Prompt 1):</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsStoryModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    title="Ver historia secuencial completa con diálogos entre varios personajes durante los 10 segundos de cada segmento"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Ver Historia y Diálogos (10s)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyFullScript(editableEpisode)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/10 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Copiar guion completo con diálogos y timecodes"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Copiar Guion</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyVisualPrompts(editableEpisode)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/10 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Copiar lista de prompts visuales independientes"
+                  >
+                    <Video className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Copiar Prompts</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyBibleContinuity}
+                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/10 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Copiar biblia narrativa y model sheets fijos"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Copiar Biblia</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopyQualityChecklist(editableEpisode)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Copiar lista final de control de calidad (Sección H)"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Lista de Control H</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quality Control Checklist Card (Sección H de Prompt 2) */}
+              {(() => {
+                const qc = (editableEpisode as any).qualityChecklist || buildQualityChecklist(editableEpisode.scenes || [], editableEpisode.hook, editableEpisode.cliffhanger);
+                return (
+                  <div className="p-4 rounded-3xl bg-slate-900/90 border border-emerald-500/30 space-y-3 shadow-xl">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-white">
+                            Lista Final de Control de Calidad y Viabilidad Técnica (Sección H de Prompt 2)
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            Validación estructural: gancho &lt;3s, claridad de conflicto, coherencia de revelación y presupuesto fonético.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyQualityChecklist(editableEpisode)}
+                        className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" /> Copiar Checklist
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">1. Gancho &lt;3s</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">{editableEpisode.hook}</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">2. Conflicto Claro</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ En Cuadro</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">Quién quiere qué y qué puede perder</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">3. Revelación/Giro</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Preparado</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">{editableEpisode.cliffhanger}</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">4. Formato 9:16</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Vertical 10s</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">Planos continuos sin cortes</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">5. Cadencia Oral</span>
+                        <span className="text-amber-300 font-bold flex items-center gap-1">✓ 2.0-2.5 pal/s</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">Sin silencios ni aceleración</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">6. Continuidad</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Inmutable</span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">Model sheets & entorno fijo</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Scenes List */}
               <div className="space-y-4">
                 {(editableEpisode.scenes || []).map((scene, idx) => {
@@ -1513,7 +2107,21 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         </div>
                       </div>
 
-                      {/* Visual Action Description */}
+                      {/* 1. Story Narrative Beat of the 10s Segment */}
+                      <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-amber-300">
+                          <span className="flex items-center gap-1.5">
+                            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                            📖 Historia del Segmento (10s Continuos):
+                          </span>
+                          <span className="text-[10px] text-purple-300 font-mono">Segmento {idx + 1} de 5</span>
+                        </div>
+                        <p className="text-xs text-slate-100 leading-relaxed font-sans italic bg-slate-950/70 p-2.5 rounded-xl border border-white/5">
+                          "{scene.narration || 'El conflicto dramático avanza en este plano con alta carga emocional.'}"
+                        </p>
+                      </div>
+
+                      {/* 2. Visual Action Description */}
                       <div className="p-3 rounded-2xl bg-slate-950/70 border border-white/5 text-xs text-slate-300">
                         <strong className="text-sky-400">🎬 Acción Visual de los Personajes (10s Continuos):</strong> {scene.action}
                       </div>
@@ -1549,12 +2157,33 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       {/* Interactive Dialogue in Spanish with Speaker Badges */}
                       {scene.dialogueExchange && scene.dialogueExchange.length > 0 && (
                         <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/25 space-y-2">
-                          <div className="flex items-center justify-between text-[11px] font-bold text-amber-400">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-amber-400">
                             <span className="flex items-center gap-1.5">
                               <MessageSquare className="w-3.5 h-3.5" />
-                              Diálogo Dramático Interactivo en Español (Secuencia Fluida de 10s):
+                              🗣️ Diálogo Coral entre Personajes (10s de Conversación Fluida):
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono">10s Audio Sincronizado</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-400 font-mono">10s Sincronizados</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if ('speechSynthesis' in window) {
+                                    window.speechSynthesis.cancel();
+                                    scene.dialogueExchange.forEach(turn => {
+                                      const isJ = turn.speakerId === 'jesus_cartoon_3d' || (turn.speakerName || '').toLowerCase().includes('jesús');
+                                      const utt = new SpeechSynthesisUtterance(turn.dialogueSpanish);
+                                      utt.lang = 'es-MX';
+                                      utt.pitch = isJ ? 0.88 : 1.0;
+                                      utt.rate = 0.95;
+                                      window.speechSynthesis.speak(utt);
+                                    });
+                                  }
+                                }}
+                                className="text-[9px] text-amber-300 hover:text-amber-200 px-2 py-0.5 rounded bg-amber-400/20 border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Volume2 className="w-2.5 h-2.5" /> Escuchar 10s
+                              </button>
+                            </div>
                           </div>
 
                           <div className="space-y-2">
@@ -2471,20 +3100,26 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
       {/* MODAL: GENERATE COMPLETE MINISERIES WITH AI (DELIVERED ALL AT ONCE) */}
       {isAiGeneratorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="max-w-2xl w-full rounded-3xl bg-slate-900 border border-purple-500/50 p-6 space-y-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn overflow-y-auto">
+          <div className="max-w-3xl w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-slate-900 border border-purple-500/50 p-5 sm:p-7 space-y-5 shadow-2xl">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white">
-                  <Wand2 className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 via-indigo-600 to-amber-500 flex items-center justify-center text-white shadow-lg">
+                  <Wand2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white font-cinzel">
-                    Crear Nueva Miniserie Completa de Fe
-                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-white font-cinzel">
+                      Crear Miniserie con Habilidades de IA
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/30">
+                      3 Habilidades Activas
+                    </span>
+                  </div>
                   <p className="text-xs text-purple-300">
-                    Genera todos los capítulos de una sola vez, divididos y con interacciones entre personajes.
+                    Control de producción 9:16, guion de microficción, presupuesto fonético y continuidad inmutable.
                   </p>
                 </div>
               </div>
@@ -2498,93 +3133,223 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               </button>
             </div>
 
+            {/* Active AI Skills Badges Bar (Prompt 1, 2, 3) */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Habilidades de Inteligencia Artificial Integradas (Documento Maestro):</span>
+                </span>
+                <span className="text-[10px] text-amber-300 font-mono font-bold">100% Autónomas</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
+                <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 space-y-1">
+                  <div className="font-bold text-amber-300 flex items-center gap-1">
+                    <span>⚡ Habilidad 1: Arquitectura</span>
+                  </div>
+                  <p className="text-[10px] text-slate-300 leading-relaxed">
+                    Control de 1 a 10 episodios, exclusiones estrictas ("NO INCLUIR") y salida modular copiable.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 space-y-1">
+                  <div className="font-bold text-sky-300 flex items-center gap-1">
+                    <span>🎬 Habilidad 2: Guion 9:16</span>
+                  </div>
+                  <p className="text-[10px] text-slate-300 leading-relaxed">
+                    Gancho &lt;3s ("quién quiere qué"), revelación, cliffhanger y cadencia 2.0-2.5 pal/s.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 space-y-1">
+                  <div className="font-bold text-emerald-300 flex items-center gap-1">
+                    <span>🎯 Habilidad 3: Formulación</span>
+                  </div>
+                  <p className="text-[10px] text-slate-300 leading-relaxed">
+                    Conflicto inmediato, tonos melodramáticos y preservación del elenco sin mutaciones.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Test Preset Button (From Document) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs">
+              <div className="flex items-center gap-2 text-amber-300">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="font-bold">¿Deseas probar la historia de verificación del documento?</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLoadDocSuggestedTest}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-md"
+              >
+                <span>🧪 Cargar Prueba Sugerida (Frutera y el Recibo del Futuro)</span>
+              </button>
+            </div>
+
             <div className="space-y-4 text-xs">
               
+              {/* 1. Idea o Conflicto Central */}
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-200">Tema o Historia de Fe para la Miniserie:</label>
+                <label className="font-bold text-slate-200 flex items-center justify-between">
+                  <span>Idea o Conflicto Central (Texto libre):</span>
+                  <span className="text-[10px] text-purple-300">Obligatorio</span>
+                </label>
                 <textarea
                   rows={3}
                   value={aiTopicInput}
                   onChange={(e) => setAiTopicInput(e.target.value)}
-                  placeholder="Ej: El hijo que volvió después de 10 años, la sanidad imposible a las 3 AM en el hospital, el perdón al socio que robó la empresa..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-400 resize-none"
+                  placeholder="Ej: Una frutera recibe cada noche un recibo de una venta que todavía no ocurrió; el recibo lleva el nombre de su padre desaparecido..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-400 resize-none font-sans leading-relaxed"
                 />
               </div>
 
+              {/* 2. Tono y Categoría */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Categoría Dramática:</label>
+                  <label className="font-bold text-slate-300">Tono de la Historia (Prompt 1 & 3):</label>
+                  <input
+                    type="text"
+                    value={aiToneInput}
+                    onChange={(e) => setAiToneInput(e.target.value)}
+                    placeholder="melodrama + misterio + fe profunda"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300">Categoría Temática:</label>
                   <select
                     value={aiCategoryInput}
                     onChange={(e) => setAiCategoryInput(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
                   >
                     <option value="milagro_familiar">Milagro & Restauración Familiar</option>
                     <option value="misterio_3am">Misterio de Madrugada (3:00 AM)</option>
                     <option value="sanidad_imposible">Sanidad Sobrenatural / Médica</option>
-                    <option value="prueba_fe">Perdón & Corazones Duros</option>
+                    <option value="prueba_fe">Perdón, Reconciliación & Fe</option>
                     <option value="historia_biblica">Historia Bíblica Adaptada</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Número de Capítulos a Generar:</label>
-                  <select
-                    value={aiTotalParts}
-                    onChange={(e) => setAiTotalParts(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400"
-                  >
-                    <option value={2}>2 Capítulos (Parte 1 y Gran Final)</option>
-                    <option value={3}>3 Capítulos (Trilogía Completa: Conflicto, Señal y Desenlace)</option>
                   </select>
                 </div>
               </div>
 
-              {/* Locked Environment Selector for Netflix-Grade Continuity */}
+              {/* 3. Número de Episodios (1 a 10) y Duración (60-75s) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300">Número de Episodios (1 a 10):</label>
+                  <select
+                    value={aiTotalParts}
+                    onChange={(e) => setAiTotalParts(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                      <option key={num} value={num}>
+                        {num === 1 ? '1 Capítulo (Historia Autoconclusiva)' : `${num} Capítulos Serializados`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300">Duración por Episodio:</label>
+                  <select
+                    value={aiDurationSec}
+                    onChange={(e) => setAiDurationSec(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
+                  >
+                    <option value={60}>60 segundos (6 planos de 10s)</option>
+                    <option value={65}>65 segundos (Ritmo denso)</option>
+                    <option value={70}>70 segundos (Recomendado estándar)</option>
+                    <option value={75}>75 segundos (Máxima inmersión)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300">Público o Plataforma:</label>
+                  <select
+                    value={aiAudiencePlatform}
+                    onChange={(e) => setAiAudiencePlatform(e.target.value as any)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
+                  >
+                    <option value="Universal 9:16">Universal 9:16 (TikTok/Reels/Shorts)</option>
+                    <option value="TikTok">TikTok (Enfoque Retención Rápida)</option>
+                    <option value="Instagram Reels">Instagram Reels (Estético y Emotivo)</option>
+                    <option value="YouTube Shorts">YouTube Shorts (Alta Fidelidad)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 4. Personajes y Rasgos a Conservar */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300 flex items-center justify-between">
+                  <span>Personajes y Rasgos que el Usuario Quiera Conservar (Opcional):</span>
+                  <span className="text-[10px] text-slate-400">Protección de Elenco</span>
+                </label>
+                <input
+                  type="text"
+                  value={aiCustomCharacters}
+                  onChange={(e) => setAiCustomCharacters(e.target.value)}
+                  placeholder="Ej: Elena (frutera valiente y trabajadora de 32 años), abuela sabia, Maestro Jesús"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
+                />
+              </div>
+
+              {/* 5. Exclusiones ("NO INCLUIR") & Llamada a la Acción */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-rose-300">Temas o Elementos que NO se deben incluir (Opcional):</label>
+                  <input
+                    type="text"
+                    value={aiNoInclude}
+                    onChange={(e) => setAiNoInclude(e.target.value)}
+                    placeholder="Ej: armas, violencia gráfica, lenguaje vulgar, anacronismos"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-rose-500/30 text-white text-xs focus:outline-none focus:border-rose-400 font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-300">Llamada a la Acción (CTA Opcional):</label>
+                  <input
+                    type="text"
+                    value={aiCallToAction}
+                    onChange={(e) => setAiCallToAction(e.target.value)}
+                    placeholder="Ej: Escribe AMÉN y comparte si crees en los milagros"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* 6. Entorno Escénico Fijo */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-300 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                    Entorno Escénico Fijo (Continuidad de Locación Tipo Netflix):
+                    <span>Entorno Escénico Fijo (Continuidad Inmutable Tipo Netflix):</span>
                   </span>
                   <span className="text-[10px] text-emerald-400 font-mono">100% Inmutable</span>
                 </label>
                 <select
                   value={aiEnvironmentInput}
                   onChange={(e) => setAiEnvironmentInput(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 text-white text-xs focus:outline-none focus:border-emerald-400"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 text-white text-xs focus:outline-none focus:border-emerald-400 cursor-pointer"
                 >
-                  <option value="auto">🤖 Auto-detectar según la historia de fe (Recomendado)</option>
+                  <option value="auto">🤖 Auto-detectar según la historia (Recomendado)</option>
                   {SERIES_ENVIRONMENTS_FE.map(env => (
                     <option key={env.id} value={env.id}>
                       {env.previewEmoji} {env.name} ({env.timeOfDay})
                     </option>
                   ))}
                 </select>
-                <p className="text-[10px] text-slate-400">
-                  Fija la arquitectura de la habitación, azulejos, lámparas y paleta de color para evitar que herramientas como Flow o Kling cambien el escenario entre videos.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-purple-950/40 to-slate-900 border border-emerald-500/40 text-[11px] text-emerald-200 leading-relaxed space-y-1">
-                <div className="font-bold text-white flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Continuidad Estricta de Serie Tipo Netflix (Anti-Mutación):</span>
-                </div>
-                <div>
-                  • <strong>Model Sheets Inmutables:</strong> Cada escena inyecta el bloqueo descriptivo de rostro, vestimenta y proporciones de Jesús y el co-protagonista.<br/>
-                  • <strong>Voces Persistentes:</strong> Se asigna un preset de voz único (ElevenLabs / Gemini TTS) con timbre, tono y velocidad invariables.<br/>
-                  • <strong>Entorno Fijo:</strong> Las coordenadas escénicas se sellan para mantener una narrativa visual cohesionada como una serie real.
-                </div>
               </div>
 
             </div>
 
+            {/* Footer Buttons */}
             <div className="pt-3 border-t border-white/10 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setIsAiGeneratorOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
               >
                 Cancelar
               </button>
@@ -2593,10 +3358,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 type="button"
                 onClick={handleGenerateCompleteSeries}
                 disabled={isGeneratingSeries || !aiTopicInput.trim()}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl cursor-pointer disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl cursor-pointer disabled:opacity-50 transition-all hover:scale-[1.02]"
               >
                 <Sparkles className={`w-4 h-4 ${isGeneratingSeries ? 'animate-spin' : ''}`} />
-                <span>{isGeneratingSeries ? 'Generando Serie Completa...' : 'Generar Serie Completa en 1 Clic'}</span>
+                <span>{isGeneratingSeries ? 'Generando Serie Completa...' : `Generar Serie (${aiTotalParts} Capítulos) con Habilidades IA`}</span>
               </button>
             </div>
 
@@ -2683,6 +3448,324 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 Cerrar Ficha
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: INSPECT AI SKILL FROM MASTER DOCUMENT */}
+      {inspectingSkill && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn overflow-y-auto">
+          <div className="max-w-2xl w-full rounded-3xl bg-slate-900 border border-purple-500/50 p-5 sm:p-7 space-y-4 shadow-2xl">
+            <div className="flex items-start justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-purple-600 flex items-center justify-center text-slate-950 font-bold shadow-md">
+                  <Brain className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white font-cinzel">
+                      {inspectingSkill.name}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase">
+                      {inspectingSkill.badge || 'Habilidad de IA'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">{inspectingSkill.source}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setInspectingSkill(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300">Prompt Original del Documento Maestro:</span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(inspectingSkill.rawPromptText, 'copy_skill_raw', '¡Prompt de la habilidad copiado!')}
+                  className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-[10px] flex items-center gap-1 transition-all cursor-pointer shadow"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Copiar Prompt</span>
+                </button>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-white/10 text-slate-300 font-mono text-[11px] leading-relaxed max-h-80 overflow-y-auto whitespace-pre-wrap select-all">
+                {inspectingSkill.rawPromptText}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 text-[11px] flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Esta habilidad está 100% activa en el motor de la IA y rige la generación de miniseries en esta sección.</span>
+            </div>
+
+            <div className="pt-2 border-t border-white/10 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setInspectingSkill(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInspectingSkill(null);
+                  setIsAiGeneratorOpen(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white text-xs font-bold transition-all cursor-pointer shadow-md"
+              >
+                Usar en Generador
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HISTORIA COMPLETA Y DIÁLOGOS CORALES SERIALIZADOS (10s por Plano) */}
+      {isStoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-fadeIn overflow-y-auto">
+          <div className="max-w-4xl w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-slate-900 border border-purple-500/50 p-5 sm:p-7 space-y-6 shadow-2xl">
+            
+            {/* Modal Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-purple-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shrink-0">
+                  <BookOpen className="w-6 h-6 text-slate-950" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white font-cinzel flex items-center gap-2">
+                    <span>📖 Historia Serializada y Guion Coral (10s c/u)</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono font-bold uppercase">
+                      ✓ Diálogos 100% Verificados
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    {currentSeries.seriesTitle} • {currentSeries.episodes.length} Capítulos Progresivos • Planos de 10s con 2 a 3 personajes dialogando
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullText = currentSeries.episodes.map(ep => (
+                      `======================================================\n` +
+                      `CAPÍTULO ${ep.episodeNumber}: ${ep.episodeTitle}\n` +
+                      `GANCHO DE APERTURA: "${ep.hook}"\n` +
+                      `CONFLICTO: "${ep.conflict}"\n` +
+                      `ESCALADA: "${ep.escalation}"\n` +
+                      `CLIFFHANGER: "${ep.cliffhanger}"\n` +
+                      `------------------------------------------------------\n` +
+                      (ep.scenes || []).map(sc => (
+                        `[PLANO ${sc.sceneNumber} (${sc.timeframe || '00:00-00:10'}) - ${sc.durationSec || 10}s]\n` +
+                        `📖 HISTORIA DEL SEGMENTO: "${sc.narration || ''}"\n` +
+                        `🎬 ACCIÓN VISUAL 9:16: ${sc.action}\n` +
+                        `🗣️ DIÁLOGO CORAL ENTRE VARIOS PERSONAJES:\n` +
+                        (sc.dialogueExchange || []).map(d => `  * [${d.timeWindow || '00:00-00:03'}] ${d.speakerName}: "${d.dialogueSpanish}" (${d.allocatedSeconds || 3}s - Tono: ${d.emotionalTone})`).join('\n') + '\n' +
+                        `🔊 SFX: ${sc.sfx}\n`
+                      )).join('\n')
+                    )).join('\n\n\n');
+                    handleCopy(fullText, 'copy_modal_full_story', '¡Historia completa y diálogos corales copiados!');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Historia Completa</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsStoryModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Series Logline Banner */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-purple-500/30 flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs">
+                <span className="font-bold text-amber-300 uppercase tracking-wider block text-[10px]">
+                  Premisa Central & Continuidad de la Historia:
+                </span>
+                <p className="text-slate-200 leading-relaxed italic">
+                  "{currentSeries.logline}"
+                </p>
+              </div>
+            </div>
+
+            {/* Chapters Serialized List */}
+            <div className="space-y-6">
+              {currentSeries.episodes.map((ep, epIdx) => (
+                <div key={epIdx} className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-white/10 space-y-4">
+                  
+                  {/* Episode Banner */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-[10px] uppercase tracking-wider">
+                          Capítulo {ep.episodeNumber} de {currentSeries.episodes.length}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {ep.scenes?.length || 0} Planos de 10s • ~{(ep.scenes || []).reduce((a, s) => a + (s.durationSec || 10), 0)}s
+                        </span>
+                      </div>
+                      <h4 className="text-base font-bold text-white font-cinzel mt-1">
+                        {ep.episodeTitle}
+                      </h4>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyFullScript(ep)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar Guion Cap {ep.episodeNumber}
+                    </button>
+                  </div>
+
+                  {/* Hook & Cliffhanger */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-red-950/30 border border-red-500/20">
+                      <span className="text-[10px] font-bold text-red-300 block uppercase">Gancho de Apertura:</span>
+                      <p className="text-slate-200 italic font-sans">"{ep.hook}"</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/20">
+                      <span className="text-[10px] font-bold text-amber-300 block uppercase">Cliffhanger de Retención:</span>
+                      <p className="text-slate-200 italic font-sans">"{ep.cliffhanger}"</p>
+                    </div>
+                  </div>
+
+                  {/* 10-Second Scenes Breakdown with Story Narrative & Multi-Character Dialogues */}
+                  <div className="space-y-3 pt-2">
+                    <span className="text-[11px] font-bold text-purple-300 uppercase tracking-wider block">
+                      Planos Continuos de 10 Segundos (Historia & Diálogo Coral):
+                    </span>
+
+                    <div className="space-y-3">
+                      {(ep.scenes || []).map((sc, scIdx) => (
+                        <div key={scIdx} className="p-3.5 rounded-xl bg-slate-900/90 border border-white/10 space-y-2.5">
+                          
+                          {/* Scene Bar */}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-md bg-purple-600 text-white font-black text-[10px] flex items-center justify-center">
+                                {sc.sceneNumber}
+                              </span>
+                              <span className="text-xs font-bold text-amber-300">
+                                {sc.onScreenText}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                ⏱️ {sc.timeframe || `00:${String(scIdx * 10).padStart(2, '0')} - 00:${String((scIdx + 1) * 10).padStart(2, '0')}`} (10s)
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if ('speechSynthesis' in window) {
+                                  window.speechSynthesis.cancel();
+                                  (sc.dialogueExchange || []).forEach(d => {
+                                    const isJ = d.speakerId === 'jesus_cartoon_3d' || (d.speakerName || '').toLowerCase().includes('jesús');
+                                    const utt = new SpeechSynthesisUtterance(d.dialogueSpanish);
+                                    utt.lang = 'es-MX';
+                                    utt.pitch = isJ ? 0.88 : 1.0;
+                                    utt.rate = 0.95;
+                                    window.speechSynthesis.speak(utt);
+                                  });
+                                }
+                              }}
+                              className="text-[10px] text-amber-300 hover:text-amber-200 px-2 py-0.5 rounded bg-amber-400/20 border border-amber-400/30 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Volume2 className="w-3 h-3" /> Escuchar Diálogo (10s)
+                            </button>
+                          </div>
+
+                          {/* 1. Historia que se cuenta en estos 10s */}
+                          <div className="p-2.5 rounded-lg bg-purple-950/40 border border-purple-500/30 space-y-1">
+                            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                              <BookOpen className="w-3 h-3 text-amber-400" />
+                              📖 Historia que se cuenta en este segmento (10s):
+                            </span>
+                            <p className="text-xs text-slate-100 leading-relaxed italic font-sans">
+                              "{sc.narration || 'El conflicto dramático avanza con tensión y emoción viva en este plano.'}"
+                            </p>
+                          </div>
+
+                          {/* 2. Diálogo Coral entre varios personajes */}
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1">
+                              <Users className="w-3 h-3 text-purple-400" />
+                              🗣️ Intercambio de Diálogos entre Personajes (10s Continuos):
+                            </span>
+
+                            <div className="space-y-1">
+                              {(sc.dialogueExchange || []).map((turn, tIdx) => {
+                                const isJesus = turn.speakerId === 'jesus_cartoon_3d' || (turn.speakerName || '').toLowerCase().includes('jesús');
+                                return (
+                                  <div
+                                    key={tIdx}
+                                    className={`p-2 rounded-lg text-xs border ${
+                                      isJesus 
+                                        ? 'bg-amber-950/30 border-amber-400/40 text-amber-100' 
+                                        : 'bg-slate-950 border-white/5 text-slate-200'
+                                    }`}
+                                  >
+                                    <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                                      <strong className={isJesus ? 'text-amber-300 flex items-center gap-1 font-black' : 'text-purple-300 font-bold'}>
+                                        {isJesus ? '✨ Maestro Jesús' : turn.speakerName}:
+                                      </strong>
+                                      <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-mono">
+                                        {turn.timeWindow && <span className="text-amber-400/80">⏱️ {turn.timeWindow}</span>}
+                                        <span>({turn.allocatedSeconds || 3}s)</span>
+                                        <span className="italic text-slate-500">[{turn.emotionalTone}]</span>
+                                      </div>
+                                    </div>
+                                    <p className="italic font-sans">"{turn.dialogueSpanish}"</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* 3. Acción visual */}
+                          <div className="text-[11px] text-slate-300">
+                            <strong className="text-sky-300">🎬 Acción Visual 9:16:</strong> {sc.action}
+                          </div>
+
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Estructura serializada de microficción vertical 9:16 verificada.</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsStoryModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer shadow-md"
+              >
+                Cerrar Visor de Historia
+              </button>
+            </div>
+
           </div>
         </div>
       )}

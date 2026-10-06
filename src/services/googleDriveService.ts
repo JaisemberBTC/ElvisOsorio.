@@ -5,13 +5,10 @@ import {
   GoogleAuthProvider, 
   onAuthStateChanged, 
   User, 
-  signOut 
+  signOut,
+  Auth
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
-
-// Initialize or reuse Firebase App
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
 
 // All Google Drive Scopes
 export const DRIVE_SCOPES = [
@@ -30,10 +27,27 @@ export const DRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive.scripts',
 ];
 
-const provider = new GoogleAuthProvider();
-DRIVE_SCOPES.forEach((scope) => {
-  provider.addScope(scope);
-});
+// Initialize Firebase App safely only if valid API key is present
+let auth: Auth | null = null;
+let provider: GoogleAuthProvider | null = null;
+
+try {
+  const config = firebaseConfig as any;
+  if (config && config.apiKey && typeof config.apiKey === 'string' && config.apiKey.trim().length > 10) {
+    const app = getApps().length === 0 ? initializeApp(config) : getApp();
+    auth = getAuth(app);
+    provider = new GoogleAuthProvider();
+    DRIVE_SCOPES.forEach((scope) => {
+      provider?.addScope(scope);
+    });
+  } else {
+    console.info('[GoogleDriveService] Firebase apiKey not present in configuration. Quick connect mode enabled.');
+  }
+} catch (e) {
+  console.warn('[GoogleDriveService] Firebase auth initialization skipped:', e);
+}
+
+export { auth };
 
 // In-memory token management
 let cachedAccessToken: string | null = null;
@@ -55,6 +69,10 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
+  if (!auth) {
+    if (onAuthFailure) onAuthFailure();
+    return () => {};
+  }
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       if (cachedAccessToken) {
@@ -71,6 +89,9 @@ export const initAuth = (
 };
 
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+  if (!auth || !provider) {
+    throw new Error('Google Firebase Auth no está configurado');
+  }
   try {
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
@@ -94,7 +115,11 @@ export const getAccessToken = async (): Promise<string | null> => {
 };
 
 export const logoutGoogle = async () => {
-  await signOut(auth);
+  if (auth) {
+    try {
+      await signOut(auth);
+    } catch (_err) {}
+  }
   cachedAccessToken = null;
 };
 

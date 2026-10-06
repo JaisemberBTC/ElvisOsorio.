@@ -1,13 +1,13 @@
 import celestialDawn from '../assets/images/celestial_sunrise_dawn_1787717221920.jpg';
-import crossHope from '../assets/images/cross_sunrise_hope_1787717245799.jpg';
+import crossHope from '../assets/images/jesus_radiant_cross_salvation.jpg';
 import heavenlyDove from '../assets/images/heavenly_dove_light_1787717258852.jpg';
-import jesusBlessing from '../assets/images/jesus_divine_blessing_1787716123982.jpg';
+import jesusBlessing from '../assets/images/jesus_divine_hands_embrace.jpg';
 import jesusHealing from '../assets/images/jesus_healing_light_1787716152719.jpg';
-import jesusNight from '../assets/images/jesus_night_sanctuary_1787716164249.jpg';
-import jesusPeace from '../assets/images/jesus_peace_in_storm_1787716138284.jpg';
-import jesusPrayer from '../assets/images/jesus_sacred_prayer_1787717512349.jpg';
-import jesusTeaching from '../assets/images/jesus_teaching_wisdom_1787717523974.jpg';
-import oliveGarden from '../assets/images/olive_garden_peace_1787717233225.jpg';
+import jesusNight from '../assets/images/jesus_night_starry_refuge.jpg';
+import jesusPeace from '../assets/images/jesus_peace_solace.jpg';
+import jesusPrayer from '../assets/images/jesus_shepherd_love_1787717500827.jpg';
+import jesusTeaching from '../assets/images/jesus_shepherd_love_1787717500827.jpg';
+import oliveGarden from '../assets/images/celestial_sunrise_dawn_1787717221920.jpg';
 
 export interface JesusArtwork {
   id: string;

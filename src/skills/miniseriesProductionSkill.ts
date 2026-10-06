@@ -171,6 +171,45 @@ export function buildEpisodeScenes10s(
  * Executes the complete autonomous production skill for a topic.
  * Fully modular and callable from scripts, background services, endpoints, or UI.
  */
+function generateDiverseEpisodeHook(topic: string, epNum: number, totalParts: number, protagonistName: string, companionName: string): string {
+  const hash = Math.abs((topic + epNum).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
+  if (epNum === 1) {
+    const hooks = [
+      `Eran las 3:15 de la madrugada cuando el silencio se rompió en el hogar de ${protagonistName}. Lo que ocurrió con "${topic}" nadie lo vio venir.`,
+      `¿Alguna vez sentiste que tus fuerzas se acabaron? Mira lo que hicieron ${protagonistName} y ${companionName} en su peor momento de dolor.`,
+      `Tenían todo en contra: el tiempo, los pronósticos y las deudas. Pero cuando todo recurso humano se agotó, una luz entró a la habitación.`,
+      `No deslices este video: lo que Jesús le reveló a ${protagonistName} frente a ${companionName} es la respuesta de fe que hoy necesitas escuchar.`,
+      `Una lágrima cayó sobre la mesa mientras ${protagonistName} sostenía la mano de ${companionName}. En ese instante exacto, Dios intervino.`,
+      `Nadie conocía la angustia secreta de esta familia... hasta que un clamor a medianoche desató un milagro sobrenatural.`
+    ];
+    return hooks[hash % hooks.length];
+  }
+  if (epNum === 2) {
+    const hooks = [
+      `La prueba subió de intensidad y ${companionName} sintió que la fe flaqueaba... hasta que una presencia gloriosa llenó el recinto.`,
+      `Justo cuando pensaron que la tormenta los destruiría, la puerta se abrió con un resplandor dorado celestial: Jesús estaba allí.`,
+      `Lo que ${protagonistName} escuchó al alzar la mirada dejó a ${companionName} temblando de asombro y reverencia.`,
+      `La conversación a las 3:00 AM con el Maestro cambió para siempre el destino de toda su familia.`
+    ];
+    return hooks[hash % hooks.length];
+  }
+  if (epNum === 3) {
+    const hooks = [
+      `Faltaban solo minutos para que venciera el plazo. Entonces ocurrió lo que la ciencia y la lógica jamás podrán explicar.`,
+      `El diagnóstico decía "imposible", pero Jesús extendió Su mano traspasada y dijo: "Cree solamente".`,
+      `Las lágrimas de dolor de ${protagonistName} se transformaron en un clamor de victoria que hizo retroceder toda aflicción.`,
+      `La gloria de Dios inundó cada rincón del hogar, consumando el milagro que cambiaría sus vidas para siempre.`
+    ];
+    return hooks[hash % hooks.length];
+  }
+  const hooks = [
+    `La restauración fue total: Dios no solo sanó la herida, sino que transformó la casa entera en un altar de alabanza.`,
+    `Hoy este testimonio de fe recorre el mundo para recordarte que Dios jamás llega tarde a tu clamor.`,
+    `Lo que el enemigo quiso usar para destruir esta casa, Jesús lo convirtió en una corona de victoria eterna.`
+  ];
+  return hooks[hash % hooks.length];
+}
+
 export function executeProductionSkill(req: SkillProductionRequest): GeneratedMiniseriesPackage {
   const cleanTopic = (req.topic || '').trim() || 'Una mujer de fe que clama por un milagro imposible';
   const partsCount = Math.max(2, Math.min(4, Number(req.totalParts) || 3));
@@ -220,9 +259,7 @@ export function executeProductionSkill(req: SkillProductionRequest): GeneratedMi
     return {
       episodeNumber: epNum,
       episodeTitle: epTitle,
-      hook: isFirst
-        ? `Nadie imaginaba lo que estaba a punto de suceder con "${cleanTopic}". Cuando todo parecía perdido, Jesús apareció.`
-        : `A la mañana siguiente, lo que ocurrió con ${cast.protagonist.name} dejó a todos con la boca abierta. Jesús no había terminado aún.`,
+      hook: generateDiverseEpisodeHook(cleanTopic, epNum, partsCount, cast.protagonist.name, cast.supporting?.name || 'su familia'),
       conflict: `La familia o persona enfrenta la imposibilidad de "${cleanTopic}", agotando todo recurso humano.`,
       escalation: `La prueba sube de intensidad hasta que un clamor sincero a Jesús abre los cielos.`,
       cliffhanger: isLast

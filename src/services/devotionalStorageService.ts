@@ -1,72 +1,48 @@
-import { DevotionalVideoProductionDoc, DevotionalSceneItem } from '../types';
-
 export interface SavedDevotionalProject {
   id: string;
+  timestamp: number;
   title: string;
-  createdAt: string;
-  totalDurationSec: number;
   prompt: string;
-  originalPrompt?: string;
-  aspectRatio: '9:16' | '16:9' | '1:1';
-  scenes: DevotionalSceneItem[];
-  productionDoc: DevotionalVideoProductionDoc;
+  doc: any;
 }
 
-const DEVOTIONAL_STORAGE_KEY = 'fe_oracion_devotional_saved_projects_v1';
+const STORAGE_KEY = 'saved_devotional_projects_v1';
 
-class DevotionalStorageService {
+export const devotionalStorageService = {
   getAllProjects(): SavedDevotionalProject[] {
     try {
-      const data = localStorage.getItem(DEVOTIONAL_STORAGE_KEY);
-      if (!data) return [];
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (err) {
-      console.error('Error loading devotional projects:', err);
-      return [];
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {
+      console.warn('Error reading devotional projects:', e);
     }
-  }
+    return [];
+  },
 
-  saveProject(productionDoc: DevotionalVideoProductionDoc, promptText?: string): SavedDevotionalProject {
-    const existing = this.getAllProjects();
-    const id = `dev_proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    
-    const newProject: SavedDevotionalProject = {
-      id,
-      title: productionDoc.videoTitle || 'Devocional Sagrado',
-      createdAt: new Date().toISOString(),
-      totalDurationSec: productionDoc.totalDurationSec || 10,
-      prompt: promptText || productionDoc.environmentOverview || '',
-      originalPrompt: promptText || productionDoc.environmentOverview || '',
-      aspectRatio: productionDoc.aspectRatio || '9:16',
-      scenes: productionDoc.scenes || [],
-      productionDoc
+  saveProject(doc: any, prompt: string): SavedDevotionalProject {
+    const projects = this.getAllProjects();
+    const newProj: SavedDevotionalProject = {
+      id: `dev_${Date.now()}`,
+      timestamp: Date.now(),
+      title: doc?.title || doc?.titulo || 'Devocional de Fe',
+      prompt,
+      doc
     };
-
-    const updated = [newProject, ...existing.filter(p => p.title !== newProject.title)].slice(0, 30);
+    projects.unshift(newProj);
     try {
-      localStorage.setItem(DEVOTIONAL_STORAGE_KEY, JSON.stringify(updated));
-    } catch (err) {
-      console.error('Error saving devotional project to localStorage:', err);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects.slice(0, 50)));
+    } catch (e) {
+      console.warn('Error saving devotional project:', e);
     }
-
-    return newProject;
-  }
+    return newProj;
+  },
 
   deleteProject(id: string): void {
-    const existing = this.getAllProjects();
-    const filtered = existing.filter(p => p.id !== id);
+    const projects = this.getAllProjects().filter(p => p.id !== id);
     try {
-      localStorage.setItem(DEVOTIONAL_STORAGE_KEY, JSON.stringify(filtered));
-    } catch (err) {
-      console.error('Error deleting devotional project:', err);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    } catch (e) {
+      console.warn('Error deleting devotional project:', e);
     }
   }
-
-  getProjectById(id: string): SavedDevotionalProject | null {
-    const list = this.getAllProjects();
-    return list.find(p => p.id === id) || null;
-  }
-}
-
-export const devotionalStorageService = new DevotionalStorageService();
+};

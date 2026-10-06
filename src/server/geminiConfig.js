@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 export const GEMINI_IMAGE_MODELS = ["imagen-3.0-generate-002", "imagen-3.0-fast-generate-001"];
 export const ACTIVE_IMAGE_MODEL = "imagen-3.0-generate-002";
 
-export function getGeminiServerClient(): GoogleGenAI {
+export function getGeminiServerClient() {
   return new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || "",
     httpOptions: {
@@ -14,14 +14,14 @@ export function getGeminiServerClient(): GoogleGenAI {
   });
 }
 
-export async function generateImage(prompt: string): Promise<string | null> {
+export async function generateImage(prompt) {
   return null;
 }
 
-export async function generateFourScenes(prompt: string): Promise<string[]> {
+export async function generateFourScenes(prompt) {
   return [];
 }
 
-export function buildUniqueScenePrompt(topic: string, sceneNum: number): string {
+export function buildUniqueScenePrompt(topic, sceneNum) {
   return `${topic} scene ${sceneNum}`;
 }

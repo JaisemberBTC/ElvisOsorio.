@@ -1,6 +1,8 @@
 {
-  "name": "Espacio de Fe y Oración AI",
-  "description": "Estudio creativo y santuario inteligente impulsado por IA para crear oraciones, guiones de video devocional, storyboards bíblicos, velas de intercesión y contenido de fe.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Espacio de Fe & Oración AI",
+  "description": "Espacio inteligente para la edificación espiritual, creación audiovisual de fe y oración viva con inteligencia artificial.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

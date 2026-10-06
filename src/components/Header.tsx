@@ -164,23 +164,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             </span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('scene-generator')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'scene-generator'
-                ? 'bg-gradient-to-r from-cyan-600/30 to-amber-600/20 text-cyan-100 border border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.2)] font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-cyan-500/10 border border-transparent'
-            }`}
-          >
-            <Clapperboard className="w-4 h-4 text-cyan-300" />
-            <span className="font-bold">Escenografía de Guion</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              activeTab === 'scene-generator' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-cyan-500/20 text-cyan-300'
-            }`}>
-              Habilidad IA
-            </span>
-          </button>
-
           {/* DEDICATED CHANNEL STUDIO: @Aprendeen30segundos */}
           <button
             onClick={() => setActiveTab('aprende-30s')}

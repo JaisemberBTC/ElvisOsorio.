@@ -1379,31 +1379,116 @@ export function generateUniqueScenographyForTopic(
     };
   }
 
-  // Universal Dynamic Scenario Synthesizer: derives dynamic shortTag and room from topic words (NEVER hardcodes ESTANCIA_A9H_916)
+  // 21. Nocturnal Fruit Stall, Street Market & Mysterious Receipt
+  if (clean.includes('frutera') || clean.includes('fruta') || clean.includes('recibo') || clean.includes('mercado') || clean.includes('puesto') || clean.includes('venta') || clean.includes('negocio') || clean.includes('tienda')) {
+    return {
+      id: `mercado_frutas_recibo_${hash}`,
+      name: 'Puesto de Frutas en Mercado Nocturno bajo Llovizna',
+      shortTag: 'MERCADO_FRUTAS_916',
+      architecturePromptEn: `Atmospheric nocturnal open-air wooden fruit stall in high-end 3D Pixar animation bespoke for the mystery of the receipt, rustic weathered wooden crates brimming with glossy oranges and red apples, hanging vintage brass balance scale with chains, rain-slicked cobblestone street reflecting warm streetlamps, canvas awning dripping rain droplets, deep twilight mist.`,
+      lightingSetup: `Warm 2400K gas lantern flame casting elongated dramatic shadows across the fruit crates, contrasting with a pure 4500K celestial divine radiance when Jesus appears.`,
+      propsAndAtmosphere: `A vintage paper receipt fluttering gently under a brass weight, old mechanical cash drawer, crates of fresh citrus, faint mist in the air.`,
+      negativePromptEn: 'no indoor room, no hospital machines, no modern vehicles, no change of character clothing, no extra limbs'
+    };
+  }
+
+  // 22. Family Woodworking Shop, Carpentry & Hidden Legacy Letter
+  if (clean.includes('carpintería') || clean.includes('carpinteria') || clean.includes('taller') || clean.includes('muebles') || clean.includes('herencia') || clean.includes('carta') || clean.includes('cepillo')) {
+    return {
+      id: `taller_carpinteria_familiar_${hash}`,
+      name: 'Taller de Carpintería Familiar y Banco de Trabajo de Roble',
+      shortTag: 'TALLER_CARPINTERIA_916',
+      architecturePromptEn: `Historic family woodworking workshop in 3D Pixar style, massive hand-hewn oak workbench dusted with fragrant pine sawdust, hand planes and iron chisels hanging neatly on wooden rack, tall arched window showing twilight storm clouds, rustic plank floor with curled wood shavings.`,
+      lightingSetup: `Warm 2900K hanging incandescent pendant over the workbench, evolving into 4800K holy golden glory illuminating the hands of Jesus Christ.`,
+      propsAndAtmosphere: `Handwritten sealed yellowed envelope, wooden shaving ribbons, hand-carved cross in progress on workbench, brass calipers.`,
+      negativePromptEn: 'no modern factory, no hospital equipment, no change of character clothing, no extra limbs'
+    };
+  }
+
+  // 23. Midnight Doorway, Hallway & Father Returning at 3:00 AM
+  if (clean.includes('3:00') || clean.includes('3 am') || clean.includes('3:00 am') || clean.includes('padre ausente') || clean.includes('regreso') || clean.includes('foyer') || clean.includes('puerta de entrada') || clean.includes('volver') || clean.includes('arrepentido')) {
+    return {
+      id: `umbral_regreso_madrugada_${hash}`,
+      name: 'Foyer y Puerta de Entrada a las 3:00 AM Bajo la Lluvia',
+      shortTag: 'UMBRAL_3AM_LLUVIA_916',
+      architecturePromptEn: `Intimate hallway and front entrance foyer in 3D Pixar animation at 3:00 AM, heavy weathered wooden front door slightly ajar showing pouring rain and distant streetlamp glow, pendulum wall clock frozen at 3:02 AM, wet trench coat hanging by the mirror, dark polished hardwood floor reflecting rain sheen.`,
+      lightingSetup: `Subtle 2600K amber wall sconce pierced by majestic 4500K golden divine aura of Christ standing between father and family.`,
+      propsAndAtmosphere: `Ticking pendulum wall clock, wet umbrella leaving puddle on mat, framed family picture on entryway table, warm steam from hallway heater.`,
+      negativePromptEn: 'no hospital equipment, no ancient ruins, no change of character clothing, no extra limbs'
+    };
+  }
+
+  // 24. Drought-Stricken Orchard & Vineyard of the Prodigy
+  if (clean.includes('huerto') || clean.includes('sequia') || clean.includes('sequía') || clean.includes('parcela') || clean.includes('arbol') || clean.includes('árbol') || clean.includes('viña') || clean.includes('higos')) {
+    return {
+      id: `huerto_prodigio_sequia_${hash}`,
+      name: 'Huerto Familiar con Cerca de Piedra al Atardecer Dorado',
+      shortTag: 'HUERTO_PRODIGIO_916',
+      architecturePromptEn: `Soulful rustic orchard and garden in 3D Pixar animation, ancient gnarled fig and olive trees with lush green leaves defying surrounding drought, low dry-stone wall, wooden garden gate, sunset sky blazing with violet and apricot hues.`,
+      lightingSetup: `Luminous 3300K golden-hour sunset backlighting leaves with crystalline green rim light, crowned by pure 5000K divine presence of Jesus.`,
+      propsAndAtmosphere: `Rustic wooden water bucket overflowing with crystal droplets, woven harvest basket with fresh figs, clay pitcher.`,
+      negativePromptEn: 'no indoor room, no modern tractor, no change of character clothing, no extra limbs'
+    };
+  }
+
+  // 25. Universal Dynamic Scenario Synthesizer: Generates DISTINCT bespoke rooms with ZERO recycling
   const tagWords = clean
     .replace(/[^\w\sáéíóúüñ]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 3 && !['para', 'como', 'todo', 'toda', 'este', 'esta', 'sobre', 'cuando', 'donde', 'desde', 'pero', 'porque'].includes(w));
   
-  const w1 = (tagWords[0] || 'REFUGIO').toUpperCase().slice(0, 8);
-  const w2 = (tagWords[1] || 'PROMESA').toUpperCase().slice(0, 8);
+  const w1 = (tagWords[0] || 'SANTUARIO').toUpperCase().slice(0, 8);
+  const w2 = (tagWords[1] || 'REFUGIO').toUpperCase().slice(0, 8);
   const dynamicTag = `${w1}_${w2}_${hash.toUpperCase().slice(0, 4)}_916`;
 
+  // Dynamic architectural archetypes based on hash to guarantee variety
+  const roomTypes = [
+    {
+      name: `Atelier Rústico y Mesa de Trabajo ("${topic.slice(0, 30)}")`,
+      arch: `Sunlit artisan studio and loft in high-end 3D Pixar animation bespoke for "${topic.slice(0, 40)}", pitched timber beam ceiling with skylight, wide reclaimed wood workbench with artisan tools, tall steel-framed window overlooking misty morning hills.`,
+      lighting: `Morning 3500K crisp sunbeam slicing through early mist, elevated to 5000K heavenly golden glory illuminating ${protagonistName}.`,
+      props: `Drafting paper with handwritten notes, clay mugs, brass ruler, wooden chest.`
+    },
+    {
+      name: `Galería con Arcos de Piedra y Patio Interior ("${topic.slice(0, 30)}")`,
+      arch: `Peaceful cloistered stone courtyard gallery in 3D Pixar animation bespoke for "${topic.slice(0, 40)}", smooth sandstone pillars, flowering jasmine climbing stone arches, stone water fountain with gentle ripples, starry twilight sky above.`,
+      lighting: `Cool 4200K twilight contrasted with 3000K warm torchlight, met by 4800K divine glow around Christ.`,
+      props: `Stone prayer bench, terracotta planters, olive branch, open parchment scroll.`
+    },
+    {
+      name: `Rincón Íntimo de Vigilia y Mesa de Roble ("${topic.slice(0, 30)}")`,
+      arch: `Contemplative study and vigil room in high-end 3D Pixar animation bespoke for "${topic.slice(0, 40)}", dark oak paneling with warm patina, comfortable armchair with woven blanket, rain-washed bay window framing midnight streetlights.`,
+      lighting: `Intimate 2600K amber reading lamp glow in deep chiaroscuro, transformed into 4200K divine hope as Jesus enters.`,
+      props: `Handwritten personal journal with pen, eyeglasses on open page, steaming ceramic cup, family clock.`
+    },
+    {
+      name: `Pórtico Rústico y Mirador de Montaña ("${topic.slice(0, 30)}")`,
+      arch: `Covered mountain cabin porch in 3D Pixar animation bespoke for "${topic.slice(0, 40)}", cedar posts supporting a shingle roof, weathered rocking chairs, panoramic view of sunrise breaking over misty mountain valleys.`,
+      lighting: `First rays of 5500K golden sunrise piercing morning valley fog with dazzling rim light on characters.`,
+      props: `Carved walking staff leaning on railing, wool poncho, clay tea mug with rising steam, wild mountain blossoms.`
+    }
+  ];
+
+  const seed = (clean.length * 13 + hash.charCodeAt(0)) % roomTypes.length;
+  const selectedType = roomTypes[seed];
+
   return {
-    id: `aposento_narrativo_${hash}`,
-    name: `Aposento de Clamor y Encuentro ("${topic.slice(0, 32)}")`,
+    id: `escenario_dinamico_${hash}`,
+    name: selectedType.name,
     shortTag: dynamicTag,
-    architecturePromptEn: `Atmospheric and intimate sacred setting in high-end 3D Pixar animation bespoke for "${topic.slice(0, 45)}", weathered dark timber craftsmanship with visible wood grain, hand-carved furnishings, warm plaster and stone architecture, tall arch window framing deep indigo twilight sky with bright celestial stars, floor with polished natural grain.`,
-    lightingSetup: `Warm 2800K localized lamp light in the shadows evolving into 4200K heavenly golden glory radiating from Jesus Christ illuminating ${protagonistName}.`,
-    propsAndAtmosphere: `Sacred writings open to the promises of God, porcelain cup with faint steam, peaceful ambient dust motes catching golden light rays, pure holy stillness.`,
+    architecturePromptEn: selectedType.arch,
+    lightingSetup: selectedType.lighting,
+    propsAndAtmosphere: selectedType.props,
     negativePromptEn: 'no hospital machines, no modern clutter, no change of character clothing, no facial morphing'
   };
 }
 
 /**
  * Generates bespoke, topic-specific dialogue and narrative arcs for all 5 scenes of an episode.
- * Completely eliminates repetitive hooks like "¡Señor Jesús, no doy más!" and ensures
- * visceral, contextual, and word-budget-calibrated dialogues (< 2.2 words/sec).
+ * Strictly enforces Prompt 2:
+ * 1. Hook <3s stating who wants what and what they can lose.
+ * 2. Oral cadence of 2.0 to 2.5 words/sec (max 18-22 words per 10s shot).
+ * 3. Never repeating generic lines like "¡Señor Jesús, no doy más!".
  */
 export function generateContextualSceneDialogueArc(
   topic: string,
@@ -1416,6 +1501,17 @@ export function generateContextualSceneDialogueArc(
   const clean = (topic || '').trim().toLowerCase();
   const isFirst = epNum === 1;
   const isLast = epNum === totalParts;
+
+  const isReceipt = clean.includes('recibo') || clean.includes('frutera') || clean.includes('mercado') || clean.includes('fruta');
+  const isWisdomProverbs = clean.includes('fíate') || clean.includes('fiate') || clean.includes('jehová') || clean.includes('jehova') || clean.includes('prudencia') || clean.includes('proverbios') || clean.includes('sabiduria') || clean.includes('sabiduría') || clean.includes('senda') || clean.includes('camino') || clean.includes('apoyes');
+  const isFatherReturn = clean.includes('padre') && (clean.includes('ausente') || clean.includes('volvió') || clean.includes('3:00') || clean.includes('3 am') || clean.includes('perdón') || clean.includes('perdon'));
+  const isMedical = clean.includes('hospital') || clean.includes('médico') || clean.includes('medico') || clean.includes('doctor') || clean.includes('uci') || clean.includes('enfermedad') || clean.includes('cáncer') || clean.includes('diagnóstico');
+  const isFinances = clean.includes('quiebra') || clean.includes('desalojo') || clean.includes('deuda') || clean.includes('deudas') || clean.includes('banco') || clean.includes('arriendo') || clean.includes('embargo');
+  const isFamilyCarpentry = clean.includes('carpintería') || clean.includes('carpinteria') || clean.includes('carta') || clean.includes('hermanos') || clean.includes('herencia') || clean.includes('taller');
+  const isOrchardDrought = clean.includes('huerto') || clean.includes('sequia') || clean.includes('sequía') || clean.includes('parcela') || clean.includes('tierra');
+  const isFamilyMarriage = clean.includes('matrimonio') || clean.includes('esposos') || clean.includes('pareja') || clean.includes('divorcio') || clean.includes('reconciliacion');
+  const isAnxiety = clean.includes('ansiedad') || clean.includes('pánico') || clean.includes('panico') || clean.includes('insomnio') || clean.includes('temor') || clean.includes('miedo');
+  const isStorm = clean.includes('barca') || clean.includes('mar') || clean.includes('tormenta') || clean.includes('tempestad') || clean.includes('olas');
 
   const prot = (cast as any).protagonist;
   const supp = (cast as any).supporting || (cast as any).secondary || {
@@ -1430,312 +1526,482 @@ export function generateContextualSceneDialogueArc(
   const sLock = `[LOCKED CHARACTER - ${supp.name.toUpperCase()}]: ${supp.modelSheetLockEn}`;
   const negLock = `[NEGATIVE CONTINUITY PROMPT: ${env.negativePromptEn}, no changes in character clothing, no change of hairstyle, no facial morphing, no extra limbs, no camera jump cuts]`;
 
-  // Detect thematic archetype for tailor-made dialogue and crisis hooks
-  const isWisdomProverbs = clean.includes('fíate') || clean.includes('fiate') || clean.includes('jehová') || clean.includes('jehova') || clean.includes('prudencia') || clean.includes('proverbios') || clean.includes('sabiduria') || clean.includes('sabiduría') || clean.includes('senda') || clean.includes('camino') || clean.includes('planes') || clean.includes('apoyes');
-  const isMedical = clean.includes('hospital') || clean.includes('enfermedad') || clean.includes('médico') || clean.includes('medico') || clean.includes('uci') || clean.includes('cáncer') || clean.includes('cancer') || clean.includes('salud');
-  const isFinances = clean.includes('quiebra') || clean.includes('desalojo') || clean.includes('deuda') || clean.includes('deudas') || clean.includes('banco') || clean.includes('embargo') || clean.includes('dinero') || clean.includes('arriendo');
-  const isFamilyMarriage = clean.includes('matrimonio') || clean.includes('esposos') || clean.includes('pareja') || clean.includes('divorcio') || clean.includes('hijo') || clean.includes('reconciliacion') || clean.includes('reconciliación');
-  const isAnxiety = clean.includes('ansiedad') || clean.includes('panico') || clean.includes('pánico') || clean.includes('insomnio') || clean.includes('pesadilla') || clean.includes('miedo') || clean.includes('temor');
-  const isStorm = clean.includes('barca') || clean.includes('mar') || clean.includes('tormenta') || clean.includes('tempestad') || clean.includes('olas');
+  // Bespoke Narrative Arc & Dialogues dynamically calibrated by Chapter (epNum) and Theme
+  // Chapter 1: The Inciting Crisis & Shock | Chapter 2: The Complication & Secret | Chapter 3+: The Climax & Supernatural Miracle
 
-  // Bespoke Scene 1 dialogues based on archetype
-  let s1ProtDialogue = isFirst 
-    ? `¡Señor Jesús, se agotaron mis fuerzas!`
-    : `¡Maestro, sé que no tardas en llegar!`;
-  let s1SuppDialogue = `¡No temas más, el Maestro está aquí!`;
-  let s1JesusDialogue = `${prot.vocative}, he escuchado tu clamor; no temas.`;
-
-  if (isWisdomProverbs) {
-    s1ProtDialogue = isFirst
-      ? `¡Confié en mi lógica y todo colapsó!`
-      : `¡Maestro, aquí están mis planes rendidos a Ti!`;
-    s1SuppDialogue = `¡Suelta el plano, el Gran Edificador llegó!`;
-    s1JesusDialogue = `Hijo mío, fíate de Mí; Yo enderezaré tu senda.`;
-  } else if (isMedical) {
-    s1ProtDialogue = isFirst
-      ? `¡El informe médico dice que no hay esperanza!`
-      : `¡Maestro, mi respiración depende de Tu poder!`;
-    s1SuppDialogue = `¡La ciencia no tiene la última palabra; Jesús entró!`;
-    s1JesusDialogue = `${prot.vocative}, Yo soy tu Sanador; la muerte retrocede.`;
-  } else if (isFinances) {
-    s1ProtDialogue = isFirst
-      ? `¡Llegó la orden final de desalojo y no tengo nada!`
-      : `¡Maestro, sólo Tú puedes abrir provisión en el desierto!`;
-    s1SuppDialogue = `¡No te desesperes; el Dueño del oro está aquí!`;
-    s1JesusDialogue = `Hijo mío, Yo soy tu sustento; no quedarás desamparado.`;
-  } else if (isFamilyMarriage) {
-    s1ProtDialogue = isFirst
-      ? `¡El orgullo y el silencio destrozaron nuestro hogar!`
-      : `¡Maestro, restaura los lazos que nosotros rompimos!`;
-    s1SuppDialogue = `¡No firmes nada todavía; el Príncipe de Paz entró!`;
-    s1JesusDialogue = `Hijos míos, lo que parecía roto, mi amor lo restaura.`;
-  } else if (isAnxiety) {
-    s1ProtDialogue = isFirst
-      ? `¡Son las tres de la mañana y el pánico me ahoga!`
-      : `¡Maestro, la sombra intenta regresar pero clamo a Ti!`;
-    s1SuppDialogue = `¡Mira la luz divina; el tormento tiene que huir!`;
-    s1JesusDialogue = `Paz a tu corazón: Yo venzo tus temores ahora.`;
-  } else if (isStorm) {
-    s1ProtDialogue = isFirst
-      ? `¡Las olas nos cubren y la barca se hunde!`
-      : `¡Maestro, la tormenta arrecia pero sé quién va a bordo!`;
-    s1SuppDialogue = `¡Despierta tu fe; el Señor camina sobre el agua!`;
-    s1JesusDialogue = `Calla, enmudece: mi paz gobierna sobre el mar.`;
+  interface SceneStorySpec {
+    title: string;
+    action: string;
+    cameraSetupEn: string;
+    turns: { speaker: string; id: string; role: string; text: string; tone: string; voice: string }[];
+    sfx: string;
+    sfxList: { atSecond: string; sound: string; purpose: string }[];
+    narration: string;
+    onScreen: string;
+    label: string;
+    music: string;
   }
 
-  // Bespoke Scene 2 dialogues
-  let s2JesusDialogue = `¿Crees de corazón que puedo hacer esto por ti?`;
-  let s2ProtDialogue = `¡Creo, Señor! ¡Para Ti no hay imposibles!`;
-  let s2SuppDialogue = `¡Hágase Tu santa voluntad, Maestro amado!`;
+  const getSceneSpecsForEpisode = (): SceneStorySpec[] => {
+    // -------------------------------------------------------------
+    // CHAPTER 1: EL DETONANTE Y LA CRISIS HUMANA
+    // -------------------------------------------------------------
+    if (epNum === 1) {
+      const s1Prot = isReceipt
+        ? `¡Elena, mira este recibo! ¡Tiene la firma exacta de mi padre con fecha de hoy!`
+        : isWisdomProverbs
+        ? `¡Confié en mis propios cálculos y todo el proyecto se vino abajo esta mañana!`
+        : isMedical
+        ? `¡A las 3:00 AM los monitores cayeron a cero... los médicos no dan esperanzas!`
+        : isFinances
+        ? `¡Llegó la orden final de desalojo! Nos dan hasta las seis de la tarde o quedamos en la calle.`
+        : isFamilyCarpentry
+        ? `¡Encontré esta carta sellada de mamá debajo del banco de trabajo del taller!`
+        : isFatherReturn
+        ? `¡Son las 3:00 de la madrugada y escucho los pasos pesados de papá afuera!`
+        : isOrchardDrought
+        ? `¡La sequía secó todo el pozo y los prestamistas vinieron a exigir la parcela!`
+        : isFamilyMarriage
+        ? `¡Los papeles del divorcio están sobre la mesa y ya no podemos ni mirarnos a los ojos!`
+        : isAnxiety
+        ? `¡Son las 3:00 AM y siento que el aire se me corta... no puedo controlar este temblor!`
+        : isStorm
+        ? `¡El agua está entrando a cántaros y el timón de la barca se partió en dos!`
+        : `¡Se agotaron todos los recursos humanos y si Dios no hace algo hoy, lo perdemos todo!`;
 
-  if (isWisdomProverbs) {
-    s2JesusDialogue = `¿Estás dispuesto a soltar el control y dejarme guiar?`;
-    s2ProtDialogue = `¡Sí, Señor! ¡Renuncio a mi orgullo y confío en Ti!`;
-    s2SuppDialogue = `¡Guíanos, Maestro; Tus caminos son más altos!`;
-  } else if (isFinances) {
-    s2JesusDialogue = `¿Crees que puedo abrir puertas que nadie puede cerrar?`;
-    s2ProtDialogue = `¡Creo, Señor! ¡En Tus manos pongo mi pan y mi casa!`;
-    s2SuppDialogue = `¡Toda nuestra confianza reposa en Tu fidelidad!`;
-  }
+      const s1Supp = isReceipt
+        ? `¡Es imposible! Tu padre desapareció hace siete años sin dejar rastro.`
+        : isWisdomProverbs
+        ? `Cálmate, por favor... no puedes cargar tú solo con el peso de este fracaso.`
+        : isMedical
+        ? `¡No te desmorones ahora! Todavía podemos clamar con la poca fuerza que nos queda.`
+        : isFinances
+        ? `¿Cómo fue que dejamos acumular tres meses? ¡Tenemos que hablar con el dueño ya!`
+        : isFamilyCarpentry
+        ? `¡No la abras todavía! Sabes bien el resentimiento que separó a esta familia.`
+        : isFatherReturn
+        ? `¡Abre despacio la mirilla! Llevamos diez años orando por este momento en silencio.`
+        : isOrchardDrought
+        ? `¡No firmes ningún papel de venta! Dios prometió que este huerto daría fruto.`
+        : isFamilyMarriage
+        ? `¡No firmes nada todavía! El orgullo nos está cegando y destruyendo el hogar.`
+        : isAnxiety
+        ? `Mírame a los ojos y respira hondo... no estás sola en esta habitación oscura.`
+        : isStorm
+        ? `¡Aférrate al mástil con fuerza! ¡No permitas que el pánico te haga saltar!`
+        : `¡No te rindas! Mira hacia la puerta... hay una paz inexplicable entrando en este cuarto.`;
 
-  // Bespoke Scene 3 dialogues
-  let s3JesusDialogue = isLast
-    ? `¡Decreto vida, paz y victoria sobre tu casa!`
-    : `¡La gloria del Padre desciende ahora aquí!`;
-  let s3ProtDialogue = `¡Siento Su poder! ¡La pesada carga se fue!`;
-  let s3SuppDialogue = `¡Alabado sea el Señor! ¡La atmósfera se llenó de luz!`;
+      const s1Jesus = isReceipt
+        ? `Hija mía, lo que estuvo escondido en la sombra, hoy sale a la luz.`
+        : isWisdomProverbs
+        ? `${prot.vocative}, donde termina tu lógica humana, recién comienza mi sabiduría.`
+        : isMedical
+        ? `${prot.vocative}, los hombres dictan diagnósticos, pero Yo tengo la última palabra.`
+        : isFinances
+        ? `Hijo mío, Yo soy quien sustenta a las aves del cielo; no temas.`
+        : `${prot.vocative}, he visto tu lágrima secreta; he venido a estar contigo.`;
 
-  if (isWisdomProverbs) {
-    s3JesusDialogue = isLast
-      ? `¡He aquí abro tu camino y coloco cimiento de roca!`
-      : `¡Quito la confusión y alumbro tu entendimiento ahora!`;
-    s3ProtDialogue = `¡Toda oscuridad se disipó! ¡Veo la senda clara!`;
-    s3SuppDialogue = `¡La sabiduría de Dios llenó este lugar de gloria!`;
-  }
+      // Scene 2: Confrontación de Urgencia
+      const s2Prot = isReceipt
+        ? `¡Mira el papel, tiembla en mis dedos! ¿Cómo explicas la tinta fresca si él no está?`
+        : isWisdomProverbs
+        ? `¡Invertí los ahorros de diez años pensando que lo tenía todo bajo control!`
+        : isMedical
+        ? `¡El doctor dijo que preparemos los papeles! ¿Cómo le pido a mi corazón que soporte esto?`
+        : isFinances
+        ? `¡El camión de la mudanza viene en camino y no tengo ni para pagar el flete!`
+        : `¡Todo lo que construí se desmorona en un segundo y no encuentro ninguna salida!`;
 
-  // Bespoke Scene 4 dialogues
-  const s4SuppDialogue = `¡Miren cómo resplandece la estancia con Su gloria!`;
-  const s4ProtDialogue = `¡Lo que era dolor se convirtió en testimonio vivo!`;
-  const s4JesusDialogue = `El que en Mí confía jamás será avergonzado.`;
+      const s2Supp = isReceipt
+        ? `¡Alguien lo dejó sobre el mostrador hace minutos! Sentí un escalofrío en la espalda.`
+        : isWisdomProverbs
+        ? `El orgullo nos cegó a los dos... pero mira quién está parado en medio de nosotros.`
+        : isMedical
+        ? `¡Pon tus manos sobre las mías! El pulso sigue latiendo, aún no es el final.`
+        : isFinances
+        ? `¡No empaques todavía! Dios no nos trajo a esta casa para avergonzarnos.`
+        : `¡Basta de lamentarnos! Mira fijamente el umbral... Jesús está aquí presente.`;
 
-  // Bespoke Scene 5 dialogues
-  let s5ProtDialogue = isLast
-    ? `¡Declara tu milagro aquí abajo en los comentarios!`
-    : `¡Maestro! ¿Qué misterio nos revelarás al amanecer?`;
-  let s5SuppDialogue = isLast
-    ? `¡Comparte este video con quien necesite esperanza hoy!`
-    : `¡Alguien golpea a la puerta con noticias urgentes!`;
-  let s5JesusDialogue = isLast
-    ? `Si tú crees en esta promesa, escribe AMÉN con fe.`
-    : `Prepárate: la mayor gloria viene en la Parte ${epNum + 1}.`;
+      const s2Jesus = isReceipt
+        ? `¿Estás dispuesta a perdonar el pasado para descubrir la verdad que te liberará?`
+        : isWisdomProverbs
+        ? `¿Confías en que puedo enderezar tus veredas si sueltas tu propia prudencia?`
+        : isMedical
+        ? `¿Crees de corazón que tengo poder para devolver el aliento a lo que agoniza?`
+        : isFinances
+        ? `¿Crees que soy capaz de abrir una puerta donde el hombre cerró con cerrojo?`
+        : `¿Crees de corazón que para Mí no existe absolutamente ningún imposible?`;
 
-  const scene1 = {
-    sceneNumber: 1,
-    durationSec: 10,
-    characterId: prot.id,
-    secondaryCharacterId: 'jesus_cartoon_3d',
-    charactersInShot: [prot.id, supp.id, 'jesus_cartoon_3d'],
-    interactionType: 'dos_personajes_frente_a_frente',
-    timeframe: '00:00 - 00:10',
-    action: `En ${env.name}, ${prot.name} está ${prot.posture} sintiendo la imposibilidad humana de "${topic}". A su lado, ${supp.name} le sostiene en oración. De pronto, el Maestro Jesús entra iluminando el umbral con luz celestial a 3400K.`,
-    scenographyDetails: {
-      exactLocation: `Foco principal de ${env.name}, entre la penumbra y el umbral de gloria.`,
-      narrativeProps: 'Escrituras abiertas, vasijas y elementos cargados de significado dramático.',
-      lightingSetup: 'Contraluz de 2800K penetrado por un haz volumétrico dorado de Jesús a 3400K.',
-      spatialPlacement: `${prot.name} y ${supp.name} en tercio izquierdo; Jesús entra por el centro en encuadre vertical 9:16.`
-    },
-    dialogueExchange: calibrateAndPaceDialogue([
-      { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:00 - 00:03', allocatedSeconds: 3, dialogueSpanish: s1ProtDialogue, emotionalTone: 'Clamor desgarrador con fe naciente', voicePresetName: prot.voicePreset },
-      { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:03 - 00:06', allocatedSeconds: 3, dialogueSpanish: s1SuppDialogue, emotionalTone: 'Asombro reverente y esperanza viva', voicePresetName: supp.voicePreset },
-      { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:06 - 00:10', allocatedSeconds: 4, dialogueSpanish: s1JesusDialogue, emotionalTone: 'Ternura compasiva infinita y autoridad divina', voicePresetName: 'Marcus - Deep & Resonant' }
-    ], 10),
-    narration: `${prot.name} clamó cuando los recursos humanos se agotaron, pero cuando Jesús entra, la aflicción tiene que retroceder.`,
-    onScreenText: isFirst ? 'EL CLAMOR EN LA PRUEBA' : `PARTE ${epNum}: LA ESPERANZA VIVA`,
-    secondaryLabel: 'Jeremías 33:3',
-    imageToVideoPrompt: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animated style inside ${env.shortTag}. Multi-person synchronized Latin American Spanish dialogue:\n[00:00-00:03] ${prot.name} (3s): "${s1ProtDialogue}"\n[00:03-00:06] ${supp.name} (3s): "${s1SuppDialogue}"\n[00:06-00:10] Jesus Christ (4s): "${s1JesusDialogue}"\n${negLock}`,
-    englishPromptWithSpanishDialogue: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end 3D Pixar animation inside ${env.shortTag}. 3 characters in shot. Synced Latin American Spanish dialogue:\n[00:00-00:03] ${prot.name} (3s): "${s1ProtDialogue}"\n[00:03-00:06] ${supp.name} (3s): "${s1SuppDialogue}"\n[00:06-00:10] Jesus Christ (4s): "${s1JesusDialogue}"\n${negLock}`,
-    masterNetflixPrompt: `[NETFLIX CONTINUITY - SCENE 1]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: 3-person scene in ${env.name}. Divided dialogue in 10s. Spanish voice.\n${negLock}`,
-    sfx: 'Crujido de madera y suspiro hondo (-9dB), destello dorado celestial a 432Hz (-8dB)',
-    sfxTimeline: [
-      { atSecond: '00:00 - 00:02', sound: 'Latido acelerado y suspiro contenido (-8dB)', purpose: 'Enganche empático con el dolor' },
-      { atSecond: '00:03 - 00:05', sound: 'Roce de túnicas y giro hacia la puerta (-9dB)', purpose: 'Atención visual al umbral' },
-      { atSecond: '00:06 - 00:08', sound: 'Whoosh celestial cálido y campana sagrada (-8dB)', purpose: 'Entrada majestuosa de Jesús' },
-      { atSecond: '00:08 - 00:10', sound: 'Cuerdas sinfónicas suaves en calma (-12dB)', purpose: 'Transición sin silencio' }
-    ],
-    bgMusicMood: 'Chelo melancólico que transmuta a cuerdas cálidas de esperanza'
-  };
-
-  const scene2 = {
-    sceneNumber: 2,
-    durationSec: 10,
-    characterId: 'jesus_cartoon_3d',
-    secondaryCharacterId: prot.id,
-    charactersInShot: ['jesus_cartoon_3d', prot.id, supp.id],
-    interactionType: 'encuentro_con_jesus',
-    timeframe: '00:10 - 00:20',
-    action: `Jesús da un paso firme en ${env.name} y posa Su mano resplandeciente sobre el hombro de ${prot.name}. Una ola de paz sobrenatural satura el rostro de ${prot.name} mientras ${supp.name} contempla maravillado.`,
-    scenographyDetails: {
-      exactLocation: `Junto a los elementos de prueba en ${env.name}, halo dorado envolviendo a los personajes.`,
-      narrativeProps: 'Los objetos de dolor o planos reflejan la luz celestial de Cristo.',
-      lightingSetup: 'Luz volumétrica dorada a 3400K enfocada en la mirada compasiva de Cristo.',
-      spatialPlacement: `Jesús inclinado con ternura sobre ${prot.name}; plano medio vertical 9:16.`
-    },
-    dialogueExchange: calibrateAndPaceDialogue([
-      { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:00 - 00:04', allocatedSeconds: 4, dialogueSpanish: s2JesusDialogue, emotionalTone: 'Pregunta penetrante con amor inconmovible', voicePresetName: 'Marcus - Deep & Resonant' },
-      { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:04 - 00:07', allocatedSeconds: 3, dialogueSpanish: s2ProtDialogue, emotionalTone: 'Rendición ardiente y fe desbordante', voicePresetName: prot.voicePreset },
-      { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:07 - 00:10', allocatedSeconds: 3, dialogueSpanish: s2SuppDialogue, emotionalTone: 'Fe unánime y reverente', voicePresetName: supp.voicePreset }
-    ], 10),
-    narration: `Cuando el Maestro te mira a los ojos, el miedo y la autosuficiencia pierden todo su poder.`,
-    onScreenText: 'EL TOQUE DEL MAESTRO',
-    secondaryLabel: 'Juan 11:40',
-    imageToVideoPrompt: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animated style inside ${env.shortTag}. Multi-person synchronized Latin American Spanish dialogue:\n[00:00-00:04] Jesus Christ (4s): "${s2JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s2ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s2SuppDialogue}"\n${negLock}`,
-    englishPromptWithSpanishDialogue: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end 3D Pixar animation inside ${env.shortTag}. 3 characters in frame. Synced Latin American Spanish dialogue:\n[00:00-00:04] Jesus Christ (4s): "${s2JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s2ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s2SuppDialogue}"\n${negLock}`,
-    masterNetflixPrompt: `[NETFLIX CONTINUITY - SCENE 2]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: Hand on shoulder faith challenge. 3 characters.\n${negLock}`,
-    sfx: 'Arpa celestial a 432Hz (-10dB), latido que se serena (-9dB), suspiro de paz (-10dB)',
-    sfxTimeline: [
-      { atSecond: '00:00 - 00:02', sound: 'Contacto de la mano y shimmer celestial (-9dB)', purpose: 'Sentido táctil del toque de Jesús' },
-      { atSecond: '00:03 - 00:05', sound: 'Latido acelerado que frena en paz profunda (-8dB)', purpose: 'Alivio biológico' },
-      { atSecond: '00:06 - 00:08', sound: 'Arpa etérea y bocanada de aire limpio (-10dB)', purpose: 'Resonancia del clamor de fe' },
-      { atSecond: '00:08 - 00:10', sound: 'Zumbido armónico de partículas doradas (-11dB)', purpose: 'Anticipación del milagro' }
-    ],
-    bgMusicMood: 'Crescendo conmovedor de piano y cuerdas sinfónicas'
-  };
-
-  const scene3 = {
-    sceneNumber: 3,
-    durationSec: 10,
-    characterId: 'jesus_cartoon_3d',
-    secondaryCharacterId: prot.id,
-    charactersInShot: ['jesus_cartoon_3d', prot.id, supp.id],
-    interactionType: 'encuentro_con_jesus',
-    timeframe: '00:20 - 00:30',
-    action: `Jesús alza Su mano derecha con resplandor soberano en ${env.name}. Ondas de luz celestial a 4500K atraviesan el recinto, disolviendo toda tiniebla sobre "${topic}".`,
-    scenographyDetails: {
-      exactLocation: `Foco principal de ${env.name}, bañado en gloria sobrenatural.`,
-      narrativeProps: 'Los objetos de dolor o escasez se llenan de destellos dorados y bendición.',
-      lightingSetup: 'Explosión de luz volumétrica dorada a 4500K proyectando rayos ascendentes de victoria.',
-      spatialPlacement: `Jesús erguido con soberana majestad; ${prot.name} recibiendo la impartición de pie o de rodillas.`
-    },
-    dialogueExchange: calibrateAndPaceDialogue([
-      { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:00 - 00:04', allocatedSeconds: 4, dialogueSpanish: s3JesusDialogue, emotionalTone: 'Autoridad soberana de trueno suave y majestad', voicePresetName: 'Marcus - Deep & Resonant' },
-      { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:04 - 00:07', allocatedSeconds: 3, dialogueSpanish: s3ProtDialogue, emotionalTone: 'Asombro sagrado y lágrimas de gozo', voicePresetName: prot.voicePreset },
-      { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:07 - 00:10', allocatedSeconds: 3, dialogueSpanish: s3SuppDialogue, emotionalTone: 'Glorificación unánime con manos alzadas', voicePresetName: supp.voicePreset }
-    ], 10),
-    narration: `Una sola palabra de la boca de Jesús basta para cambiar el destino de toda una generación.`,
-    onScreenText: isLast ? 'EL MILAGRO SE CONSUMÓ' : 'EL DECRETO DEL CIELO',
-    secondaryLabel: 'Salmo 107:20',
-    imageToVideoPrompt: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animated style inside ${env.shortTag}. Multi-person synchronized Latin American Spanish dialogue:\n[00:00-00:04] Jesus Christ (4s): "${s3JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s3ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s3SuppDialogue}"\n${negLock}`,
-    englishPromptWithSpanishDialogue: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end 3D Pixar animation inside ${env.shortTag}. 3 characters in shot. Synced Latin American Spanish dialogue:\n[00:00-00:04] Jesus Christ (4s): "${s3JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s3ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s3SuppDialogue}"\n${negLock}`,
-    masterNetflixPrompt: `[NETFLIX CONTINUITY - SCENE 3]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: Supernatural decree and golden blast. 3 characters.\n${negLock}`,
-    sfx: 'Trueno sordo celestial (-8dB), destello dorado a 4500K (-7dB), campana de paz a 528Hz (-8dB)',
-    sfxTimeline: [
-      { atSecond: '00:00 - 00:02', sound: 'Ráfaga de viento cálido sagrado (-7dB)', purpose: 'Preparación de la proclamación' },
-      { atSecond: '00:03 - 00:05', sound: 'Resonancia cristalina y destello dorado (-8dB)', purpose: 'Impartición del decreto' },
-      { atSecond: '00:06 - 00:08', sound: 'Chime radiante y vibración cálida (-9dB)', purpose: 'Recepción del milagro' },
-      { atSecond: '00:08 - 00:10', sound: 'Armonía de coro celestial en crescendo suave (-10dB)', purpose: 'Consumación de la escena' }
-    ],
-    bgMusicMood: 'Sinfonía gloriosa de victoria y soberanía'
-  };
-
-  const scene4 = {
-    sceneNumber: 4,
-    durationSec: 10,
-    characterId: prot.id,
-    secondaryCharacterId: supp.id,
-    charactersInShot: [prot.id, supp.id, 'jesus_cartoon_3d'],
-    interactionType: 'abrazo_consuelo',
-    timeframe: '00:30 - 00:40',
-    action: `${prot.name} y ${supp.name} se funden en un abrazo de lágrimas de gozo en ${env.name}. Jesús contempla la escena sonriendo con infinita ternura, bendiciendo el lugar con Su presencia.`,
-    scenographyDetails: {
-      exactLocation: `Frente a la ventana o umbral de ${env.name}, luz matutina dorada ingresando a 5000K.`,
-      narrativeProps: 'Los objetos reflejan el amanecer de bendición.',
-      lightingSetup: 'Luz omnidireccional cálida y dorada a 5000K, disolviendo toda sombra de angustia.',
-      spatialPlacement: `${prot.name} y ${supp.name} abrazados en primer plano; Jesús detrás con manos extendidas.`
-    },
-    dialogueExchange: calibrateAndPaceDialogue([
-      { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:00 - 00:03', allocatedSeconds: 3, dialogueSpanish: s4SuppDialogue, emotionalTone: 'Asombro desbordante y gratitud pura', voicePresetName: supp.voicePreset },
-      { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:03 - 00:06', allocatedSeconds: 3, dialogueSpanish: s4ProtDialogue, emotionalTone: 'Paz inquebrantable y testimonio vivo', voicePresetName: prot.voicePreset },
-      { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:06 - 00:10', allocatedSeconds: 4, dialogueSpanish: s4JesusDialogue, emotionalTone: 'Paz soberana y promesa cumplida', voicePresetName: 'Marcus - Deep & Resonant' }
-    ], 10),
-    narration: `Donde abundó la aflicción, sobreabundó la gracia. Jesús restauró lo que el enemigo intentó destruir.`,
-    onScreenText: 'RESTAURACIÓN Y PAZ',
-    secondaryLabel: 'Romanos 8:28',
-    imageToVideoPrompt: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animated style inside ${env.shortTag}. Multi-person synchronized Latin American Spanish dialogue:\n[00:00-00:03] ${supp.name} (3s): "${s4SuppDialogue}"\n[00:03-00:06] ${prot.name} (3s): "${s4ProtDialogue}"\n[00:06-00:10] Jesus Christ (4s): "${s4JesusDialogue}"\n${negLock}`,
-    englishPromptWithSpanishDialogue: `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end 3D Pixar animation inside ${env.shortTag}. 3 characters in shot. Synced Latin American Spanish dialogue:\n[00:00-00:03] ${supp.name} (3s): "${s4SuppDialogue}"\n[00:03-00:06] ${prot.name} (3s): "${s4ProtDialogue}"\n[00:06-00:10] Jesus Christ (4s): "${s4JesusDialogue}"\n${negLock}`,
-    masterNetflixPrompt: `[NETFLIX CONTINUITY - SCENE 4]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: Emotional embrace and divine smile. 3 characters.\n${negLock}`,
-    sfx: 'Sollozo de alegría (-8dB), fricción de lino en abrazo (-9dB), repique sutil de campana de gloria (-8dB)',
-    sfxTimeline: [
-      { atSecond: '00:00 - 00:02', sound: 'Exhalación de alivio y roce de ropas (-9dB)', purpose: 'Contacto afectivo' },
-      { atSecond: '00:03 - 00:05', sound: 'Sollozo de gratitud y suspiro profundo (-8dB)', purpose: 'Desahogo emocional' },
-      { atSecond: '00:06 - 00:08', sound: 'Viento suave celestial y campanada tenue (-8dB)', purpose: 'Sello de bendición de Jesús' },
-      { atSecond: '00:08 - 00:10', sound: 'Acorde de piano en 432Hz sostenido (-11dB)', purpose: 'Transición hacia la escena final' }
-    ],
-    bgMusicMood: 'Piano en 432Hz con cuerdas cálidas de adoración y consuelo'
-  };
-
-  const scene5 = {
-    sceneNumber: 5,
-    durationSec: 10,
-    characterId: isLast ? 'jesus_cartoon_3d' : prot.id,
-    secondaryCharacterId: isLast ? prot.id : 'jesus_cartoon_3d',
-    charactersInShot: ['jesus_cartoon_3d', prot.id, supp.id],
-    interactionType: isLast ? 'reaccion_asombro' : 'confrontacion_redencion',
-    timeframe: '00:40 - 00:50',
-    action: isLast
-      ? `Jesús extiende Sus manos hacia la cámara con mirada penetrante de infinito amor en ${env.name}. A Su lado, ${prot.name} y ${supp.name} invitan a los espectadores a recibir el milagro y declarar su fe.`
-      : `En ${env.name}, una repentina sombra cruza la ventana y una voz resuena en la distancia. ${prot.name} y ${supp.name} giran con tensión dramática mientras Jesús los mira con misterio divino.`,
-    scenographyDetails: {
-      exactLocation: `Junto al umbral iluminado de ${env.name}.`,
-      narrativeProps: isLast ? 'Objetos resplandeciendo en plenitud de bendición.' : 'El umbral abierto con la noche y un misterio por revelar.',
-      lightingSetup: isLast ? 'Luz dorada omnidireccional a 5500K.' : 'Contraste dramático entre la luz de Jesús y la noche exterior.',
-      spatialPlacement: `Los 3 personajes en plano conjunto vertical 9:16.`
-    },
-    dialogueExchange: calibrateAndPaceDialogue(
-      isLast
-        ? [
-            { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:00 - 00:04', allocatedSeconds: 4, dialogueSpanish: s5JesusDialogue, emotionalTone: 'Llamado íntimo y magnético directo al alma', voicePresetName: 'Marcus - Deep & Resonant' },
-            { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:04 - 00:07', allocatedSeconds: 3, dialogueSpanish: s5ProtDialogue, emotionalTone: 'Llamado ardiente a comentar y declarar', voicePresetName: prot.voicePreset },
-            { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:07 - 00:10', allocatedSeconds: 3, dialogueSpanish: s5SuppDialogue, emotionalTone: 'Urgencia de fe y llamado a compartir', voicePresetName: supp.voicePreset }
-          ]
-        : [
-            { speakerName: prot.name, speakerId: prot.id, role: 'protagonista', timeWindow: '00:00 - 00:04', allocatedSeconds: 4, dialogueSpanish: s5ProtDialogue, emotionalTone: 'Tensión dramática y asombro por lo que viene', voicePresetName: prot.voicePreset },
-            { speakerName: supp.name, speakerId: supp.id, role: 'secundario', timeWindow: '00:04 - 00:07', allocatedSeconds: 3, dialogueSpanish: s5SuppDialogue, emotionalTone: 'Alerta expectante mirando hacia la puerta', voicePresetName: supp.voicePreset },
-            { speakerName: 'Maestro Jesús', speakerId: 'jesus_cartoon_3d', role: 'maestro', timeWindow: '00:07 - 00:10', allocatedSeconds: 3, dialogueSpanish: s5JesusDialogue, emotionalTone: 'Misterio divino magnético que atrapa al espectador', voicePresetName: 'Marcus - Deep & Resonant' }
+      return [
+        {
+          title: 'El Shock Visual del Detonante',
+          action: `En ${env.name}, primer plano macro cinematográfico al objeto de la prueba sobre la mesa de madera rústica. ${prot.name} contempla la evidencia en soledad con la respiración contenida y los dedos temblando, hasta que un resplandor dorado celestial sacude el umbral.`,
+          cameraSetupEn: `Dramatic macro extreme close-up, 9:16 vertical. Intimate single-shot on trembling hands holding the narrative object, shifting to expressive face caught in disbelief, illuminated by a single flickering candle and a sudden golden rim light.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: s1Prot, tone: 'Choque profundo e incredulidad viva', voice: prot.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: s1Jesus, tone: 'Serenidad cálida y autoridad divina', voice: 'Marcus - Deep & Resonant' }
           ],
-      10
-    ),
-    narration: isLast
-      ? `Jesús nunca llega tarde. Si tú crees en Su poder para tu hogar, escribe AMÉN y comparte esta serie completa.`
-      : `Pero esto era solo el comienzo del milagro. [PAUSA] ¿Qué ocurrirá al amanecer? Descúbrelo en la PARTE ${epNum + 1}.`,
-    onScreenText: isLast ? 'ESCRIBE "AMÉN" Y COMPARTE' : `CONTINÚA EN PARTE ${epNum + 1}`,
-    secondaryLabel: isLast ? 'FIN DE LA SERIE' : `PARTE ${epNum + 1} MAÑANA`,
-    imageToVideoPrompt: isLast
-      ? `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animation. Grand finale at the luminous doorway. 3 characters looking into camera:\n[00:00-00:04] Jesus Christ (4s): "${s5JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s5ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s5SuppDialogue}"\n${negLock}`
-      : `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animation. Dramatic cliffhanger at the doorway of ${env.shortTag}:\n[00:00-00:04] ${prot.name} (4s): "${s5ProtDialogue}"\n[00:04-00:07] ${supp.name} (3s): "${s5SuppDialogue}"\n[00:07-00:10] Jesus Christ (3s): "${s5JesusDialogue}"\n${negLock}`,
-    englishPromptWithSpanishDialogue: isLast
-      ? `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: Grand finale in 9:16 vertical. Jesus Christ extends his hands toward camera. Synced Latin American Spanish dialogue:\n[00:00-00:04] Jesus Christ (4s): "${s5JesusDialogue}"\n[00:04-00:07] ${prot.name} (3s): "${s5ProtDialogue}"\n[00:07-00:10] ${supp.name} (3s): "${s5SuppDialogue}"\n${negLock}`
-      : `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: Cinematic cliffhanger in vertical 9:16 at the doorway of ${env.shortTag}. Synced Latin American Spanish dialogue:\n[00:00-00:04] ${prot.name} (4s): "${s5ProtDialogue}"\n[00:04-00:07] ${supp.name} (3s): "${s5SuppDialogue}"\n[00:07-00:10] Jesus Christ (3s): "${s5JesusDialogue}"\n${negLock}`,
-    masterNetflixPrompt: isLast
-      ? `[NETFLIX CONTINUITY - SCENE 5 (FINALE)]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: Grand finale blessing to camera. 3 characters.\n${negLock}`
-      : `[NETFLIX CONTINUITY - SCENE 5 (CLIFFHANGER)]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: Cliffhanger at door. 3 characters. Next episode hook.\n${negLock}`,
-    sfx: isLast ? 'Campana solemne de templo (-6dB), arpa triunfal (-8dB), oleada dorada (-9dB)' : 'Acorde de suspenso (Braam -6dB), crujido de puerta (-8dB), latido intrigante (-7dB)',
-    sfxTimeline: isLast
-      ? [
-          { atSecond: '00:00 - 00:02', sound: 'Campana solemne de templo y eco celestial (-6dB)', purpose: 'Enganche directo a la cámara' },
-          { atSecond: '00:03 - 00:05', sound: 'Oleada dorada de bendición (Whoosh suave -8dB)', purpose: 'Acompañamiento del llamado a comentar' },
-          { atSecond: '00:06 - 00:08', sound: 'Chime radiante y arpa de victoria (-9dB)', purpose: 'Subrayar el llamado a compartir' },
-          { atSecond: '00:08 - 00:10', sound: 'Acorde glorioso final y campana de paz sostenida (-8dB)', purpose: 'Retención y llamado a comentar AMÉN' }
-        ]
-      : [
-          { atSecond: '00:00 - 00:02', sound: 'Golpe cinematográfico de intriga (Braam dramático -6dB)', purpose: 'Alerta instantánea de cliffhanger' },
-          { atSecond: '00:03 - 00:05', sound: 'Crujido de madera y puerta chirriando al abrirse (-8dB)', purpose: 'Tensión de suspenso del umbral' },
-          { atSecond: '00:06 - 00:08', sound: 'Latido acelerado (thud-thud) y zumbido misterioso (-7dB)', purpose: 'Curiosidad magnética para la siguiente parte' },
-          { atSecond: '00:08 - 00:10', sound: 'Crescendo abrupto de cuerdas que se corta en seco (-6dB)', purpose: 'Corte de suspenso para obligar a ver la siguiente parte' }
+          sfx: 'Crujido de papel arrugado en dedos temblorosos, reloj de pared y brisa tibia dorada (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:04', sound: 'Frote de papel, reloj y exhalación entrecortada (-8dB)', purpose: 'Contacto íntimo con la crisis' },
+            { atSecond: '00:04 - 00:10', sound: 'Brisa tibia sobrenatural y shimmer 432Hz (-8dB)', purpose: 'Intervención y respuesta de Jesús' }
+          ],
+          narration: `El golpe de la realidad sacudió el aposento. En ese segundo de silencio absoluto, los cielos se abrieron.`,
+          onScreen: 'EL DETONANTE • LA PRUEBA',
+          label: 'CAPÍTULO 1 • PARTE 1',
+          music: 'Atmósfera ambiental de alta tensión que se transforma en paz de 432Hz'
+        },
+        {
+          title: 'Confrontación de Urgencia',
+          action: `Plano compartido over-the-shoulder: ${prot.name} y ${supp.name} discuten acaloradamente sobre qué hacer con el tiempo en contra. En el centro de la escena, la figura serena de Jesús los observa con compasión.`,
+          cameraSetupEn: `Over-the-shoulder intimate two-shot with shallow depth of field. Natural cinematic rack-focus between the two characters in emotional dispute, framed in 9:16.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: s2Prot, tone: 'Desesperación humana visceral', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: s2Supp, tone: 'Firmeza de fe entre lágrimas', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: s2Jesus, tone: 'Pregunta penetrante al corazón', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Golpe seco de nudillos sobre madera rústica, eco de voces alteradas que bajan de tono (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Impacto sordo en la mesa y sollozo contenido (-8dB)', purpose: 'Descarga del dolor' },
+            { atSecond: '00:03 - 00:06', sound: 'Toma de manos y suspiro de apoyo (-9dB)', purpose: 'Vínculo fraternal' },
+            { atSecond: '00:06 - 00:10', sound: 'Campana de cristal etérea que silencia la disputa (-10dB)', purpose: 'Impacto de la pregunta de Cristo' }
+          ],
+          narration: `La discusión no resolvía nada; solo cuando miraron al Maestro comprendieron que la prueba medía su fe.`,
+          onScreen: 'LA PRUEBA DE FE',
+          label: 'TIEMPO LÍMITE',
+          music: 'Cuerdas sinfónicas de alta tensión con notas graves sostenidas'
+        },
+        {
+          title: 'La Mirada al Fondo del Alma',
+          action: `Jesús da un paso adelante y se coloca a un metro de distancia. La luz de 3400K ilumina las miradas. ${prot.name} baja la guardia y deja caer el objeto sobre la mesa, vulnerable.`,
+          cameraSetupEn: `Slow dramatic push-in / dolly towards Jesus and the protagonist. Volumetric warm light rays illuminating the dust motes and authentic facial tears in vertical 9:16.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Reconozco que no puedo más, Maestro! Mis fuerzas se acabaron por completo.`, tone: 'Quebranto genuino y rendición', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Aquí estamos los dos, Señor; no nos moveremos de este aposento sin Ti!`, tone: 'Clamor colectivo con manos abiertas', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Tu impotencia es el suelo donde mi gracia echa raíces. Mírame a los ojos.`, tone: 'Amor incondicional y consuelo sublime', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Objeto cayendo suavemente sobre madera, exhalación profunda de desahogo (-9dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Sollozo que se rompe y roce de rodillas (-9dB)', purpose: 'Rendición física' },
+            { atSecond: '00:03 - 00:06', sound: 'Voz quebrada al unísono y eco de oración (-8dB)', purpose: 'Unidad de clamor' },
+            { atSecond: '00:06 - 00:10', sound: 'Onda dorada armónica a 528Hz (-8dB)', purpose: 'Abrazo espiritual de Jesús' }
+          ],
+          narration: `Cuando el orgullo se rinde, el corazón queda limpio para recibir lo sobrenatural.`,
+          onScreen: 'RENDICIÓN TOTAL',
+          label: 'HUMILDAD',
+          music: 'Piano cálido en 432Hz con violonchelo envolvente de paz'
+        },
+        {
+          title: 'La Revelación Oculta',
+          action: `Jesús posa su mano sobre el objeto o elemento central de la prueba en ${env.name}. Un detalle antes invisible comienza a resplandecer con un tenue halo dorado.`,
+          cameraSetupEn: `Extreme close-up on the narrative element and the glowing hand of Jesus. Macro details of worn paper or wood, slow vertical tilt up to expressive eyes.`,
+          turns: [
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Mira el reverso de la hoja! ¡Había algo escrito que nunca antes vimos!`, tone: 'Asombro tembloroso señalando', voice: supp.voicePreset },
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Es una anotación oculta con una dirección y una hora señalada!`, tone: 'Pálpito acelerado de esperanza', voice: prot.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `El enemigo planeó tu ruina, pero Yo ya preparé la salida. No temas.`, tone: 'Firmeza protectora y revelación', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Chime cristalino sutil, paso de página y latido de expectación (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Destello tenue y crujido de papel antiguo (-8dB)', purpose: 'Descubrimiento del secreto' },
+            { atSecond: '00:03 - 00:06', sound: 'Inspiración súbita de aire de asombro (-9dB)', purpose: 'Reacción física de los personajes' },
+            { atSecond: '00:06 - 00:10', sound: 'Resonancia profunda de chelo sacral (-9dB)', purpose: 'Sello divino de promesa' }
+          ],
+          narration: `No todo estaba perdido. Un mensaje no revelado aguardaba el momento exacto para manifestarse.`,
+          onScreen: 'EL SECRETO DESCUBIERTO',
+          label: 'GIRO INESPERADO',
+          music: 'Suspenso cinematográfico con arpegios de piano misterioso'
+        },
+        {
+          title: 'El Gancho Final del Capítulo 1',
+          action: `De repente, tres golpes secos y violentos retumban en la puerta exterior de ${env.name}. Los personajes giran sobresaltados. El reloj de pared marca la medianoche y la vela parpadea.`,
+          cameraSetupEn: `Dramatic Dutch angle with rapid push-in to the door, cutting to high-tension close-up on the terrified faces turning around. Cinematic vertical 9:16 cliffhanger.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Llegaron antes de tiempo! ¡Están golpeando con fuerza la entrada!`, tone: 'Pánico súbito mirando a la puerta', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡No abras todavía! Si ven lo que tenemos aquí, todo habrá terminado.`, tone: 'Urgencia extrema interponiéndose', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Permanece firme. Lo que viene a continuación probará si realmente confías en Mí.`, tone: 'Misterio sagrado y calma electrizante', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Tres golpes secos retumbando en madera pesada (Bang-Bang-Bang), crujido de bisagra y corte seco en suspenso (-6dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Tres golpes violentos en la puerta exterior (-6dB)', purpose: 'Impacto súbito de cliffhanger' },
+            { atSecond: '00:03 - 00:06', sound: 'Pasos presurosos y cerrojo que tiembla (-7dB)', purpose: 'Tensión de peligro inmediato' },
+            { atSecond: '00:06 - 00:10', sound: 'Braam orquestal de suspenso con corte abrupto (-6dB)', purpose: 'Retención total para la Parte 2' }
+          ],
+          narration: `El peligro llamó a la puerta antes de lo previsto. ¿Quién está afuera en plena noche? La respuesta cambiará todo en la PARTE 2.`,
+          onScreen: 'CONTINÚA EN LA PARTE 2',
+          label: 'CLIFFHANGER',
+          music: 'Crescendo abrupto de cuerdas que se corta en seco con golpe dramático'
+        }
+      ];
+    }
+
+    // -------------------------------------------------------------
+    // CHAPTER 2: LA COMPLICACIÓN Y LA PRUEBA EXTREMA
+    // -------------------------------------------------------------
+    if (epNum === 2) {
+      return [
+        {
+          title: 'El Umbral del Conflicto',
+          action: `En ${env.name}, la puerta tiembla bajo la presión exterior. ${prot.name} se interpone protegiendo el aposento, mientras ${supp.name} observa una sombra siniestra a través del cristal. Jesús permanece imperturbable.`,
+          cameraSetupEn: `Low-angle tracking shot moving from the trembling door handle towards the protective stance of the protagonist, vertical 9:16 high contrast lighting.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Identifíquense! ¡Nadie tiene derecho a forzar esta puerta a medianoche!`, tone: 'Defensa desesperada con voz firme', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Reconozco esa voz... es la persona que juró arruinar a nuestra familia!`, tone: 'Terror amargo y manos en la boca', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `No temas a quien puede dañar lo exterior. Abre la puerta con mansedumbre.`, tone: 'Comando sereno desconcertante', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Forcejeo metálico de cerrojo, respiración contenida y chirrido de madera (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Golpe metálico en la cerradura exterior (-7dB)', purpose: 'Amenaza activa' },
+            { atSecond: '00:03 - 00:06', sound: 'Susurro asustado y retroceso de pasos (-9dB)', purpose: 'Reacción de miedo' },
+            { atSecond: '00:06 - 00:10', sound: 'Paso firme y suave de Jesús hacia adelante (-9dB)', purpose: 'Liderazgo divino' }
+          ],
+          narration: `El pasado no pidió permiso para entrar. La prueba obligaba a obedecer una orden que desafiaba toda prudencia humana.`,
+          onScreen: 'EL PASADO EN LA PUERTA',
+          label: 'CAPÍTULO 2 • PARTE 2',
+          music: 'Pulso rítmico marcial amortiguado con chelo de tensión creciente'
+        },
+        {
+          title: 'El Choque de Realidades',
+          action: `La puerta se entreabre lentamente revelando la silueta de la persona del conflicto con un documento legal en la mano. La tensión en la estancia corta el aire.`,
+          cameraSetupEn: `Over-the-shoulder medium shot through the cracked doorway, light from the hallway cutting into the dark room in a sharp diagonal beam.`,
+          turns: [
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¿Vienes a terminar de quitarnos lo poco que nos quedaba en este hogar?`, tone: 'Reproche adolorido con ojos llorosos', voice: supp.voicePreset },
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Mira cómo tiembla su mano! No vino con odio... viene cargando una culpa que lo quiebra.`, tone: 'Comprensión súbita y choque visual', voice: prot.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Mira más allá de la ofensa. He traído a tu enemigo a tus pies no para venganza, sino para redención.`, tone: 'Sabiduría celestial infinita', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Chirrido prolongado de bisagra oxidada, caída de sobre en el suelo (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Bisagra que rechina lentamente (-8dB)', purpose: 'Apertura de la intriga' },
+            { atSecond: '00:03 - 00:06', sound: 'Sobre de papel cayendo pesadamente al piso (-9dB)', purpose: 'Entrega del documento' },
+            { atSecond: '00:06 - 00:10', sound: 'Armonía cálida sutil en el fondo (-10dB)', purpose: 'Paz transformadora' }
+          ],
+          narration: `El enemigo no era un monstruo invencible, sino un alma rota que Dios había arrastrado hasta el aposento.`,
+          onScreen: 'LA OTRA CARA DEL CONFLICTO',
+          label: 'REDENCIÓN',
+          music: 'Melodía melancólica conmovedora con notas agudas de violín'
+        },
+        {
+          title: 'El Desafío al Corazón',
+          action: `En el centro de ${env.name}, ${prot.name} levanta el documento del suelo. Jesús le pide que mire a su opositor a los ojos y extienda la mano en perdón real.`,
+          cameraSetupEn: `Two-shot from waist up, camera slowly orbiting the characters as warm light from Jesus begins illuminating both faces equally. 9:16 framing.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Señor, me costó diez años de amargura superar lo que me hizo! ¿Cómo le perdono ahora?`, tone: 'Conflicto interno desgarrador', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `Hermano, si Dios nos perdonó a nosotros, no podemos cerrar el corazón esta noche.`, tone: 'Súplica tierna tocándole el hombro', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `El rencor es la prisión donde tú mismo eres el carcelero. Suelta la ofensa y verás mi gloria.`, tone: 'Verdad liberadora y ternura santa', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Respiración temblorosa, crujido de dedos apretados que se abren despacio (-9dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Sollozo ahogado y puño cerrado con fuerza (-8dB)', purpose: 'Tensión del resentimiento' },
+            { atSecond: '00:03 - 00:06', sound: 'Mano posándose con afecto en el brazo (-9dB)', purpose: 'Apoyo fraterno' },
+            { atSecond: '00:06 - 00:10', sound: 'Campanilla de plata lejana (-10dB)', purpose: 'Rotura de cadenas interiores' }
+          ],
+          narration: `El milagro no empezaba en las circunstancias externas; empezaba en la decisión de arrancar el odio de raíz.`,
+          onScreen: 'LA BATALLA INTERIOR',
+          label: 'EL PERDÓN',
+          music: 'Crescendo de piano con acordes mayores llenos de perdón y esperanza'
+        },
+        {
+          title: 'La Decisión Decisiva',
+          action: `${prot.name} abre los brazos y estrecha la mano de su adversario. Un choque de miradas cargado de lágrimas sella un pacto de paz. En ese instante, una luz celestial penetra el techo de la estancia.`,
+          cameraSetupEn: `Dramatic tight close-up on the two hands grasping each other, tears falling onto the parchment on the table, volumetric golden light descending.`,
+          turns: [
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Te perdono! Delante de Jesús, rompo todo rencor y cancelo esta deuda en mi corazón.`, tone: 'Liberación ardiente y lágrimas vivas', voice: prot.voicePreset },
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Alabado sea Dios! ¡Se siente cómo se disipa toda la pesadez de este lugar!`, tone: 'Gozo sincero con brazos al cielo', voice: supp.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Porque obedeciste a mi voz en lo secreto, ahora contemplarás lo que haré en lo visible.`, tone: 'Promesa solemne con sonrisa victoriosa', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Papel de deuda rasgándose simbólicamente, sollozo de desahogo y viento celestial cálido (-8dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Papel de ofensa rasgándose a la mitad (-8dB)', purpose: 'Cancelación del rencor' },
+            { atSecond: '00:03 - 00:06', sound: 'Exhalación masiva de alivio colectivo (-9dB)', purpose: 'Liberación de los personajes' },
+            { atSecond: '00:06 - 00:10', sound: 'Arpa dorada en 432Hz resonando (-8dB)', purpose: 'Apertura de los cielos' }
+          ],
+          narration: `Cuando el perdón vence al orgullo, los cielos se abren sin resistencia.`,
+          onScreen: 'EL PACTO DE PAZ',
+          label: 'OBEDIENCIA',
+          music: 'Himno instrumental de adoración que crece majestuoso'
+        },
+        {
+          title: 'El Cliffhanger del Capítulo 2',
+          action: `Un estruendo sutil de milagro hace temblar la mesa: de la vasija vacía o el sobre roto comienza a emanar un brillo sobrenatural cegador. Pero una sirena o llamado urgente suena afuera anunciando la hora final.`,
+          cameraSetupEn: `Fast push-in from wide room to the blinding light radiating from the table, rack-focus to the window showing the red dawn approaching. 9:16 cliffhanger.`,
+          turns: [
+            { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Mira la mesa! ¡El documento está cambiando y algo imposible está brotando!`, tone: 'Grito de asombro supremo', voice: supp.voicePreset },
+            { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Faltan solo sesenta segundos para el plazo final de las autoridades!`, tone: 'Cuenta regresiva dramática', voice: prot.voicePreset },
+            { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `No mires el reloj de los hombres. Tu milagro acaba de nacer. Míralo en la PARTE FINAL.`, tone: 'Autoridad absoluta y gancho magnético', voice: 'Marcus - Deep & Resonant' }
+          ],
+          sfx: 'Zumbido sobrenatural creciente a 4500K, campanada de templo lejana y corte abrupto (-6dB)',
+          sfxList: [
+            { atSecond: '00:00 - 00:03', sound: 'Chime de gloria y brillo envolvente (-7dB)', purpose: 'Inicio de la manifestación' },
+            { atSecond: '00:03 - 00:06', sound: 'Tic-tac acelerado de reloj final (-8dB)', purpose: 'Cuenta regresiva' },
+            { atSecond: '00:06 - 00:10', sound: 'Golpe orquestal majestuoso con corte en seco (-6dB)', purpose: 'Cliffhanger hacia el final' }
+          ],
+          narration: `El reloj está en cero y la gloria de Dios acaba de estallar. ¿Qué ocurrió al abrirse la puerta? Descúbrelo en la GRAN PARTE FINAL.`,
+          onScreen: 'CONTINÚA EN LA PARTE FINAL',
+          label: 'CLIFFHANGER FINAL',
+          music: 'Crescendo épico de cuerdas y coros que se suspende en el clímax'
+        }
+      ];
+    }
+
+    // -------------------------------------------------------------
+    // CHAPTER 3+: EL MILAGRO SOBRENATURAL Y LA RESTAURACIÓN TOTAL
+    // -------------------------------------------------------------
+    return [
+      {
+        title: 'La Hora de la Verdad',
+        action: `En ${env.name}, la luz matutina dorada rompe la penumbra por la ventana a 5000K. ${prot.name}, ${supp.name} y los presentes están de pie con miradas expectantes ante el Maestro Jesús.`,
+        cameraSetupEn: `Cinematic wide establishing shot tilting down from the morning sunbeams piercing the wooden arch window down to the united characters, vertical 9:16.`,
+        turns: [
+          { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Llegó la hora señalada! Todo lo que parecía muerte y ruina hoy tiene que rendirse.`, tone: 'Fe inquebrantable y madura', voice: prot.voicePreset },
+          { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡El sol salió y no estamos derrotados! ¡La presencia de Dios nos sostuvo toda la noche!`, tone: 'Testimonio vibrante con sonrisa', voice: supp.voicePreset },
+          { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Porque me creíste cuando todo era oscuro, hoy contemplarás la plenitud de mi promesa.`, tone: 'Majestad tierna y victoria', voice: 'Marcus - Deep & Resonant' }
         ],
-    bgMusicMood: isLast ? 'Himno victorioso de adoración y gloria' : 'Suspenso cinematográfico con chelo y campanas'
+        sfx: 'Canto de aves al amanecer, brisa fresca y eco de campana de victoria (-8dB)',
+        sfxList: [
+          { atSecond: '00:00 - 00:03', sound: 'Aleteo de paloma y brisa fresca matutina (-8dB)', purpose: 'Nuevo amanecer' },
+          { atSecond: '00:03 - 00:06', sound: 'Sonrisa de desahogo y paso adelante (-9dB)', purpose: 'Confianza restaurada' },
+          { atSecond: '00:06 - 00:10', sound: 'Whoosh dorado celestial omnidireccional (-8dB)', purpose: 'Presencia gloriosa' }
+        ],
+        narration: `La noche más larga de sus vidas quedó atrás. El sol de la justicia amanecía con sanidad y respuesta en sus alas.`,
+        onScreen: 'EL AMANECER DEL MILAGRO',
+        label: 'CAPÍTULO FINAL',
+        music: 'Piano y violonchelo luminoso en tonalidad de Sol Mayor'
+      },
+      {
+        title: 'La Intervención Soberana',
+        action: `Jesús alza Su mano sobre el centro de la estancia. Ondas de luz volumétrica a 5500K disuelven toda sombra de dolor. La deuda queda cancelada, el diagnóstico se revierte y la provisión rebosa.`,
+        cameraSetupEn: `Dramatic low-angle shot looking up at Jesus with hands outstretched, luminous golden aura expanding to bathe the entire 9:16 frame in heavenly glory.`,
+        turns: [
+          { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `¡Queda deshecha toda obra de ruina y enfermedad! ¡Yo declaro paz y abundancia sobre este hogar!`, tone: 'Voz de trueno suave y decreto de Rey', voice: 'Marcus - Deep & Resonant' },
+          { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Miren el informe! ¡Las deudas están pagadas y la enfermedad ya no existe!`, tone: 'Asombro supremo con manos en la cabeza', voice: prot.voicePreset },
+          { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Dios lo hizo! ¡Lo que era imposible para los hombres, Dios lo hizo en un segundo!`, tone: 'Alabanza desbordante con lágrimas de gozo', voice: supp.voicePreset }
+        ],
+        sfx: 'Trueno sordo celestial a 5500K, destello radiante y arpa de victoria triunfal (-7dB)',
+        sfxList: [
+          { atSecond: '00:00 - 00:03', sound: 'Decreto divino con eco majestuoso (-7dB)', purpose: 'Palabra de poder' },
+          { atSecond: '00:03 - 00:06', sound: 'Grito de victoria y llanto de júbilo (-8dB)', purpose: 'Recepción del milagro' },
+          { atSecond: '00:06 - 00:10', sound: 'Campanadas de iglesia solemne y coro celestial (-8dB)', purpose: 'Consumación gloriosa' }
+        ],
+        narration: `Una sola palabra de Jesús transformó lo imposible en testimonio eterno.`,
+        onScreen: '¡EL MILAGRO SE CONSUMÓ!',
+        label: 'VICTORIA DIVINA',
+        music: 'Sinfonía gloriosa de victoria con coros sacros y percusión épica'
+      },
+      {
+        title: 'La Evidencia Tangible',
+        action: `Primer plano compartido: los personajes revisan con ojos desorbitados la prueba real del milagro (el saldo a favor, el certificado limpio, el abrazo del padre restaurado). No hay dudas.`,
+        cameraSetupEn: `Close-up two-shot tracking the joyful hands turning over the evidence, faces glowing in golden ambient light with genuine happy tears streaming down.`,
+        turns: [
+          { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Pásame el documento otra vez! ¡No es un sueño, es una realidad que podemos tocar!`, tone: 'Risa entre lágrimas y gozo puro', voice: supp.voicePreset },
+          { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Dios nos devolvió siete veces lo que la prueba quiso arrebatarnos!`, tone: 'Testimonio firme e inconmovible', voice: prot.voicePreset },
+          { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `El que pone su confianza en Mí, jamás de los jamases será avergonzado.`, tone: 'Mirada afectuosa y sello de fe', voice: 'Marcus - Deep & Resonant' }
+        ],
+        sfx: 'Risas de desahogo, roce de manos entrelazadas y suspiros de profunda paz (-8dB)',
+        sfxList: [
+          { atSecond: '00:00 - 00:03', sound: 'Exclamación de júbilo sincero (-8dB)', purpose: 'Desahogo' },
+          { atSecond: '00:03 - 00:06', sound: 'Risa inocente y abrazo estrecho (-9dB)', purpose: 'Paz familiar' },
+          { atSecond: '00:06 - 00:10', sound: 'Zumbido de partículas doradas (-10dB)', purpose: 'Presencia continua de Cristo' }
+        ],
+        narration: `El milagro se podía tocar, contar y testificar. La vergüenza se convirtió en corona de honra.`,
+        onScreen: 'TESTIMONIO VIVO',
+        label: 'HONRA',
+        music: 'Piano emotivo pastoral con armonías dulces y cálidas'
+      },
+      {
+        title: 'Restauración y Abrazo Fraternal',
+        action: `${prot.name}, ${supp.name} y los suyos se funden en un abrazo largo y conmovedor en medio de ${env.name}. Jesús los envuelve con Su manto extendido en señal de protección perpetua.`,
+        cameraSetupEn: `Medium shot slowly tracking around the emotional family embrace, backlit by the 5500K golden divine halo of Jesus smiling lovingly behind them. 9:16.`,
+        turns: [
+          { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Gracias por no soltarme en la noche oscura! ¡Este hogar le pertenece a Dios para siempre!`, tone: 'Gratitud desbordante abrazando con fuerza', voice: prot.voicePreset },
+          { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Valió cada lágrima de rodillas! ¡La fidelidad de Dios nunca nos falló!`, tone: 'Llanto de triunfo y amor fraternal', voice: supp.voicePreset },
+          { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Mi paz os dejo, mi paz os doy. La bendición que comenzó hoy aquí no tendrá fin.`, tone: 'Bendición paternal soberana', voice: 'Marcus - Deep & Resonant' }
+        ],
+        sfx: 'Abrazo estrecho, ropa de lino frotándose y suspiro de gratitud profunda (-9dB)',
+        sfxList: [
+          { atSecond: '00:00 - 00:03', sound: 'Abrazo apretado y sollozo de gozo (-8dB)', purpose: 'Unidad restaurada' },
+          { atSecond: '00:03 - 00:06', sound: 'Suspiro largo de descanso total (-9dB)', purpose: 'Fin de la angustia' },
+          { atSecond: '00:06 - 00:10', sound: 'Campana de templo solemne sostenida (-8dB)', purpose: 'Sello de bendición eterna' }
+        ],
+        narration: `Donde la prueba intentó destruir una familia, Dios levantó un altar de adoración y testimonio vivo.`,
+        onScreen: 'RESTAURACIÓN TOTAL',
+        label: 'PAZ ETERNA',
+        music: 'Himno instrumental majestuoso con cuerdas y campanas de gloria'
+      },
+      {
+        title: 'Gran Cierre y Bendición Inmortal',
+        action: `Jesús da un paso hacia la cámara en ${env.name} y extiende Sus manos luminosas directamente hacia el espectador. A Su lado, ${prot.name} y ${supp.name} invitan a declarar la misma victoria.`,
+        cameraSetupEn: `Direct-to-camera intimate medium close-up of Jesus extending his hands, warm celestial eyes gazing with infinite compassion, vertical 9:16 cinema.`,
+        turns: [
+          { speaker: 'Maestro Jesús', id: 'jesus_cartoon_3d', role: 'maestro', text: `Lo que hice por este hogar hoy, también lo haré por el tuyo si te atreves a confiar en Mí.`, tone: 'Llamado directo al alma del espectador', voice: 'Marcus - Deep & Resonant' },
+          { speaker: prot.name, id: prot.id, role: 'protagonista', text: `¡Escribe AMÉN con toda tu fe en los comentarios si tú también crees en los milagros de Dios!`, tone: 'Llamado ardiente a declarar la fe', voice: prot.voicePreset },
+          { speaker: supp.name, id: supp.id, role: 'secundario', text: `¡Comparte este video con alguien que necesite hoy recordar que Jesús no llega tarde!`, tone: 'Urgencia de amor y testimonio vivo', voice: supp.voicePreset }
+        ],
+        sfx: 'Campana solemne en 528Hz, oleada suave de bendición (Whoosh dorado) y acorde triunfal final (-6dB)',
+        sfxList: [
+          { atSecond: '00:00 - 00:03', sound: 'Oleada dorada de paz y campana sagrada (-7dB)', purpose: 'Conexión con el espectador' },
+          { atSecond: '00:03 - 00:06', sound: 'Arpa celestial y eco radiante (-8dB)', purpose: 'Llamado a comentar AMÉN' },
+          { atSecond: '00:06 - 00:10', sound: 'Acorde glorioso final sostenido en 432Hz (-7dB)', purpose: 'Cierre inmortal de la miniserie' }
+        ],
+        narration: `El mismo Jesús que abrió caminos en esta historia está listo para obrar en tu vida. Si lo crees de corazón, escribe AMÉN y comparte esta bendición.`,
+        onScreen: 'ESCRIBE "AMÉN" Y COMPARTE',
+        label: 'FIN DE LA SERIE',
+        music: 'Melodía triunfal gloriosa de bendición eterna que se desvanece con suavidad'
+      }
+    ];
   };
 
-  return [scene1, scene2, scene3, scene4, scene5];
+  const sceneSpecs = getSceneSpecsForEpisode();
+
+  return sceneSpecs.map((spec, sIdx) => {
+    const sNum = sIdx + 1;
+    const pacedTurns = calibrateAndPaceDialogue(
+      spec.turns.map(t => ({
+        speakerName: t.speaker,
+        speakerId: t.id,
+        role: t.role,
+        dialogueSpanish: t.text,
+        emotionalTone: t.tone,
+        voicePresetName: t.voice
+      })),
+      10
+    );
+
+    const dialogPromptLines = pacedTurns
+      .map((t: any) => `[${t.timeWindow}] ${t.speakerName} (${t.allocatedSeconds}s): "${t.dialogueSpanish}"`)
+      .join('\n');
+
+    const syncedVideoPrompt = `${envLock}\n${jLock}\n${pLock}\n${sLock}\n[CONTINUOUS 10s SHOT - FLUID SPEECH ~2.0 words/sec]: High-end Pixar 3D animated style inside ${env.shortTag}. ${spec.cameraSetupEn}\nAction: ${spec.action}\nSynchronized Latin American Spanish dialogue:\n${dialogPromptLines}\n${negLock}`;
+
+    const choralNarration = pacedTurns
+      .map((t: any) => `${t.speakerName}: "${t.dialogueSpanish}"`)
+      .join(' | ');
+
+    return {
+      sceneNumber: sNum,
+      durationSec: 10,
+      characterId: sNum === 1 ? prot.id : sNum === 2 ? 'jesus_cartoon_3d' : sNum === 5 && isLast ? 'jesus_cartoon_3d' : prot.id,
+      secondaryCharacterId: sNum === 1 ? supp.id : prot.id,
+      charactersInShot: [prot.id, supp.id, 'jesus_cartoon_3d'],
+      interactionType: sNum === 1 ? 'dos_personajes_frente_a_frente' : sNum === 4 ? 'abrazo_consuelo' : sNum === 5 ? (isLast ? 'reaccion_asombro' : 'confrontacion_redencion') : 'encuentro_con_jesus',
+      timeframe: `00:${String((sNum - 1) * 10).padStart(2, '0')} - 00:${String(sNum * 10).padStart(2, '0')}`,
+      action: spec.action,
+      scenographyDetails: {
+        exactLocation: `Foco principal de ${env.name}.`,
+        narrativeProps: 'Elementos activos que impulsan el dilema y la resolución.',
+        lightingSetup: isFirst ? '2700K sombras alargadas y penumbra' : isLast ? '5500K luz dorada celestial' : '3400K contraluz divino cálido',
+        spatialPlacement: 'Composición cinematográfica vertical 9:16 con profundidad de campo.'
+      },
+      dialogueExchange: pacedTurns,
+      narration: `${spec.narration} [Diálogo: ${choralNarration}]`,
+      onScreenText: spec.onScreen,
+      secondaryLabel: spec.label,
+      imageToVideoPrompt: syncedVideoPrompt,
+      englishPromptWithSpanishDialogue: syncedVideoPrompt,
+      masterNetflixPrompt: `[NETFLIX CONTINUITY - EPISODE ${epNum} SCENE ${sNum}]\n${envLock}\n${jLock}\n${pLock}\n${sLock}\n[ACTION 10s]: ${spec.action}. Divided dialogue: ${pacedTurns.length} turns in 10s.\n${negLock}`,
+      sfx: spec.sfx,
+      sfxTimeline: spec.sfxList,
+      bgMusicMood: spec.music
+    };
+  });
 }
 
 /**
@@ -1880,5 +2146,411 @@ export function getSceneSpeechMetrics(turns: any[], sceneDurationSec: number = 1
         ? `Excelente (${totalWords} palabras para ${sceneDurationSec}s · ${avgWps} pal/s)` 
         : `Aceptable (${totalWords} palabras para ${sceneDurationSec}s)`
   };
+}
+
+/**
+ * Ensures that EVERY 10-second scene has a genuine multi-character dialogue exchange
+ * (at least 2 or 3 distinct characters conversing back-and-forth across the 10 seconds).
+ * Completely eliminates isolated monologues or scenes with only a single speaker.
+ */
+export function ensureMultiCharacterDialogueExchange(
+  scene: any,
+  sceneNumber: number = 1,
+  cast: DynamicCastEnsemble | ProtagonistCast | any,
+  topic: string = '',
+  totalParts: number = 3,
+  epNum: number = 1
+): any[] {
+  const existingTurns = Array.isArray(scene.dialogueExchange) ? scene.dialogueExchange : [];
+  
+  // Extract distinct speaker names/ids
+  const distinctSpeakers = new Set(
+    existingTurns.map((t: any) => (t.speakerName || t.speakerId || '').trim().toLowerCase()).filter(Boolean)
+  );
+
+  // Identify Protagonist, Supporting, and Jesus
+  const protName = cast?.protagonist?.name || 'Protagonista';
+  const protId = cast?.protagonist?.id || 'protagonista_fe';
+  const protVocative = cast?.protagonist?.vocative || 'Hijo mío';
+  const protVoice = cast?.protagonist?.voicePreset || 'David - Confident & Clear';
+
+  const suppName = cast?.supporting?.name || cast?.secondary?.name || 'Compañero de Fe';
+  const suppId = cast?.supporting?.id || cast?.secondary?.id || 'apoyo_fe';
+  const suppVoice = cast?.supporting?.voicePreset || 'Elena - Deeply Emotional & Sincere';
+
+  // If there are already 2 or more distinct characters speaking:
+  if (existingTurns.length >= 2 && distinctSpeakers.size >= 2) {
+    // If only 2 turns exist, ensure Jesus or 3rd character completes the 10s arc if scene calls for it
+    if (existingTurns.length === 2 && !distinctSpeakers.has('jesus_cartoon_3d') && !distinctSpeakers.has('jesús') && !distinctSpeakers.has('jesus')) {
+      const augmentedTurns = [
+        ...existingTurns,
+        {
+          speakerName: 'Maestro Jesús',
+          speakerId: 'jesus_cartoon_3d',
+          role: 'maestro',
+          timeWindow: '00:06 - 00:10',
+          allocatedSeconds: 4,
+          dialogueSpanish: sceneNumber === 5 && epNum === totalParts
+            ? 'Si crees en esta promesa de victoria, escribe AMÉN con fe.'
+            : `${protVocative}, Yo estoy contigo; no temas a la prueba.`,
+          emotionalTone: 'Ternura compasiva infinita y autoridad divina',
+          voicePresetName: 'Marcus - Deep & Resonant'
+        }
+      ];
+      return calibrateAndPaceDialogue(augmentedTurns, scene.durationSec || 10);
+    }
+    return calibrateAndPaceDialogue(existingTurns, scene.durationSec || 10);
+  }
+
+  const isLast = epNum === totalParts && sceneNumber === 5;
+
+  // If there was 1 existing turn, keep its text to enrich rather than discard
+  const firstTurn = existingTurns.length > 0 ? existingTurns[0] : null;
+  const firstSpeakerName = firstTurn?.speakerName || protName;
+  const firstSpeakerId = firstTurn?.speakerId || protId;
+  const firstDialogue = firstTurn?.dialogueSpanish?.trim() || '';
+
+  const clean = (topic || '').toLowerCase();
+  const isReceipt = clean.includes('recibo') || clean.includes('frutera') || clean.includes('mercado') || clean.includes('fruta');
+  const isWisdomProverbs = clean.includes('fíate') || clean.includes('fiate') || clean.includes('jehová') || clean.includes('jehova') || clean.includes('prudencia') || clean.includes('proverbios') || clean.includes('sabiduria') || clean.includes('sabiduría') || clean.includes('senda') || clean.includes('camino') || clean.includes('apoyes');
+  const isFather = clean.includes('padre') && (clean.includes('ausente') || clean.includes('volvió') || clean.includes('3:00') || clean.includes('3 am') || clean.includes('perdón') || clean.includes('perdon'));
+  const isMedical = clean.includes('hospital') || clean.includes('médico') || clean.includes('medico') || clean.includes('doctor') || clean.includes('uci') || clean.includes('enfermedad') || clean.includes('cáncer') || clean.includes('diagnóstico');
+  const isFinances = clean.includes('quiebra') || clean.includes('desalojo') || clean.includes('deuda') || clean.includes('deudas') || clean.includes('banco') || clean.includes('arriendo') || clean.includes('embargo');
+  const isFamilyCarpentry = clean.includes('carpintería') || clean.includes('carpinteria') || clean.includes('carta') || clean.includes('hermanos') || clean.includes('herencia') || clean.includes('taller');
+  const isOrchardDrought = clean.includes('huerto') || clean.includes('sequia') || clean.includes('sequía') || clean.includes('parcela') || clean.includes('tierra');
+  const isFamilyMarriage = clean.includes('matrimonio') || clean.includes('esposos') || clean.includes('pareja') || clean.includes('divorcio') || clean.includes('reconciliacion');
+  const isAnxiety = clean.includes('ansiedad') || clean.includes('pánico') || clean.includes('panico') || clean.includes('insomnio') || clean.includes('temor') || clean.includes('miedo');
+  const isStorm = clean.includes('barca') || clean.includes('mar') || clean.includes('tormenta') || clean.includes('tempestad') || clean.includes('olas');
+
+  let turns: any[] = [];
+
+  switch (sceneNumber) {
+    case 1: {
+      const pText = firstDialogue || (isFather 
+        ? '¡Son las 3:00 AM y escucho los pasos de mi padre en la puerta!' 
+        : isReceipt 
+          ? '¡Este recibo tiene la firma de mi padre con fecha de hoy!'
+          : isWisdomProverbs
+            ? '¡Confié en mi propia lógica y todo mi proyecto colapsó!'
+            : isMedical
+              ? '¡A las 3:00 AM los monitores cayeron y no responden!'
+              : isFinances
+                ? '¡Llegó la orden final de desalojo y perderemos la casa!'
+                : isFamilyCarpentry
+                  ? '¡Si abrimos esta carta de mamá, saldrá toda la verdad!'
+                  : isOrchardDrought
+                    ? '¡La sequía secó todo el valle y quieren quitarnos la tierra!'
+                    : isFamilyMarriage
+                      ? '¡El orgullo y los silencios destrozaron nuestro hogar!'
+                      : isAnxiety
+                        ? '¡Son las 3:00 AM y este pánico me ahoga el pecho!'
+                        : isStorm
+                          ? '¡Las olas nos cubren y la barca se parte en dos!'
+                          : '¡Si Dios no interviene hoy, perderemos todo en esta prueba!');
+
+      const sText = isFather
+        ? '¡Hijo, abre con amor; Dios escuchó cada noche de lágrimas!'
+        : isReceipt
+          ? '¡Elena, tu padre desapareció hace siete años en este puesto!'
+          : isWisdomProverbs
+            ? '¡Suelta el timón humano; el Arquitecto eterno está aquí!'
+            : isMedical
+              ? '¡No desconecten nada; la presencia de Jesús acaba de entrar!'
+              : isFinances
+                ? '¡No empaques las maletas; el Dueño de todo está aquí!'
+                : isFamilyCarpentry
+                  ? '¡Espera, hermano; el rencor no puede destruir este taller!'
+                  : isOrchardDrought
+                    ? '¡No vendas nada; mira el brote verde que nació con el alba!'
+                    : isFamilyMarriage
+                      ? '¡No rompas el pacto; el Príncipe de Paz acaba de entrar!'
+                      : isAnxiety
+                        ? '¡Mira hacia la luz divina; el temor tiene que huir ahora!'
+                        : isStorm
+                          ? '¡Despierta tu fe; el Señor camina sobre las aguas!'
+                          : '¡Mira hacia el umbral; la gloriosa presencia de Jesús acaba de entrar!';
+
+      const jText = isFather
+        ? 'Hijo mío, para el corazón contrito hoy nace un nuevo día de gracia.'
+        : isWisdomProverbs
+          ? 'Fíate de Mí de todo corazón; Yo enderezaré tus sendas.'
+          : `${protVocative}, he escuchado tu clamor sincero; Yo abro camino hoy.`;
+
+      turns = [
+        {
+          speakerName: firstSpeakerName.toLowerCase().includes('jesús') ? protName : firstSpeakerName,
+          speakerId: firstSpeakerId.includes('jesus') ? protId : firstSpeakerId,
+          role: 'protagonista',
+          timeWindow: '00:00 - 00:03',
+          allocatedSeconds: 3,
+          dialogueSpanish: pText,
+          emotionalTone: 'Clamor desgarrador con fe naciente',
+          voicePresetName: protVoice
+        },
+        {
+          speakerName: suppName,
+          speakerId: suppId,
+          role: 'secundario',
+          timeWindow: '00:03 - 00:06',
+          allocatedSeconds: 3,
+          dialogueSpanish: sText,
+          emotionalTone: 'Asombro reverente y apoyo incondicional',
+          voicePresetName: suppVoice
+        },
+        {
+          speakerName: 'Maestro Jesús',
+          speakerId: 'jesus_cartoon_3d',
+          role: 'maestro',
+          timeWindow: '00:06 - 00:10',
+          allocatedSeconds: 4,
+          dialogueSpanish: jText,
+          emotionalTone: 'Ternura compasiva infinita y autoridad divina',
+          voicePresetName: 'Marcus - Deep & Resonant'
+        }
+      ];
+      break;
+    }
+
+    case 2: {
+      // Scene 2: Urgent Dispute / Confronting the human dilemma
+      const pText = epNum === 1
+        ? (firstDialogue || '¡Intenté hacer todo con mi propia lógica y ahora todo se viene abajo!')
+        : epNum === 2
+        ? (firstDialogue || '¡Si ellos descubren lo que pasó con los papeles, perderemos todo!')
+        : (firstDialogue || '¡Faltan minutos para la hora señalada y las fuerzas se me terminaron!');
+
+      const sText = epNum === 1
+        ? '¡Basta de lamentarte! Si nos quedamos congelados por el miedo, no habrá salida.'
+        : epNum === 2
+        ? '¡No podemos seguir ocultando la verdad! Hay que encarar la situación con valentía.'
+        : '¡Mírame a los ojos! Dios no nos trajo hasta este desierto para dejarnos morir.';
+
+      const jText = epNum === 1
+        ? '¿Confías en que puedo enderezar tus veredas si sueltas tu propia prudencia?'
+        : epNum === 2
+        ? 'La verdad nunca destruye a quien la abraza; sed sinceros y Yo pelearé por vosotros.'
+        : 'No temáis a la tormenta de los hombres; vuestra fe ha sido probada como oro fino.';
+
+      turns = [
+        {
+          speakerName: protName,
+          speakerId: protId,
+          role: 'protagonista',
+          timeWindow: '00:00 - 00:03',
+          allocatedSeconds: 3,
+          dialogueSpanish: pText,
+          emotionalTone: 'Desesperación humana visceral y angustia sincera',
+          voicePresetName: protVoice
+        },
+        {
+          speakerName: suppName,
+          speakerId: suppId,
+          role: 'secundario',
+          timeWindow: '00:03 - 00:06',
+          allocatedSeconds: 3,
+          dialogueSpanish: sText,
+          emotionalTone: 'Firmeza de apoyo y confrontación compasiva',
+          voicePresetName: suppVoice
+        },
+        {
+          speakerName: 'Maestro Jesús',
+          speakerId: 'jesus_cartoon_3d',
+          role: 'maestro',
+          timeWindow: '00:06 - 00:10',
+          allocatedSeconds: 4,
+          dialogueSpanish: jText,
+          emotionalTone: 'Sabiduría penetrante, calidez íntima y autoridad celestial',
+          voicePresetName: 'Marcus - Deep & Resonant'
+        }
+      ];
+      break;
+    }
+
+    case 3: {
+      // Scene 3: The Point of Vulnerability / Breaking the Inner Resistance
+      const pText = epNum === 1
+        ? (firstDialogue || '¡Reconozco que me equivoqué! Pensé que podía resolverlo sin pedir ayuda.')
+        : epNum === 2
+        ? (firstDialogue || '¡Me cuesta perdonar tantos años de desprecio y traición!')
+        : (firstDialogue || '¡Pongo mi vida y mi familia en Tus manos, Señor!');
+
+      const sText = epNum === 1
+        ? 'Todos nos equivocamos, pero Dios mira un corazón humilde que se levanta.'
+        : epNum === 2
+        ? 'Si Dios nos perdonó nuestras deudas, nosotros no podemos cerrar la puerta.'
+        : '¡Miren la paz que desciende sobre este aposento! ¡La angustia se disipa!';
+
+      const jText = epNum === 1
+        ? 'Tu impotencia reconocida es el inicio de mi sabiduría en tu vida.'
+        : epNum === 2
+        ? 'El rencor ata tu propio destino; perdona y tus cadenas se romperán hoy.'
+        : 'Vuestra entrega ha tocado el corazón del Padre; contemplad lo que voy a hacer.';
+
+      turns = [
+        {
+          speakerName: protName,
+          speakerId: protId,
+          role: 'protagonista',
+          timeWindow: '00:00 - 00:03',
+          allocatedSeconds: 3,
+          dialogueSpanish: pText,
+          emotionalTone: 'Quebranto honesto, lágrimas sinceras y rendición',
+          voicePresetName: protVoice
+        },
+        {
+          speakerName: suppName,
+          speakerId: suppId,
+          role: 'secundario',
+          timeWindow: '00:03 - 00:06',
+          allocatedSeconds: 3,
+          dialogueSpanish: sText,
+          emotionalTone: 'Súplica amorosa y abrazo fraternal reconfortante',
+          voicePresetName: suppVoice
+        },
+        {
+          speakerName: 'Maestro Jesús',
+          speakerId: 'jesus_cartoon_3d',
+          role: 'maestro',
+          timeWindow: '00:06 - 00:10',
+          allocatedSeconds: 4,
+          dialogueSpanish: jText,
+          emotionalTone: 'Ternura santa infinita y promesa viva de gracia',
+          voicePresetName: 'Marcus - Deep & Resonant'
+        }
+      ];
+      break;
+    }
+
+    case 4: {
+      // Scene 4: The Revelation / Concrete Action of Faith
+      const sText = epNum === 1
+        ? '¡Mira la mesa! ¡Apareció un sello y una nota que no habíamos visto!'
+        : epNum === 2
+        ? '¡Están tocando a la puerta pero no vienen con armas, vienen pidiendo paz!'
+        : '¡El diagnóstico cambió y los documentos fueron firmados a nuestro favor!';
+
+      const pText = epNum === 1
+        ? (firstDialogue || '¡Es una salida que nadie en este mundo hubiera imaginado!')
+        : epNum === 2
+        ? (firstDialogue || '¡Siento cómo el veneno del resentimiento abandona mi pecho!')
+        : (firstDialogue || '¡Lo que para los hombres era imposible, Dios lo hizo real aquí!');
+
+      const jText = epNum === 1
+        ? 'Donde el hombre dice no hay camino, Yo abro sendas en medio del desierto.'
+        : epNum === 2
+        ? 'La paz que os doy no es como el mundo la da; permaneced en mi amor.'
+        : 'El que confía en Mí jamás quedará avergonzado; caminad en victoria.';
+
+      turns = [
+        {
+          speakerName: suppName,
+          speakerId: suppId,
+          role: 'secundario',
+          timeWindow: '00:00 - 00:03',
+          allocatedSeconds: 3,
+          dialogueSpanish: sText,
+          emotionalTone: 'Asombro esperanzador señalando el giro narrativo',
+          voicePresetName: suppVoice
+        },
+        {
+          speakerName: protName,
+          speakerId: protId,
+          role: 'protagonista',
+          timeWindow: '00:03 - 00:06',
+          allocatedSeconds: 3,
+          dialogueSpanish: pText,
+          emotionalTone: 'Respiro hondo de liberación y lágrimas de gratitud',
+          voicePresetName: protVoice
+        },
+        {
+          speakerName: 'Maestro Jesús',
+          speakerId: 'jesus_cartoon_3d',
+          role: 'maestro',
+          timeWindow: '00:06 - 00:10',
+          allocatedSeconds: 4,
+          dialogueSpanish: jText,
+          emotionalTone: 'Victoria solemne y bendición reconfortante',
+          voicePresetName: 'Marcus - Deep & Resonant'
+        }
+      ];
+      break;
+    }
+
+    case 5:
+    default: {
+      if (isLast) {
+        // Grand Final Scene of the entire series: Reconciliation, Call to Action
+        turns = [
+          {
+            speakerName: protName,
+            speakerId: protId,
+            role: 'protagonista',
+            timeWindow: '00:00 - 00:03',
+            allocatedSeconds: 3,
+            dialogueSpanish: firstDialogue || '¡Hoy aprendí a no apoyarme en mi propia prudencia jamás!',
+            emotionalTone: 'Testimonio firme y gozo transformado',
+            voicePresetName: protVoice
+          },
+          {
+            speakerName: suppName,
+            speakerId: suppId,
+            role: 'secundario',
+            timeWindow: '00:03 - 00:06',
+            allocatedSeconds: 3,
+            dialogueSpanish: '¡Si esta historia tocó tu vida, no te quedes callado!',
+            emotionalTone: 'Llamado cálido a la comunidad con una sonrisa',
+            voicePresetName: suppVoice
+          },
+          {
+            speakerName: 'Maestro Jesús',
+            speakerId: 'jesus_cartoon_3d',
+            role: 'maestro',
+            timeWindow: '00:06 - 00:10',
+            allocatedSeconds: 4,
+            dialogueSpanish: 'Escribe AMÉN si crees que Dios transforma tu desierto en victoria.',
+            emotionalTone: 'Mirada directa compasiva y llamado memorable',
+            voicePresetName: 'Marcus - Deep & Resonant'
+          }
+        ];
+      } else {
+        // High Retention Cliffhanger between episodes
+        turns = [
+          {
+            speakerName: protName,
+            speakerId: protId,
+            role: 'protagonista',
+            timeWindow: '00:00 - 00:03',
+            allocatedSeconds: 3,
+            dialogueSpanish: firstDialogue || '¡Alguien golpea con fuerza la puerta en plena medianoche!',
+            emotionalTone: 'Sobresalto súbito mirando hacia la entrada',
+            voicePresetName: protVoice
+          },
+          {
+            speakerName: suppName,
+            speakerId: suppId,
+            role: 'secundario',
+            timeWindow: '00:03 - 00:06',
+            allocatedSeconds: 3,
+            dialogueSpanish: '¡No abras todavía! No sabemos quién está del otro lado.',
+            emotionalTone: 'Alerta extrema interponiéndose con cautela',
+            voicePresetName: suppVoice
+          },
+          {
+            speakerName: 'Maestro Jesús',
+            speakerId: 'jesus_cartoon_3d',
+            role: 'maestro',
+            timeWindow: '00:06 - 00:10',
+            allocatedSeconds: 4,
+            dialogueSpanish: `No temas a quien viene; tu mayor prueba te espera en la PARTE ${epNum + 1}.`,
+            emotionalTone: 'Misterio sagrado y gancho electrizante',
+            voicePresetName: 'Marcus - Deep & Resonant'
+          }
+        ];
+      }
+      break;
+    }
+  }
+
+  return calibrateAndPaceDialogue(turns, scene.durationSec || 10);
 }
 
