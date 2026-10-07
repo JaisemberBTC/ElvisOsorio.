@@ -46,10 +46,9 @@ import confetti from 'canvas-confetti';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport';
 import { nicheMelodyEngine, NICHE_MELODIES } from '../utils/nicheMelodyEngine';
 import { syncScenePromptWithExactDialogue, buildCanonicalDialogueBlock } from '../utils/dialoguePromptSync';
-import { executeProductionSkill, MINISERIES_SKILL_MANIFEST } from '../skills/miniseriesProductionSkill';
-import { countWordsSpanish, calibrateAndPaceDialogue, ensureMultiCharacterDialogueExchange, MAX_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
+import { buildFlowPrompt } from '../utils/flowPromptBuilder';
+import { countWordsSpanish, calibrateAndPaceDialogue, MAX_WORDS_PER_SECOND, MIN_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
 import {
-  VERTICAL_MICROFICTION_SKILLS,
   SKILL_PRODUCTION_ARCHITECTURE,
   SKILL_MICROFICTION_SCRIPT_ENGINE,
   SKILL_FAST_PROMPT_TEMPLATE,
@@ -69,6 +68,18 @@ import {
   ScenographyDirection
 } from '../data/cartoonCharactersFe';
 
+const GENERATED_SERIES_STORAGE_KEY = 'feflow-generated-miniseries-v1';
+
+function loadGeneratedSeries(): MiniserieTemplate[] {
+  try {
+    if (typeof window === 'undefined') return [];
+    const saved = JSON.parse(window.localStorage.getItem(GENERATED_SERIES_STORAGE_KEY) || '[]');
+    return Array.isArray(saved) ? saved.filter((series) => series?.id?.startsWith('feflow_') && Array.isArray(series.episodes)).slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
 interface MiniseriesFeFlowStudioProps {
   onSendToVideoStudio?: (videoPackage: any) => void;
   onNavigateToSpiritualCreator?: () => void;
@@ -79,8 +90,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   onNavigateToSpiritualCreator
 }) => {
   // Master Series List (Allows adding dynamically generated series)
-  const [seriesList, setSeriesList] = useState<MiniserieTemplate[]>(MINISERIES_TEMPLATES_FE);
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string>(MINISERIES_TEMPLATES_FE[0].id);
+  const [seriesList, setSeriesList] = useState<MiniserieTemplate[]>(() => [...loadGeneratedSeries(), ...MINISERIES_TEMPLATES_FE]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>(() => loadGeneratedSeries()[0]?.id || MINISERIES_TEMPLATES_FE[0].id);
   const [selectedEpisodeIdx, setSelectedEpisodeIdx] = useState<number>(0);
 
   // View Mode: Edit single episode OR View & Deliver the ENTIRE series with all chapters divided
@@ -104,6 +115,15 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     setIsPlaying(false);
   }, [selectedSeriesId, selectedEpisodeIdx, seriesList]);
 
+  useEffect(() => {
+    try {
+      const generated = seriesList.filter((series) => series.id?.startsWith('feflow_') && series.seriesBible?.seriesId).slice(0, 5);
+      window.localStorage.setItem(GENERATED_SERIES_STORAGE_KEY, JSON.stringify(generated));
+    } catch (error) {
+      console.warn('No se pudo guardar el estado local de FeFlow.', error);
+    }
+  }, [seriesList]);
+
   // Word Document (.docx) Export State
   const [isExportingWord, setIsExportingWord] = useState<boolean>(false);
 
@@ -111,21 +131,22 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const [selectedCharacterForModal, setSelectedCharacterForModal] = useState<CartoonCharacter | null>(null);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [selectedAiEngine, setSelectedAiEngine] = useState<'kling' | 'runway' | 'luma' | 'sora'>('kling');
+  const [selectedAiEngine, setSelectedAiEngine] = useState<'flow' | 'kling' | 'runway' | 'luma' | 'sora'>('flow');
 
   // AI Generator Form State (Impulsado por Prompts 1, 2 y 3 del documento)
   const [aiTopicInput, setAiTopicInput] = useState<string>('El perdón del padre ausente que volvió a las 3:00 AM');
   const [aiCategoryInput, setAiCategoryInput] = useState<any>('milagro_familiar');
   const [aiToneInput, setAiToneInput] = useState<string>('melodrama + misterio + fe profunda');
   const [aiTotalParts, setAiTotalParts] = useState<number>(3);
-  const [aiDurationSec, setAiDurationSec] = useState<number>(70);
+  const [aiBibleReference, setAiBibleReference] = useState<string>('');
   const [aiCustomCharacters, setAiCustomCharacters] = useState<string>('');
   const [aiAudiencePlatform, setAiAudiencePlatform] = useState<'TikTok' | 'Instagram Reels' | 'YouTube Shorts' | 'Universal 9:16'>('Universal 9:16');
-  const [aiCallToAction, setAiCallToAction] = useState<string>('Escribe AMÉN si crees que Dios hace milagros imposibles');
+  const [aiCallToAction, setAiCallToAction] = useState<string>('¿Qué paso pequeño te devuelve la esperanza?');
   const [aiNoInclude, setAiNoInclude] = useState<string>('violencia gráfica, armas, lenguaje vulgar, cambios de ropa');
   const [aiEnvironmentInput, setAiEnvironmentInput] = useState<string>('auto');
   const [expandedNetflixPromptSceneIdx, setExpandedNetflixPromptSceneIdx] = useState<number | null>(null);
   const [isGeneratingSeries, setIsGeneratingSeries] = useState<boolean>(false);
+  const [agentProviderUsed, setAgentProviderUsed] = useState<string>('');
 
   // AI Skills for Miniseries state (Documento Maestro: Prompts 1, 2, 3)
   const [isSkillsPanelExpanded, setIsSkillsPanelExpanded] = useState<boolean>(true);
@@ -231,8 +252,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     setAiCustomCharacters(preset.characters);
     setAiNoInclude(preset.noInclude);
     setAiTotalParts(3);
-    setAiDurationSec(70);
-    setAiCallToAction("Comenta qué harías si recibes ese recibo y escribe AMÉN");
+    setAiCallToAction("¿Qué paso pequeño te devuelve la esperanza?");
     showNotification("🧪 ¡Prueba sugerida del documento cargada! (Elena y el recibo del futuro)");
   };
 
@@ -254,24 +274,26 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
   const formatPromptForEngine = (
     promptText: string,
-    engine: 'kling' | 'runway' | 'luma' | 'sora',
+    engine: 'flow' | 'kling' | 'runway' | 'luma' | 'sora',
     duration: number = 10,
     dialogueExchange?: DialogueTurn[]
   ) => {
     // Strictly synchronize dialogue verbatim so AI video generators receive the exact spoken lines
-    const baseWithDialogue = dialogueExchange && dialogueExchange.length > 0
-      ? syncScenePromptWithExactDialogue(promptText, dialogueExchange, duration)
+    const baseWithDialogue = engine !== 'flow' && dialogueExchange && dialogueExchange.length > 0
+      ? syncScenePromptWithExactDialogue(promptText, dialogueExchange)
       : promptText;
 
     switch (engine) {
+      case 'flow':
+        return promptText;
       case 'kling':
         return `${baseWithDialogue} --duration ${duration}s --mode professional --cfg_scale 0.5`;
       case 'runway':
         return `${baseWithDialogue} [Runway Gen-3: ${duration}-second continuous shot, steady cinematic camera push-in, expressive facial animation calibrated for Spanish audio]`;
       case 'luma':
-        return `${baseWithDialogue} [Luma Dream Machine: ${duration}s shot, continuous character motion, no cuts, photorealistic 3D cartoon, Spanish lip sync]`;
+        return `${baseWithDialogue} [Luma: ${duration}s live-action photorealistic shot, continuous character motion, no cuts, Spanish lip sync]`;
       case 'sora':
-        return `${baseWithDialogue} [Sora / Veo 2: ${duration}s vertical 9:16 cinematic continuous sequence, 24fps, Octane lighting, Latin American Spanish voice synchronization]`;
+        return `${baseWithDialogue} [Sora / Veo: ${duration}s vertical 9:16 cinematic continuous sequence, 24fps, natural cinematic lighting, Latin American Spanish voice synchronization]`;
       default:
         return baseWithDialogue;
     }
@@ -289,12 +311,12 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
         dialogueSpanish: newDialogueSpanish
       };
 
-      // Calibrate speech distribution in 10s (max 2.2 words/sec)
+      // Mantener una voz casi continua durante la ventana asignada, sin exceder 2.2 palabras/s.
       dialogueExchange = calibrateAndPaceDialogue(dialogueExchange, scenes[sceneIdx].durationSec || 10);
 
       // Automatically re-synchronize the prompts with the updated dialogue
       const baseVisual = scenes[sceneIdx].englishPromptWithSpanishDialogue || scenes[sceneIdx].imageToVideoPrompt || '';
-      const synced = syncScenePromptWithExactDialogue(baseVisual, dialogueExchange, scenes[sceneIdx].durationSec || 10);
+      const synced = syncScenePromptWithExactDialogue(baseVisual, dialogueExchange);
 
       scenes[sceneIdx] = {
         ...scenes[sceneIdx],
@@ -397,8 +419,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
       if (activeScene.dialogueExchange && activeScene.dialogueExchange.length > 0) {
         activeScene.dialogueExchange.forEach(turn => {
-          const char = CARTOON_CHARACTERS_FE.find(c => c.id === turn.speakerId)
-            || ((turn.speakerName || '').toLowerCase().includes('jesús') ? CARTOON_CHARACTERS_FE[0] : null);
+          const char = getAvailableCharacter(turn.speakerId);
           const utterance = new SpeechSynthesisUtterance(`${turn.speakerName}: ${turn.dialogueSpanish}`);
           utterance.lang = 'es-MX';
           utterance.pitch = char?.voiceProfile?.pitchFactor || (turn.speakerId === 'jesus_cartoon_3d' ? 0.88 : 1.0);
@@ -480,8 +501,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
       musicMood: "Suspenso Dramático y Esperanza Sacra 432 Hz",
       banner_hook_superior: currentSeries.bannerHook,
       scenes: scenes.map((sc, idx) => {
-        const char = CARTOON_CHARACTERS_FE.find(c => c.id === sc.characterId) || CARTOON_CHARACTERS_FE[0];
-        const secondaryChar = sc.secondaryCharacterId ? CARTOON_CHARACTERS_FE.find(c => c.id === sc.secondaryCharacterId) : undefined;
+        const char = getAvailableCharacter(sc.characterId);
+        const secondaryChar = sc.secondaryCharacterId ? getAvailableCharacter(sc.secondaryCharacterId) : undefined;
         
         const visualDescription = secondaryChar 
           ? `Interacción 2 Personajes: ${char.name} y ${secondaryChar.name}. ${sc.action}`
@@ -563,211 +584,81 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     }
   };
 
-  // Generate a COMPLETE miniseries connected to Gemini AI and themed specifically with Jesus as active character
+  // Genera y valida una miniserie completa con el agente de código abierto.
   const handleGenerateCompleteSeries = async () => {
     if (!aiTopicInput.trim()) return;
     setIsGeneratingSeries(true);
-    showNotification(`✨ Conectando con IA para generar la serie completa: "${(aiTopicInput || '').slice(0, 35)}..." con Jesús de Nazaret como protagonista`);
+    showNotification(`Creando ${aiTotalParts} capítulos de 50 segundos con prompts listos para Flow…`);
 
     try {
-      let generatedTemplate: MiniserieTemplate | null = null;
-
-      try {
-        // 1. Try real server-side Gemini generation with Vertical Microfiction Skills (Prompts 1, 2, 3)
-        const res = await fetch('/api/gemini/generate-miniseries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic: aiTopicInput.trim(),
-            totalParts: aiTotalParts,
-            category: aiCategoryInput,
-            lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined,
-            customCharacters: aiCustomCharacters.trim() || undefined,
-            audiencePlatform: aiAudiencePlatform,
-            tone: aiToneInput.trim() || undefined,
-            durationSec: aiDurationSec,
-            callToAction: aiCallToAction.trim() || undefined,
-            noInclude: aiNoInclude.trim() || undefined
-          })
-        });
-
-        const contentType = res.headers.get('content-type') || '';
-        if (res.ok && contentType.includes('application/json')) {
-          const data = await res.json();
-          if (data.success && data.miniseries) {
-            generatedTemplate = data.miniseries;
-          }
-        } else if (contentType.includes('application/json')) {
-          const errData = await res.json().catch(() => null);
-          console.warn("[Miniseries API non-200 JSON]:", errData);
-        }
-      } catch (fetchErr) {
-        console.warn("[Miniseries API network/parsing fallback]:", fetchErr);
-      }
-
-      // 2. If server couldn't connect or returned empty, execute open-source production skill
-      if (!generatedTemplate) {
-        generatedTemplate = executeProductionSkill({
+      const response = await fetch('/api/agent/generate-miniseries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           topic: aiTopicInput.trim(),
           totalParts: aiTotalParts,
           category: aiCategoryInput,
-          lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined
-        }) as unknown as MiniserieTemplate;
+          bibleReference: aiBibleReference.trim() || undefined,
+          lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined,
+          customCharacters: aiCustomCharacters.trim() || undefined,
+          audiencePlatform: aiAudiencePlatform,
+          tone: aiToneInput.trim() || undefined,
+          callToAction: aiCallToAction.trim() || undefined,
+          noInclude: aiNoInclude.trim() || undefined
+        })
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success || !result?.miniseries) {
+        throw new Error(result?.error || 'El servidor no devolvió una miniserie válida.');
       }
 
-      if (generatedTemplate) {
-        // Enforce Netflix-continuity post-processing for all episodes and scenes
-        const envId = generatedTemplate.lockedEnvironmentId;
-        const matchedStaticEnv = envId ? SERIES_ENVIRONMENTS_FE.find(e => e.id === envId) : undefined;
-        const matchedEnv = matchedStaticEnv || {
-          id: generatedTemplate.lockedEnvironmentId || 'aposento_fe_916',
-          name: generatedTemplate.lockedEnvironmentName || 'Aposento Sagrado de Clamor',
-          shortTag: (generatedTemplate as any).lockedEnvironmentShortTag || generatedTemplate.lockedEnvironmentName?.replace(/[^\w]/g, '_').toUpperCase().slice(0, 16) || 'APOSENTO_FE_916',
-          architecturePromptEn: generatedTemplate.lockedEnvironmentPromptEn || 'Atmospheric 3D Pixar sacred setting with warm timber and arch window.',
-          lightingSetup: 'Warm divine lighting 3400K evolving to 5000K golden celestial glory.',
-          propsAndAtmosphere: 'Sacred Scriptures, clay pottery, ambient golden dust motes.',
-          negativePromptEn: 'no hospital machines, no modern clutter, no change of character clothing, no extra limbs'
-        };
-        const jesusChar = CARTOON_CHARACTERS_FE.find(c => c.id === 'jesus_cartoon_3d')!;
-        const castChars = (generatedTemplate.characters && generatedTemplate.characters.length > 0)
-          ? generatedTemplate.characters.filter(c => c.id !== 'jesus_cartoon_3d')
-          : CARTOON_CHARACTERS_FE.filter(c => generatedTemplate.primaryCharacterIds.includes(c.id) && c.id !== 'jesus_cartoon_3d');
-        const secondaryChar = castChars[0] || CARTOON_CHARACTERS_FE[3];
-
-        const envLockTag = `[LOCKED ENVIRONMENT - ${matchedEnv.shortTag.toUpperCase()}]: ${matchedEnv.architecturePromptEn} Lighting: ${matchedEnv.lightingSetup}. Props: ${matchedEnv.propsAndAtmosphere}. EXACT SAME ROOM AND PROPS IN ALL SCENES.`;
-        const charJesusLock = `[LOCKED CHARACTER - JESUS]: ${jesusChar.exactModelSheetLockEn}`;
-        const allCharLocks = [
-          charJesusLock,
-          ...castChars.map(c => `[LOCKED CHARACTER - ${c.name.toUpperCase()}]: ${c.exactModelSheetLockEn || c.fixedIdentityPromptEn}`)
-        ].join('\n');
-        const negativeLock = `[NEGATIVE CONTINUITY PROMPT: ${matchedEnv.negativePromptEn}, no changes in character clothing, no change of hairstyle, no facial morphing, no extra limbs, no camera jump cuts]`;
-
-        generatedTemplate.lockedEnvironmentId = matchedEnv.id;
-        generatedTemplate.lockedEnvironmentName = matchedEnv.name;
-        generatedTemplate.lockedEnvironmentPromptEn = matchedEnv.architecturePromptEn;
-
-        generatedTemplate.episodes.forEach(ep => {
-          ep.lockedEnvironmentId = ep.lockedEnvironmentId || matchedEnv.id;
-          ep.lockedEnvironmentName = ep.lockedEnvironmentName || matchedEnv.name;
-          ep.lockedEnvironmentPromptEn = ep.lockedEnvironmentPromptEn || matchedEnv.architecturePromptEn;
-
-          ep.scenes.forEach(sc => {
-            sc.lockedEnvironmentId = sc.lockedEnvironmentId || matchedEnv.id;
-            sc.lockedEnvironmentName = sc.lockedEnvironmentName || matchedEnv.name;
-            sc.lockedEnvironmentPromptEn = sc.lockedEnvironmentPromptEn || matchedEnv.architecturePromptEn;
-
-            sc.sfx = sc.sfx || 'Respiración contenida, suave brisa celestial (-10dB)';
-            sc.bgMusicMood = sc.bgMusicMood || 'Piano en 432Hz con cuerdas suaves de esperanza (-18dB)';
-            sc.action = sc.action || '';
-            sc.narration = sc.narration || '';
-            sc.onScreenText = sc.onScreenText || 'DIOS DE MILAGROS';
-            sc.secondaryLabel = sc.secondaryLabel || 'MINISERIE DE FE';
-            sc.charactersInShot = sc.charactersInShot || ['jesus_cartoon_3d'];
-            sc.timeframe = sc.timeframe || '00:00 - 00:10';
-            sc.englishPromptWithSpanishDialogue = sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt || '';
-            sc.imageToVideoPrompt = sc.imageToVideoPrompt || sc.englishPromptWithSpanishDialogue || '';
-
-            if (!sc.masterNetflixPrompt) {
-              sc.masterNetflixPrompt = `${envLockTag}\n${allCharLocks}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
-            }
-            if (!sc.englishPromptWithSpanishDialogue.includes('LOCKED ENVIRONMENT')) {
-              sc.englishPromptWithSpanishDialogue = `${envLockTag}\n${allCharLocks}\n${sc.englishPromptWithSpanishDialogue}\n${negativeLock}`;
-            }
-            if (!sc.imageToVideoPrompt.includes('LOCKED ENVIRONMENT')) {
-              sc.imageToVideoPrompt = `${envLockTag}\n${allCharLocks}\n${sc.imageToVideoPrompt}\n${negativeLock}`;
-            }
-
-            // Strictly ensure multi-character dialogue exchange across all 10 seconds of the scene
-            const isFem = (secondaryChar as any).gender === 'female' || secondaryChar.voiceProfile?.gender === 'femenino';
-            const castForEnrichment = {
-              protagonist: {
-                id: secondaryChar.id,
-                name: secondaryChar.name,
-                gender: (isFem ? 'female' : 'male') as ('female' | 'male'),
-                archetype: secondaryChar.archetype,
-                vocative: isFem ? 'Hija mía' : 'Hijo mío',
-                pronoun: isFem ? 'ella' : 'él',
-                posture: 'en actitud de clamor',
-                modelSheetLockEn: secondaryChar.exactModelSheetLockEn,
-                voicePreset: secondaryChar.voiceProfile?.elevenLabsPreset || 'David - Confident & Clear'
-              },
-              supporting: {
-                id: castChars[1]?.id || CARTOON_CHARACTERS_FE[1].id,
-                name: castChars[1]?.name || CARTOON_CHARACTERS_FE[1].name,
-                gender: ((castChars[1] as any)?.gender === 'male' || castChars[1]?.voiceProfile?.gender === 'masculino' ? 'male' : 'female') as ('female' | 'male'),
-                role: castChars[1]?.role || 'Apoyo de fe',
-                modelSheetLockEn: castChars[1]?.exactModelSheetLockEn || CARTOON_CHARACTERS_FE[1].exactModelSheetLockEn,
-                voicePreset: castChars[1]?.voiceProfile?.elevenLabsPreset || 'Elena - Deeply Emotional & Sincere'
-              }
-            };
-
-            sc.dialogueExchange = ensureMultiCharacterDialogueExchange(
-              sc,
-              sc.sceneNumber || 1,
-              castForEnrichment,
-              aiTopicInput,
-              generatedTemplate.totalPartsPlanned || 3,
-              ep.episodeNumber || 1
-            );
-
-            // Update charactersInShot to reflect all active dialogue speakers
-            const activeSpeakerIds = (sc.dialogueExchange || []).map((d: any) => d.speakerId).filter(Boolean);
-            sc.charactersInShot = Array.from(new Set([...(sc.charactersInShot || []), ...activeSpeakerIds]));
-
-            if (sc.dialogueExchange) {
-              sc.dialogueExchange.forEach(d => {
-                if (!d.voicePresetName) {
-                  const sName = (d.speakerName || '').toLowerCase();
-                  if (d.speakerId === 'jesus_cartoon_3d' || sName.includes('jesús') || sName.includes('jesus')) {
-                    d.voicePresetName = jesusChar.voiceProfile.elevenLabsPreset;
-                  } else {
-                    d.voicePresetName = secondaryChar.voiceProfile.elevenLabsPreset;
-                  }
-                }
-              });
-
-              // Strictly synchronize prompts with the exact multi-character dialogueExchange
-              const synchronized = syncScenePromptWithExactDialogue(
-                sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt || '',
-                sc.dialogueExchange,
-                sc.durationSec || 10
-              );
-              sc.englishPromptWithSpanishDialogue = synchronized;
-              sc.imageToVideoPrompt = synchronized;
-              sc.masterNetflixPrompt = synchronized;
-            }
-          });
-
-          // Ensure Quality Control Checklist is attached to each episode
-          (ep as any).qualityChecklist = buildQualityChecklist(ep.scenes, ep.hook, ep.cliffhanger, aiDurationSec);
+      const generatedTemplate = result.miniseries as MiniserieTemplate;
+      if (!Array.isArray(generatedTemplate.episodes) || generatedTemplate.episodes.length !== aiTotalParts) {
+        throw new Error(`Se esperaban ${aiTotalParts} capítulos; la respuesta no conserva la secuencia solicitada.`);
+      }
+      generatedTemplate.episodes.forEach((episode) => {
+        if (!Array.isArray(episode.scenes) || episode.scenes.length !== 5) {
+          throw new Error(`${episode.episodeTitle}: deben existir exactamente cinco segmentos.`);
+        }
+        episode.scenes = episode.scenes.map((scene, index) => {
+          if (!Array.isArray(scene.dialogueExchange) || scene.dialogueExchange.length < 2) {
+            throw new Error(`${episode.episodeTitle}, segmento ${index + 1}: faltan los diálogos de dos personajes.`);
+          }
+          const start = String(index * 10).padStart(2, '0');
+          const end = String((index + 1) * 10).padStart(2, '0');
+          const normalized = {
+            ...scene,
+            sceneNumber: index + 1,
+            durationSec: 10,
+            timeframe: `00:${start}–00:${end}`
+          };
+          const prompt = buildFlowPrompt(generatedTemplate, episode, normalized);
+          return {
+            ...normalized,
+            flowPrompt: prompt,
+            englishPromptWithSpanishDialogue: prompt,
+            imageToVideoPrompt: prompt,
+            masterNetflixPrompt: prompt
+          };
         });
-      }
+        (episode as any).qualityChecklist = buildQualityChecklist(episode.scenes, episode.hook, episode.cliffhanger, 50);
+      });
 
-      // Add to series list, select it, switch to divided series view
-      setSeriesList(prev => [generatedTemplate!, ...prev.filter(s => s.id !== generatedTemplate!.id)]);
+      setAgentProviderUsed(result.provider || 'plantilla-local');
+      setSeriesList((previous) => [generatedTemplate, ...previous.filter((series) => series.id !== generatedTemplate.id)]);
       setSelectedSeriesId(generatedTemplate.id);
       setSelectedEpisodeIdx(0);
       setViewMode('serie_completa_dividida');
       setIsAiGeneratorOpen(false);
-
-      // Auto-aprendizaje evolutivo de código abierto en segundo plano (habilidad intrínseca)
-      fetch('/api/niche-intelligence/learn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: generatedTemplate.seriesTitle,
-          viralPillars: ['hook_sub2.4s', 'jesus_active_character', 'cliffhanger_serializado', 'cero_silencios_10s'],
-          score: 96,
-          lesson: `Serie "${generatedTemplate.seriesTitle}" calibrada con ${generatedTemplate.episodes?.length || 3} capítulos sin silencios, Jesús protagónico y retención de nicho >88%.`,
-          adjustments: ['Continuidad cinematográfica 3D validada', 'Benchmarking viral de nicho integrado']
-        })
-      }).catch(() => {});
-
-      showNotification(`🎉 ¡Serie de ${generatedTemplate.episodes?.length || aiTotalParts} Capítulos generada con éxito! IA de Código Abierto con auto-aprendizaje y retención viral de nicho aplicada.`);
-      confetti({ particleCount: 100, spread: 90, origin: { y: 0.5 } });
-    } catch (e: any) {
-      console.error("[Generate Miniseries Error]", e);
-      showNotification('Hubo un error al generar la serie. Por favor intenta de nuevo.');
+      if (result.isFallback) {
+        showNotification('Miniserie lista con la plantilla local. Configura Ollama o un endpoint compatible para generación LLM.');
+      } else {
+        showNotification(`Miniserie lista con ${result.provider}: ${generatedTemplate.episodes.length} capítulos, ${generatedTemplate.episodes.length * 5} prompts Flow y SEO incluido.`);
+      }
+      confetti({ particleCount: 80, spread: 75, origin: { y: 0.55 } });
+    } catch (error: any) {
+      console.error('[Generate open-source miniseries agent]', error);
+      showNotification(error?.message || 'No se pudo generar la miniserie. Verifica el servidor e inténtalo de nuevo.');
     } finally {
       setIsGeneratingSeries(false);
     }
@@ -778,9 +669,9 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     : (currentEpisode.scenes && currentEpisode.scenes[0]) || {
         sceneNumber: 1,
         durationSec: 10,
-        characterId: 'jesus_cartoon_3d',
-        charactersInShot: ['jesus_cartoon_3d'],
-        interactionType: 'encuentro_con_jesus',
+        characterId: currentSeries.characters?.[0]?.id || CARTOON_CHARACTERS_FE[0].id,
+        charactersInShot: [currentSeries.characters?.[0]?.id || CARTOON_CHARACTERS_FE[0].id],
+        interactionType: 'dos_personajes_frente_a_frente',
         timeframe: '00:00 - 00:10',
         action: 'Personajes interactuando con esperanza',
         narration: editableEpisode.hook || 'Eran las 3:15 de la madrugada...',
@@ -920,7 +811,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         Control Técnico y Producción 9:16
                       </h4>
                       <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Control de 1 a 10 capítulos (60-75s), planos continuos de 10s, exclusión estricta ("NO INCLUIR") y salida modular copiable por partes.
+                        De 2 a 5 capítulos de 50 segundos, cinco prompts Flow por capítulo, continuidad visual y exclusiones estrictas.
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
@@ -1057,11 +948,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               <div className="flex flex-wrap items-center gap-1.5">
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-[11px] font-bold text-purple-200 shadow-sm">
                   <Brain className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-                  <span>IA de Código Abierto con Auto-Aprendizaje Evolutivo</span>
+                  <span>Agente abierto · {agentProviderUsed || 'Ollama / API compatible'}</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-[11px] font-bold text-emerald-300">
                   <span>●</span>
-                  <span>Benchmarking de Nicho & Retención &gt;88% Automática</span>
+                  <span>Hook + escalada + cliffhanger · sin métricas garantizadas</span>
                 </div>
               </div>
             </div>
@@ -1081,7 +972,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       handleGenerateCompleteSeries();
                     }
                   }}
-                  placeholder="Coloca aquí el tema de la miniserie (ej: La sanidad de la hija del centurión por Jesús, El milagro de la viuda y Jesús, El perdón del padre ausente)..."
+                  placeholder="Tema de fe, oración o versículo (ej.: una familia enfrenta una verdad difícil y decide empezar a perdonar)..."
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 border border-purple-500/40 text-white text-xs sm:text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-amber-400 transition-all shadow-inner"
                 />
               </div>
@@ -1089,7 +980,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               {/* Selector de Capítulos / Partes */}
               <div className="flex items-center gap-1.5 shrink-0 bg-slate-900 px-3 py-2 rounded-xl border border-white/10">
                 <span className="text-xs font-bold text-slate-400">Partes:</span>
-                {[2, 3, 4].map(num => (
+                {[2, 3, 4, 5].map(num => (
                   <button
                     key={num}
                     type="button"
@@ -1115,7 +1006,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 {isGeneratingSeries ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-                    <span>Creando con IA & Jesús ({aiTotalParts} Capítulos)...</span>
+                    <span>Creando ({aiTotalParts} capítulos de 50 s)...</span>
                   </>
                 ) : (
                   <>
@@ -1141,14 +1032,14 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
                 <Flame className="w-3 h-3 text-amber-400" />
-                Temas bíblicos y milagros con Jesús:
+                Ideas de fe, oración y esperanza:
               </span>
               {[
-                'La súplica del centurión romano a Jesús por su hija',
-                'La viuda pobre y el milagro de provisión con Jesús',
-                'El perdón del padre que volvió arrepentido a las 3:00 AM y el abrazo de Jesús',
-                'El milagro en la sala de emergencias a medianoche cuando Jesús interviene',
-                'El joven en las calles que fue rescatado tras un encuentro con Jesús'
+                'Una hija encuentra una carta que cambia lo que sabía de su familia',
+                'Una oración ayuda a una mujer a pedir perdón sin negar el daño',
+                'Un padre vuelve a casa y debe demostrar con hechos que ha cambiado',
+                'Una familia enfrenta una deuda y decide dejar de ocultar la verdad',
+                'Una enfermera encuentra esperanza en una noche difícil de hospital'
               ].map((sug) => (
                 <button
                   key={sug}
@@ -1480,8 +1371,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {(episode.scenes || []).map((sc, scIdx) => {
-                      const char1 = CARTOON_CHARACTERS_FE.find(c => c.id === sc.characterId) || CARTOON_CHARACTERS_FE[0];
-                      const char2 = sc.secondaryCharacterId ? CARTOON_CHARACTERS_FE.find(c => c.id === sc.secondaryCharacterId) : undefined;
+                      const char1 = getAvailableCharacter(sc.characterId);
+                      const char2 = sc.secondaryCharacterId ? getAvailableCharacter(sc.secondaryCharacterId) : undefined;
 
                       return (
                         <div
@@ -1599,19 +1490,18 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                               </div>
                             )}
 
-                            {/* English Video Prompt with Explicit Spanish Dialogue Tag */}
+                            {/* Self-contained Flow prompt with exact Spanish dialogue */}
                             {(() => {
                               const overviewSyncedPrompt = syncScenePromptWithExactDialogue(
                                 sc.englishPromptWithSpanishDialogue || sc.imageToVideoPrompt || '',
-                                sc.dialogueExchange,
-                                sc.durationSec || 10
+                                sc.dialogueExchange
                               );
                               return (
                                 <div className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/20 space-y-1.5 text-xs font-mono">
                                   <div className="flex items-center justify-between text-[10px] font-bold text-purple-300">
                                     <span className="flex items-center gap-1">
                                       <Video className="w-3 h-3" />
-                                      Prompt de Video (Inglés con Diálogo en Español Aclarado):
+                                      Prompt Flow autosuficiente (diálogo en español latinoamericano):
                                     </span>
                                     <button
                                       type="button"
@@ -1846,7 +1736,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                   {/* AI Engine Presets */}
                   <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-white/10 text-xs">
-                    {(['kling', 'runway', 'luma', 'sora'] as const).map(engine => (
+                    {(['flow', 'kling', 'runway', 'luma', 'sora'] as const).map(engine => (
                       <button
                         key={engine}
                         type="button"
@@ -1857,7 +1747,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                             : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        {engine === 'kling' ? 'Kling 10s' : engine === 'runway' ? 'Runway 10s' : engine === 'luma' ? 'Luma 10s' : 'Veo 10s'}
+                        {engine === 'flow' ? 'Flow 10s' : engine === 'kling' ? 'Kling 10s' : engine === 'runway' ? 'Runway 10s' : engine === 'luma' ? 'Luma 10s' : 'Veo 10s'}
                       </button>
                     ))}
                   </div>
@@ -1870,8 +1760,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         .map(s => {
                           const basePrompt = syncScenePromptWithExactDialogue(
                             s.englishPromptWithSpanishDialogue || s.imageToVideoPrompt || '',
-                            s.dialogueExchange,
-                            s.durationSec || 10
+                            s.dialogueExchange
                           );
                           const formatted = formatPromptForEngine(basePrompt, selectedAiEngine, s.durationSec || 10, s.dialogueExchange);
                           return `PLANO ${s.sceneNumber} [${s.timeframe}] (${s.onScreenText}) - DURACIÓN: ${s.durationSec || 10}s:\nPERSONAJES: ${s.charactersInShot.join(' + ')}\nACCIÓN: ${s.action}\n${(s.dialogueExchange || []).map(d => `DIÁLOGO: ${d.speakerName}: "${d.dialogueSpanish}"`).join('\n')}\nPROMPT OPTIMIZADO PARA ${selectedAiEngine.toUpperCase()} (10s CON DIÁLOGO EN ESPAÑOL):\n${formatted}\nSFX: ${s.sfx}`;
@@ -2018,18 +1907,16 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               {/* Scenes List */}
               <div className="space-y-4">
                 {(editableEpisode.scenes || []).map((scene, idx) => {
-                  const char1 = CARTOON_CHARACTERS_FE.find(c => c.id === scene.characterId) || CARTOON_CHARACTERS_FE[0];
-                  const char2 = scene.secondaryCharacterId ? CARTOON_CHARACTERS_FE.find(c => c.id === scene.secondaryCharacterId) : undefined;
+                  const char1 = getAvailableCharacter(scene.characterId);
+                  const char2 = scene.secondaryCharacterId ? getAvailableCharacter(scene.secondaryCharacterId) : undefined;
                   const basePrompt = syncScenePromptWithExactDialogue(
                     scene.englishPromptWithSpanishDialogue || scene.imageToVideoPrompt || '',
-                    scene.dialogueExchange,
-                    scene.durationSec || 10
+                    scene.dialogueExchange
                   );
                   const engineOptimizedPrompt = formatPromptForEngine(basePrompt, selectedAiEngine, scene.durationSec || 10, scene.dialogueExchange);
                   const syncedMasterPrompt = syncScenePromptWithExactDialogue(
                     scene.masterNetflixPrompt || scene.englishPromptWithSpanishDialogue || '',
-                    scene.dialogueExchange,
-                    scene.durationSec || 10
+                    scene.dialogueExchange
                   );
 
                   return (
@@ -2059,7 +1946,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                           {/* Quick Duration Buttons (Defaults to 10s) */}
                           <div className="flex items-center gap-1 bg-slate-950 px-2 py-0.5 rounded-xl border border-white/10">
                             <span className="text-[10px] text-slate-400 font-medium">Duración:</span>
-                            {[6, 8, 10, 12].map(dur => (
+                            {[10].map(dur => (
                               <button
                                 key={dur}
                                 type="button"
@@ -2082,14 +1969,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                           <div className="flex flex-wrap items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-950/60 border border-purple-500/30 text-xs font-bold text-white">
                             {(scene.charactersInShot && scene.charactersInShot.length > 0
                               ? scene.charactersInShot.map(id => {
-                                  const c = CARTOON_CHARACTERS_FE.find(ch => ch.id === id);
-                                  if (c) return c;
-                                  const d = scene.dialogueExchange?.find(t => t.speakerId === id);
-                                  return {
-                                    id,
-                                    name: d ? d.speakerName : id,
-                                    avatarEmoji: id.includes('jesus') ? '✝️' : id.includes('nino') || id.includes('hijo') ? '👦' : id.includes('mujer') || id.includes('sara') || id.includes('maria') ? '👩' : '👤'
-                                  };
+                                  return getAvailableCharacter(id);
                                 })
                               : [char1, char2].filter(Boolean)
                             ).map((c: any, cIdx: number) => {
@@ -2219,15 +2099,19 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                                         const turnSec = turn.allocatedSeconds || 3;
                                         const turnWords = countWordsSpanish(turn.dialogueSpanish);
                                         const cadence = Math.round((turnWords / turnSec) * 10) / 10;
+                                        const minAllowed = Math.ceil(turnSec * MIN_WORDS_PER_SECOND);
                                         const maxAllowed = Math.round(turnSec * MAX_WORDS_PER_SECOND);
                                         const isOver = turnWords > maxAllowed;
+                                        const isShort = turnWords < minAllowed;
                                         return (
                                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-mono flex items-center gap-1 border ${
                                             isOver 
                                               ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
-                                              : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                              : isShort
+                                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
                                           }`}>
-                                            {isOver ? '⚠️' : '💬'} {turnWords} pal ({cadence} pal/s {isOver ? `> máx ${maxAllowed}` : '✓'})
+                                            {isOver ? '⚠️' : isShort ? '⏳' : '💬'} {turnWords} pal ({cadence} pal/s · meta {minAllowed}–{maxAllowed})
                                           </span>
                                         );
                                       })()}
@@ -2268,21 +2152,30 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                                       {(() => {
                                         const turnSec = turn.allocatedSeconds || 3;
                                         const wordsTyped = countWordsSpanish(editingDialogueText);
+                                        const minRec = Math.ceil(turnSec * MIN_WORDS_PER_SECOND);
                                         const maxRec = Math.round(turnSec * MAX_WORDS_PER_SECOND);
                                         const pace = Math.round(((wordsTyped / turnSec) || 0) * 10) / 10;
                                         const isOverBudget = wordsTyped > maxRec;
+                                        const isUnderTarget = wordsTyped < minRec;
                                         return (
                                           <div className={`p-2 rounded-lg text-[11px] flex flex-wrap items-center justify-between gap-1 border ${
                                             isOverBudget 
                                               ? 'bg-rose-950/40 border-rose-500/40 text-rose-200' 
-                                              : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
+                                              : isUnderTarget
+                                                ? 'bg-amber-950/40 border-amber-500/40 text-amber-200'
+                                                : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
                                           }`}>
                                             <span>
-                                              <strong>Cadencia en {turnSec}s:</strong> {wordsTyped} palabras ({pace} pal/s) • Máximo recomendado: {maxRec} palabras
+                                              <strong>Cadencia en {turnSec}s:</strong> {wordsTyped} palabras ({pace} pal/s) • Meta: {minRec}–{maxRec} palabras
                                             </span>
                                             {isOverBudget && (
                                               <span className="text-[10px] text-rose-300 font-bold">
                                                 ⚠️ Excede límite de {turnSec}s: se calibrará al guardar
+                                              </span>
+                                            )}
+                                            {!isOverBudget && isUnderTarget && (
+                                              <span className="text-[10px] text-amber-300 font-bold">
+                                                ⚠️ Falta diálogo para cubrir casi toda la ventana asignada
                                               </span>
                                             )}
                                           </div>
@@ -2326,7 +2219,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                               {selectedAiEngine.toUpperCase()} (Clip de {scene.durationSec || 10}s)
                             </span>
                             <span className="text-[11px] font-bold text-purple-200">
-                              Prompt en Inglés con Diálogo en Español Aclarado:
+                              Prompt Flow autónomo con diálogo español:
                             </span>
                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold flex items-center gap-1">
                               <CheckCircle2 className="w-2.5 h-2.5" />
@@ -3148,7 +3041,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     <span>⚡ Habilidad 1: Arquitectura</span>
                   </div>
                   <p className="text-[10px] text-slate-300 leading-relaxed">
-                    Control de 1 a 10 episodios, exclusiones estrictas ("NO INCLUIR") y salida modular copiable.
+                    Agente configurable, continuidad persistente y exportación de todos los prompts y SEO en un solo documento.
                   </p>
                 </div>
 
@@ -3199,7 +3092,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                   rows={3}
                   value={aiTopicInput}
                   onChange={(e) => setAiTopicInput(e.target.value)}
-                  placeholder="Ej: Una frutera recibe cada noche un recibo de una venta que todavía no ocurrió; el recibo lleva el nombre de su padre desaparecido..."
+                  placeholder="Ej.: una hija descubre una carta que cambia la historia de su familia y la obliga a decidir si escucha la verdad..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-400 resize-none font-sans leading-relaxed"
                 />
               </div>
@@ -3233,18 +3126,29 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 </div>
               </div>
 
-              {/* 3. Número de Episodios (1 a 10) y Duración (60-75s) */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-300">Versículo o referencia bíblica (opcional):</label>
+                <input
+                  type="text"
+                  value={aiBibleReference}
+                  onChange={(e) => setAiBibleReference(e.target.value)}
+                  placeholder="Ej.: Salmo 34:18 · el agente no inventará una cita textual"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
+                />
+              </div>
+
+              {/* 3. Número de episodios y duración fija */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Número de Episodios (1 a 10):</label>
+                  <label className="font-bold text-slate-300">Número de capítulos:</label>
                   <select
                     value={aiTotalParts}
                     onChange={(e) => setAiTotalParts(Number(e.target.value))}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    {[2, 3, 4, 5].map((num) => (
                       <option key={num} value={num}>
-                        {num === 1 ? '1 Capítulo (Historia Autoconclusiva)' : `${num} Capítulos Serializados`}
+                        {`${num} Capítulos serializados`}
                       </option>
                     ))}
                   </select>
@@ -3252,16 +3156,9 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-300">Duración por Episodio:</label>
-                  <select
-                    value={aiDurationSec}
-                    onChange={(e) => setAiDurationSec(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
-                  >
-                    <option value={60}>60 segundos (6 planos de 10s)</option>
-                    <option value={65}>65 segundos (Ritmo denso)</option>
-                    <option value={70}>70 segundos (Recomendado estándar)</option>
-                    <option value={75}>75 segundos (Máxima inmersión)</option>
-                  </select>
+                  <div className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs">
+                    50 segundos · cinco segmentos de 10 segundos
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -3289,7 +3186,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                   type="text"
                   value={aiCustomCharacters}
                   onChange={(e) => setAiCustomCharacters(e.target.value)}
-                  placeholder="Ej: Elena (frutera valiente y trabajadora de 32 años), abuela sabia, Maestro Jesús"
+                  placeholder="Ej.: Lucía (34 años, cabello oscuro, suéter terracota), Tomás (38 años, chaqueta azul)"
                   className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
                 />
               </div>
@@ -3313,7 +3210,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     type="text"
                     value={aiCallToAction}
                     onChange={(e) => setAiCallToAction(e.target.value)}
-                    placeholder="Ej: Escribe AMÉN y comparte si crees en los milagros"
+                    placeholder="Ej.: ¿Qué paso pequeño te devuelve la esperanza? (opcional)"
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-sans"
                   />
                 </div>

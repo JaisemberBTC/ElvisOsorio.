@@ -1,15 +1,7 @@
 /**
- * MINISERIES PRODUCTION SKILL (HABILIDAD DE CÓDIGO ABIERTO)
- * =========================================================
- * Núcleo de inteligencia automatizado desacoplado de interfaces visuales.
- * Funciona como una habilidad programática modular (Skill/Agent Capability)
- * para orquestar la preproducción y producción cinematográfica de series 3D de fe.
- * 
- * Cumplimiento estricto:
- * 1. Respeto inquebrantable de género (historias de mujeres tienen protagonista mujer).
- * 2. Generación de escenarios 3D únicos no reciclados para cada historia.
- * 3. Planos continuos de 10 segundos divididos entre 2, 3 o más personajes (coral dialogue).
- * 4. Generación serializada exacta de todos los capítulos pedidos (2, 3 o 4 partes).
+ * Generador sincrónico 3D heredado, conservado solo para compatibilidad.
+ * La ruta actual de "Generar Serie Completa" usa
+ * src/server/miniseriesOpenSourceAgent.ts y entrega prompts Flow hiperrealistas.
  */
 
 import { CARTOON_CHARACTERS_FE, SERIES_ENVIRONMENTS_FE, ScenographyDirection, EpisodeSEO, CartoonCharacter } from "../data/cartoonCharactersFe";
@@ -131,28 +123,24 @@ export interface GeneratedMiniseriesPackage {
   episodes: GeneratedMiniserieEpisode[];
 }
 
-/**
- * Open-Source Skill Manifest
- */
+/** Manifiesto de compatibilidad para el generador heredado; no es la licencia del repositorio. */
 export const MINISERIES_SKILL_MANIFEST: MiniseriesSkillManifest = {
-  name: "MiniseriesFaithProductionSkill",
-  version: "2.4.0-open",
-  license: "MIT - Open Source Generative Agent Skill",
+  name: "MiniseriesFaithProductionSkillLegacy",
+  version: "2.4.0-legacy",
+  license: "No declarada en el repositorio; requiere elección del titular",
   type: "autonomous_skill_engine",
-  description: "Habilidad autónoma de código abierto para guionizar, escenificar y orquestar miniseries cinematográficas 3D con Jesucristo, continuidad Netflix y división de diálogos en planos continuos de 10s.",
+  description: "Generador 3D sincrónico heredado; no lo utiliza el flujo actual de miniseries Flow.",
   capabilities: [
-    "gender_continuity_enforcement",
-    "unique_scenography_synthesis",
-    "multi_person_10s_coral_dialogues",
-    "progressive_multichapter_serialization",
-    "jesus_active_theophany_direction",
-    "cross_engine_prompt_optimization"
+    "legacy_3d_cartoon_generation",
+    "legacy_two_to_four_episode_limit",
+    "not_used_by_current_flow_agent"
   ],
-  supportedVideoEngines: ["kling", "runway", "luma", "veo", "sora"],
-  supportedTtsEngines: ["elevenlabs", "fish_audio", "edge_tts", "openai_tts"]
+  supportedVideoEngines: [],
+  supportedTtsEngines: []
 };
 
 /**
+ * @deprecated Legacy 3D output. Use the open-source agent route for Flow prompts.
  * Builds the canonical 5 scenes of 10 seconds for an episode,
  * dividing the 10 seconds across multiple characters (2, 3 or more).
  */
@@ -168,8 +156,8 @@ export function buildEpisodeScenes10s(
 }
 
 /**
- * Executes the complete autonomous production skill for a topic.
- * Fully modular and callable from scripts, background services, endpoints, or UI.
+ * @deprecated Legacy synchronous 3D generator; the current UI uses
+ * POST /api/agent/generate-miniseries instead.
  */
 function generateDiverseEpisodeHook(topic: string, epNum: number, totalParts: number, protagonistName: string, companionName: string): string {
   const hash = Math.abs((topic + epNum).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));

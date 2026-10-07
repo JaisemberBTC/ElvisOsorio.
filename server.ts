@@ -4,10 +4,7 @@ import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import {
-  generateMiniseriesWithGemini,
-  buildFallbackMiniseries
-} from "./src/server/miniseriesGenerator.js";
+import { generateOpenSourceMiniseries } from "./src/server/miniseriesOpenSourceAgent.ts";
 
 dotenv.config();
 
@@ -1013,61 +1010,43 @@ Genera 3 variantes A/B irresistibles para el nicho de fe y oración.`;
   }
 });
 
-// 1.14 Generador de Miniseries y Telenovelas de Fe Serializadas con Jesús como Personaje Protagónico Activo
-app.post("/api/gemini/generate-miniseries", async (req: Request, res: Response) => {
+// Agente de miniseries configurable: Ollama/OpenAI-compatible o fallback local.
+const generateMiniseriesHandler = async (req: Request, res: Response) => {
   try {
-    const { 
-      topic = "El perdón del padre ausente que volvió a las 3:00 AM", 
-      totalParts = 3, 
+    const {
+      topic = "Una historia de fe y esperanza",
+      totalParts = 3,
       category = "milagro_familiar",
       lockedEnvironmentId,
       customCharacters,
       audiencePlatform,
       tone,
-      durationSec,
+      bibleReference,
       callToAction,
       noInclude
     } = req.body;
-    const ai = getGeminiClient();
-
-    const miniseries = await generateMiniseriesWithGemini(ai, {
-      topic,
-      totalParts: Number(totalParts) || 3,
+    const result = await generateOpenSourceMiniseries({
+      topic: String(topic).slice(0, 500),
+      totalParts: Math.max(2, Math.min(5, Number(totalParts) || 3)),
       category,
+      bibleReference,
       lockedEnvironmentId,
       customCharacters,
       audiencePlatform,
       tone,
-      durationSec: Number(durationSec) || 70,
       callToAction,
       noInclude
     });
-
-    res.json({ success: true, miniseries });
+    res.json({ success: true, ...result });
   } catch (error: any) {
-    console.info("[API Generate Miniseries] Serving tailored series with Jesus:", error?.message || error);
-    try {
-      const fallback = buildFallbackMiniseries(
-        req.body?.topic || "El milagro que nadie esperaba",
-        Number(req.body?.totalParts) || 3,
-        req.body?.category || "milagro_familiar",
-        req.body?.lockedEnvironmentId,
-        {
-          customCharacters: req.body?.customCharacters,
-          audiencePlatform: req.body?.audiencePlatform,
-          tone: req.body?.tone,
-          durationSec: Number(req.body?.durationSec) || 70,
-          callToAction: req.body?.callToAction,
-          noInclude: req.body?.noInclude
-        }
-      );
-      res.json({ success: true, miniseries: fallback, isFallback: true });
-    } catch (fallbackError: any) {
-      console.error("[API Generate Miniseries Fallback Error]:", fallbackError);
-      res.status(500).json({ success: false, error: fallbackError?.message || "Error al construir miniserie" });
-    }
+    console.error("[Open-source miniseries agent] Error:", error?.message || error);
+    res.status(500).json({ success: false, error: "No se pudo construir la miniserie. Revisa los datos y vuelve a intentar." });
   }
-});
+};
+
+app.post("/api/agent/generate-miniseries", generateMiniseriesHandler);
+// Alias temporal para integraciones anteriores; la generación ya no depende de Gemini.
+app.post("/api/gemini/generate-miniseries", generateMiniseriesHandler);
 
 // 1.15 Fábrica de Magia Viral: Edición Multiclip Continua Tipo Netflix (1 Clic)
 app.post("/api/gemini/generate-netflix-multiclip", async (req: Request, res: Response) => {
