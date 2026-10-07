@@ -8,9 +8,9 @@ La biblia guarda identidades de personajes, vestuario, voces, escenario, utiler�
 
 ## Continuidad visual de personajes en Flow
 
-Cada prompt repite los rasgos canónicos del reparto que aparece en ese segmento y señala las referencias visuales con un ID estable. En la pestaña **Personajes**, copia el **Prompt imagen maestra** de cada actor y genera una sola imagen de referencia antes de crear los clips. Guarda esos archivos y adjunta exactamente la misma imagen de cada personaje a todos los segmentos donde aparece; no vuelvas a generar su rostro desde cero. El prompt textual por sí solo no puede garantizar que un generador de video conserve la misma identidad entre clips independientes si no recibe también esa referencia visual.
+Cada prompt repite la ficha textual canónica del reparto visible en ese segmento: identidad, edad, rostro, piel, cabello, complexión, vestuario, accesorios y voz. En la pestaña **Personajes**, el botón **Prompt de identidad** copia la misma ficha para usarla sin cambios. El flujo conserva la continuidad mediante esos prompts autónomos; no requiere generar ni adjuntar imágenes maestras externas.
 
-Los prompts de segmento bloquean rostro, edad aparente, piel, cabello, complexión, vestuario, accesorios, voz y entorno, y limitan el reparto al elenco visible de la toma. La app conserva estas instrucciones y ofrece referencias canónicas; Flow sigue necesitando que el usuario adjunte los archivos de referencia al generar cada clip.
+Los prompts de segmento bloquean rostro, edad aparente, piel, cabello, complexión, vestuario, accesorios, voz y entorno, y limitan el reparto al elenco visible de la toma. Para sostener la continuidad, conserva intactas las descripciones canónicas cuando uses cada prompt en Flow.
 
 ## Activar un modelo local con Ollama
 

@@ -5,15 +5,6 @@ const value = (input: unknown, fallback = 'No especificado') => {
   return text || fallback;
 };
 
-const safeKey = (input: unknown, fallback: string) =>
-  value(input, fallback).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || fallback;
-
-function characterReferenceId(series: AnyRecord, character: AnyRecord): string {
-  const seriesId = series.seriesBible?.seriesId || series.id || series.seriesTitle;
-  const characterId = character.id || character.name;
-  return `REF-${safeKey(seriesId, 'serie')}-${safeKey(characterId, 'personaje')}`;
-}
-
 function characterLock(character: AnyRecord): string {
   const id = value(character.id, 'sin-id');
   const name = value(character.name, 'Personaje');
@@ -24,13 +15,13 @@ function characterLock(character: AnyRecord): string {
       character.fixedIdentityPrompt || character.visualIdentity || character.shortDescription,
     'rostro, piel, cabello y complexión definidos en la biblia maestra'
   );
-  const skin = value(character.skin, 'mantener exactamente el tono de piel del model sheet');
-  const face = value(character.face, 'mantener exactamente la forma y los rasgos faciales del model sheet');
-  const hair = value(character.hair, 'mantener exactamente el cabello del model sheet');
-  const build = value(character.build, 'mantener exactamente la complexión del model sheet');
+  const skin = value(character.skin, 'mantener exactamente el tono de piel descrito en la ficha maestra');
+  const face = value(character.face, 'mantener exactamente la forma y los rasgos faciales de la ficha maestra');
+  const hair = value(character.hair, 'mantener exactamente el cabello descrito en la ficha maestra');
+  const build = value(character.build, 'mantener exactamente la complexión descrita en la ficha maestra');
   const wardrobe = value(character.wardrobe || character.clothingStyle || character.lockedWardrobeDesc, 'vestuario inmutable definido en la biblia');
   const accessories = value(character.accessories, 'accesorios inmutables definidos en la biblia');
-  const voice = value(character.voice || character.voiceProfile?.tone, 'misma voz y acento ya definidos para este personaje');
+  const voice = value(character.voice || character.voiceProfile?.tone, 'misma voz y acento definidos para este personaje');
   return [
     `- ID canónico: ${id}; nombre exacto en pantalla y diálogo: ${name}; edad aparente: ${age}; presentación: ${gender}.`,
     `  Ficha maestra de identidad (respetar literalmente, no rediseñar): ${visual}`,
@@ -80,19 +71,17 @@ function dialogueBlock(scene: AnyRecord): string {
   return lines.join('\n');
 }
 
-/** Prompt de imagen para crear una sola referencia visual canónica antes de producir los clips. */
-export function buildCharacterReferencePrompt(series: AnyRecord, character: AnyRecord): string {
-  const referenceId = characterReferenceId(series, character);
+/** Copia textual autónoma de la ficha canónica; no depende de una imagen externa. */
+export function buildCharacterIdentityPrompt(series: AnyRecord, character: AnyRecord): string {
   return [
-    `CANONICAL CHARACTER REFERENCE — ${referenceId}`,
-    `Create one photorealistic live-action actor reference image for the original series “${value(series.seriesTitle, 'Miniserie de fe')}”. This is the canonical identity source to reuse unchanged for every video segment featuring this character.`,
+    `BIBLIA TEXTUAL DE IDENTIDAD — ${value(character.id, 'sin-id')} — ${value(character.name, 'Personaje')}`,
+    `Serie: «${value(series.seriesTitle, 'Miniserie de fe')}». Usa esta misma descripción, sin reescribirla ni reinterpretarla, en cada segmento donde aparezca el personaje.`,
     characterLock(character),
-    'Single adult/age-appropriate human subject only, face clearly visible, natural neutral expression, three-quarter view, head and full fixed outfit visible, relaxed neutral pose, simple uncluttered neutral background, soft even natural studio light. Preserve realistic skin texture and exact distinguishing facial features.',
-    'One image only. No collage, no multiple versions, no split panels, no extra people, no props that are not listed in the character bible, no text, labels, watermark, stylization, age shift, wardrobe variation, or redesign.'
+    'La continuidad se resuelve con estas anclas textuales repetidas en cada prompt; no cambies ni recastees al actor entre clips.'
   ].join('\n\n');
 }
 
-/** Construye un prompt autónomo: el mismo reparto, referencias y mundo se reusan en cada segmento. */
+/** Construye un prompt autónomo: cada segmento contiene su propia biblia textual y mundo coherente. */
 export function buildFlowPrompt(series: AnyRecord, episode: AnyRecord, scene: AnyRecord): string {
   const bible = series.seriesBible || {};
   const world = bible.worldBible || {};
@@ -100,16 +89,10 @@ export function buildFlowPrompt(series: AnyRecord, episode: AnyRecord, scene: An
   const episodeNumber = Number(episode.episodeNumber) || 1;
   const sceneNumber = Number(scene.sceneNumber) || 1;
   const timeframe = value(scene.timeframe, `00:${String((sceneNumber - 1) * 10).padStart(2, '0')}–00:${String(sceneNumber * 10).padStart(2, '0')}`);
-  const allCharacters: AnyRecord[] = Array.isArray(series.characters)
-    ? series.characters
-    : Array.isArray(bible.characterBible) ? bible.characterBible : [];
   const characters = visibleCharacters(series, scene);
   const characterBible = characters.length
     ? characters.map(characterLock).join('\n')
-    : 'La serie no define un reparto legible: no inventar ni sustituir personajes; usar solo las referencias visuales que el usuario adjunte.';
-  const referenceList = characters.length
-    ? characters.map((character) => `- ${value(character.name, 'Personaje')}: adjuntar y reutilizar exactamente el mismo archivo de imagen ${characterReferenceId(series, character)} (creado una sola vez desde la pestaña Personajes). No generar un actor nuevo.`).join('\n')
-    : '- Adjuntar las mismas imágenes maestras de personajes en todos los segmentos; no volver a diseñar el reparto.';
+    : 'La serie no define un reparto legible: no inventar ni sustituir personajes; respetar las identidades textuales previas.';
   const location = value(world.location || series.lockedEnvironmentName || scene.lockedEnvironmentName, 'el mismo entorno establecido para toda la serie');
   const setting = value(world.eraAndArchitecture || world.architecture || series.lockedEnvironmentPromptEn, 'espacio contemporáneo latinoamericano, arquitectura y utilería físicamente plausibles');
   const palette = value(world.palette || world.lightingDesign, 'paleta cinematográfica natural, constante y coherente con la emoción');
@@ -142,12 +125,12 @@ export function buildFlowPrompt(series: AnyRecord, episode: AnyRecord, scene: An
 
   return [
     `DURACIÓN Y FORMATO\nVideo vertical 9:16, exactamente 10 segundos, segmento ${String(sceneNumber).padStart(2, '0')} de 05 del capítulo ${String(episodeNumber).padStart(2, '0')} («${value(episode.episodeTitle, series.seriesTitle)}»), intervalo ${timeframe}. Live-action hiperrealista y cinematográfico, apariencia de personas reales, 24 fps, audio integrado. Este prompt debe funcionar por sí solo en Flow.`,
-    `CONTINUIDAD MAESTRA\nMiniserie: «${value(series.seriesTitle, 'Miniserie de fe')}». Tema: ${value(series.logline || bible.theme, 'fe, oración y esperanza')}. Base bíblica: ${verse}.\n\nREFERENCIAS VISUALES CANÓNICAS — PREVIAS A GENERAR\n${referenceList}\nUsar la misma imagen de referencia ya aprobada para cada personaje activo en TODOS los clips, sin volver a crear su rostro desde cero.\n\nREPARTO VISIBLE EN ESTE PLANO (${characters.length || 'según referencias adjuntas'}):\n${characterBible}\n\nTratar estas fichas y las imágenes adjuntas como identidad bloqueada: mismo actor exacto, edad aparente, rostro, piel, cabello, complexión, vestuario, accesorios y voz en cada segmento. No cambiar nombres ni mezclar rasgos. No añadir protagonistas nuevos. La historia es original; no imitar personajes, guiones, música, marca ni estética distintiva de otros creadores.`,
+    `CONTINUIDAD MAESTRA\nMiniserie: «${value(series.seriesTitle, 'Miniserie de fe')}». Tema: ${value(series.logline || bible.theme, 'fe, oración y esperanza')}. Base bíblica: ${verse}.\n\nIDENTIDAD BLOQUEADA POR TEXTO — REPARTO VISIBLE (${characters.length || 'según la biblia'}):\n${characterBible}\n\nEste prompt contiene la biblia textual completa de cada personaje visible. Repite las mismas anclas de rostro, edad, piel, cabello, complexión, vestuario, accesorios y voz en todos los clips; no recastees ni mezcles rasgos. No se requiere una imagen externa para mantener la continuidad. Conservar el mismo mundo, utilería, paleta y reglas de cámara. La historia es original; no imitar personajes, guiones, música, marca ni estética distintiva de otros creadores.`,
     `ACCIÓN VISIBLE\n${value(scene.action, 'Continuar la acción del capítulo con una decisión o cambio observable desde el primer segundo.')}\nEl primer segundo debe mostrar una anomalía, riesgo, decisión o revelación concreta; introducir una variación emocional o informativa durante el segmento y terminar en el estado necesario para el siguiente segmento. Solo actúan en cámara los personajes nombrados en REPARTO VISIBLE; los demás permanecen fuera de campo.`,
     `ENTORNO\n${environment}`,
     `COMPOSICIÓN, LENTE Y MOVIMIENTO DE CÁMARA\n${camera}. ${lens}. ${movement}. ${cameraLanguage}. Mantener posiciones espaciales y dirección de miradas coherentes con el plano anterior.`,
     `LUZ, COLOR Y TEXTURA\n${lighting}. Mantener la paleta maestra ${palette} y la misma dirección de luz, salvo cambio narrativo explícito. Piel, ojos, cabello, telas y superficies con textura natural; contraste cinematográfico sin filtros plásticos ni brillo sobrenatural genérico.`,
-    `ACTUACIÓN\n${performance}. Gestos pequeños, contacto visual motivado y movimientos anatómicamente naturales. No exagerar expresiones ni alterar la edad o el rostro de referencia.`,
+    `ACTUACIÓN\n${performance}. Gestos pequeños, contacto visual motivado y movimientos anatómicamente naturales. No exagerar expresiones ni alterar la edad o el rostro de la ficha textual.`,
     `DIÁLOGO EXACTO EN ESPAÑOL LATINOAMERICANO\nPronunciar literalmente, sin traducir, resumir ni añadir frases:\n${dialogue}${scene.narration ? `\nNarración opcional, solo si cabe de forma natural: «${scene.narration}»` : ''}`,
     `VOZ Y MEZCLA\n${voices} ${audioNotes} El diálogo hablado debe ocupar aproximadamente 9,2 de los 10 segundos (cerca del 90%); respetar las ventanas de tiempo, enlazar los dos turnos con una pausa breve de máximo 0,2 segundos y no dejar silencios deliberados. Ritmo conversacional cercano a 2,1 palabras por segundo: claro y humano, nunca acelerado ni atropellado. Reservar menos de un segundo al final para la respiración o la transición.`,
     `MÚSICA ORIGINAL\n${seriesMusic}. Variación de este segmento: ${sceneMusic}. Composición instrumental inédita, con motivo melódico propio de esta miniserie; ajustar pulso e intensidad al giro dramático y dejar espacio a la voz. Sin letra, sin canciones comerciales y sin imitar obras o artistas existentes. Mezcla sugerida: música entre -18 y -22 dB bajo el diálogo, con entradas y salidas suaves.`,

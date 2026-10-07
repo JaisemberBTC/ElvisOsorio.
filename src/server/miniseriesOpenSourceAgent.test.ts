@@ -7,7 +7,7 @@ import {
 } from './miniseriesOpenSourceAgent.ts';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport.ts';
 import { buildQualityChecklist } from '../skills/verticalMicrofictionSkill.ts';
-import { buildCharacterReferencePrompt, buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
+import { buildCharacterIdentityPrompt, buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
 
 for (const totalParts of [2, 3, 4, 5]) {
   test(`fallback entrega ${totalParts} capítulos de 50s con cinco prompts Flow`, () => {
@@ -42,8 +42,8 @@ for (const totalParts of [2, 3, 4, 5]) {
         assert.ok(scene.englishPromptWithSpanishDialogue.includes('9,2 de los 10 segundos'));
         assert.ok(scene.englishPromptWithSpanishDialogue.includes('MÚSICA ORIGINAL'));
         assert.ok(scene.englishPromptWithSpanishDialogue.includes('10 segundos'));
-        assert.ok(scene.englishPromptWithSpanishDialogue.includes('REFERENCIAS VISUALES CANÓNICAS'));
-        assert.ok(scene.englishPromptWithSpanishDialogue.includes('exactamente el mismo archivo de imagen'));
+        assert.ok(scene.englishPromptWithSpanishDialogue.includes('IDENTIDAD BLOQUEADA POR TEXTO'));
+        assert.ok(scene.englishPromptWithSpanishDialogue.includes('No se requiere una imagen externa'));
         assert.ok(scene.englishPromptWithSpanishDialogue.includes(series.characters[0].name));
         assert.ok(scene.englishPromptWithSpanishDialogue.toLocaleLowerCase('es').includes('sin cambio de actor'));
         assert.ok(!scene.englishPromptWithSpanishDialogue.includes('Pixar'));
@@ -68,16 +68,16 @@ test('cada prompt de Flow limita el reparto a quienes aparecen en el segmento', 
   assert.ok(!prompt.includes('Extra que no aparece'));
 });
 
-test('el prompt de referencia crea un retrato maestro único sin variantes ni collage', () => {
+test('el prompt maestro textual conserva las anclas de identidad sin exigir imágenes externas', () => {
   const series = buildLocalMiniseriesForTest({ topic: 'Una conversación familiar', totalParts: 2 });
   const character = series.characters[0];
-  const prompt = buildCharacterReferencePrompt(series, character);
+  const prompt = buildCharacterIdentityPrompt(series, character);
 
   assert.ok(prompt.includes(character.name));
   assert.ok(prompt.includes(character.exactModelSheetLockEn));
-  assert.ok(prompt.includes('CANONICAL CHARACTER REFERENCE'));
-  assert.ok(prompt.includes('No collage'));
-  assert.ok(prompt.includes('reuse unchanged'));
+  assert.ok(prompt.includes('BIBLIA TEXTUAL DE IDENTIDAD'));
+  assert.ok(prompt.includes('recastees'));
+  assert.ok(!prompt.includes('adjuntar una imagen'));
 });
 
 test('el proveedor se configura como Ollama o compatible y admite fallback local', () => {

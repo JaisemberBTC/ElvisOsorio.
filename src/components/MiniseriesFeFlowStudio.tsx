@@ -46,7 +46,7 @@ import confetti from 'canvas-confetti';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport';
 import { nicheMelodyEngine, NICHE_MELODIES } from '../utils/nicheMelodyEngine';
 import { syncScenePromptWithExactDialogue, buildCanonicalDialogueBlock } from '../utils/dialoguePromptSync';
-import { buildFlowPrompt, buildCharacterReferencePrompt } from '../utils/flowPromptBuilder';
+import { buildFlowPrompt, buildCharacterIdentityPrompt } from '../utils/flowPromptBuilder';
 import { countWordsSpanish, calibrateAndPaceDialogue, MAX_WORDS_PER_SECOND, MIN_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
 import {
   SKILL_PRODUCTION_ARCHITECTURE,
@@ -2617,10 +2617,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
             <div className="space-y-6 animate-fadeIn">
               <div className="p-4 rounded-2xl bg-sky-950/50 border border-sky-400/30 space-y-2">
                 <div className="flex items-center gap-2 text-sky-200 font-bold text-sm">
-                  <Lock className="w-4 h-4" /> Corrección de continuidad visual para Flow
+                  <Lock className="w-4 h-4" /> Continuidad visual con prompts autosuficientes
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  Antes del primer clip, crea <strong>una sola imagen maestra por personaje</strong> con el botón de abajo y conserva ese archivo. En cada segmento, adjunta exactamente la misma imagen como referencia visual; no vuelvas a diseñar el personaje desde texto. Los prompts ya bloquean rostro, edad, piel, cabello, complexión, ropa, accesorios y voz. Si Flow genera clips independientes sin recibir la misma referencia, el texto por sí solo no puede garantizar el mismo actor.
+                  Cada prompt incluye la ficha textual completa del reparto visible y repite las mismas anclas de rostro, edad, piel, cabello, complexión, ropa, accesorios y voz. Mantén esas descripciones iguales entre clips: el flujo está diseñado para conservar a los personajes desde los prompts, sin requerir imágenes maestras externas.
                 </p>
               </div>
               {currentSeries.characters && currentSeries.characters.length > 0 && (
@@ -2657,11 +2657,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
                           <button
                             type="button"
-                            onClick={() => handleCopy(buildCharacterReferencePrompt(currentSeries, char), `char_reference_prompt_${char.id}`, `Prompt de referencia de ${char.name} copiado.`)}
+                            onClick={() => handleCopy(buildCharacterIdentityPrompt(currentSeries, char), `char_identity_prompt_${char.id}`, `Prompt de identidad de ${char.name} copiado.`)}
                             className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <Copy className="w-3 h-3" />
-                            <span>Prompt imagen maestra</span>
+                            <span>Prompt de identidad</span>
                           </button>
                           <button
                             type="button"
