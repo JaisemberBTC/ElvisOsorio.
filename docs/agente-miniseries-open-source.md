@@ -6,6 +6,12 @@ El nuevo agente entrega miniseries originales de **2 a 5 capítulos**. Cada cap�
 
 La biblia guarda identidades de personajes, vestuario, voces, escenario, utilería, paleta, firma musical, orden de capítulos y hashes de continuidad. Las series generadas se guardan en el navegador para que permanezcan disponibles al volver a abrir la app.
 
+## Continuidad visual de personajes en Flow
+
+Cada prompt repite los rasgos canónicos del reparto que aparece en ese segmento y señala las referencias visuales con un ID estable. En la pestaña **Personajes**, copia el **Prompt imagen maestra** de cada actor y genera una sola imagen de referencia antes de crear los clips. Guarda esos archivos y adjunta exactamente la misma imagen de cada personaje a todos los segmentos donde aparece; no vuelvas a generar su rostro desde cero. El prompt textual por sí solo no puede garantizar que un generador de video conserve la misma identidad entre clips independientes si no recibe también esa referencia visual.
+
+Los prompts de segmento bloquean rostro, edad aparente, piel, cabello, complexión, vestuario, accesorios, voz y entorno, y limitan el reparto al elenco visible de la toma. La app conserva estas instrucciones y ofrece referencias canónicas; Flow sigue necesitando que el usuario adjunte los archivos de referencia al generar cada clip.
+
 ## Activar un modelo local con Ollama
 
 1. Instala Ollama en el equipo que ejecuta el servidor de la aplicación.
@@ -53,7 +59,7 @@ npm run test:agent
 npm run build
 ```
 
-Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, música y continuidad, y la selección de proveedores sin hacer llamadas de red.
+Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, música y continuidad visual mediante referencias canónicas, el reparto visible por segmento, y la selección de proveedores sin hacer llamadas de red.
 
 ## Notas de uso y licencia
 

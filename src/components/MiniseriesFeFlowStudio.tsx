@@ -46,7 +46,7 @@ import confetti from 'canvas-confetti';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport';
 import { nicheMelodyEngine, NICHE_MELODIES } from '../utils/nicheMelodyEngine';
 import { syncScenePromptWithExactDialogue, buildCanonicalDialogueBlock } from '../utils/dialoguePromptSync';
-import { buildFlowPrompt } from '../utils/flowPromptBuilder';
+import { buildFlowPrompt, buildCharacterReferencePrompt } from '../utils/flowPromptBuilder';
 import { countWordsSpanish, calibrateAndPaceDialogue, MAX_WORDS_PER_SECOND, MIN_WORDS_PER_SECOND } from '../utils/miniseriesDomain';
 import {
   SKILL_PRODUCTION_ARCHITECTURE,
@@ -2615,6 +2615,14 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           {/* TAB 3: PERSONAJES */}
           {activeWorkflowTab === 'personajes' && (
             <div className="space-y-6 animate-fadeIn">
+              <div className="p-4 rounded-2xl bg-sky-950/50 border border-sky-400/30 space-y-2">
+                <div className="flex items-center gap-2 text-sky-200 font-bold text-sm">
+                  <Lock className="w-4 h-4" /> Corrección de continuidad visual para Flow
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  Antes del primer clip, crea <strong>una sola imagen maestra por personaje</strong> con el botón de abajo y conserva ese archivo. En cada segmento, adjunta exactamente la misma imagen como referencia visual; no vuelvas a diseñar el personaje desde texto. Los prompts ya bloquean rostro, edad, piel, cabello, complexión, ropa, accesorios y voz. Si Flow genera clips independientes sin recibir la misma referencia, el texto por sí solo no puede garantizar el mismo actor.
+                </p>
+              </div>
               {currentSeries.characters && currentSeries.characters.length > 0 && (
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 to-slate-900 border border-purple-500/40 space-y-3">
                   <div className="flex items-center gap-2">
@@ -2633,7 +2641,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                           <div className="flex items-center justify-between">
                             <span className="text-xl">{char.avatarEmoji}</span>
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                              Bespoke 3D
+                              Identidad fija
                             </span>
                           </div>
                           <div>
@@ -2649,18 +2657,18 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
                           <button
                             type="button"
-                            onClick={() => handleCopy(char.fixedIdentityPromptEn || char.exactModelSheetLockEn, `char_prompt_en_${char.id}`, `¡Prompt en inglés de ${char.name} copiado!`)}
+                            onClick={() => handleCopy(buildCharacterReferencePrompt(currentSeries, char), `char_reference_prompt_${char.id}`, `Prompt de referencia de ${char.name} copiado.`)}
                             className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <Copy className="w-3 h-3" />
-                            <span>Prompt Inglés</span>
+                            <span>Prompt imagen maestra</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setSelectedCharacterForModal(char)}
                             className="py-1.5 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold cursor-pointer"
                           >
-                            Ficha 3D
+                            Ficha técnica
                           </button>
                         </div>
                       </div>
