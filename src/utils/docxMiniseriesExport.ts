@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { buildFlowPrompt } from './flowPromptBuilder';
+import { SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill';
 
 const text = (value: unknown, fallback = '—') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
 
@@ -38,6 +39,8 @@ export async function downloadMiniseriesWordDoc(series: any): Promise<void> {
     field('Regla de continuidad', text(world.continuityRule, 'Mantener identidad, vestuario, voces, entorno y utilería entre segmentos.')),
     field('Música original de la serie', text(audio.originalScore || audio.genre)),
     field('Mezcla de audio', text(audio.mixNotes)),
+    new Paragraph({ text: 'REGLA EDITORIAL DE COMPARTIBILIDAD', heading: HeadingLevel.HEADING_2 }),
+    plain(SHAREABILITY_RULE),
     new Paragraph({ text: 'PERSONAJES', heading: HeadingLevel.HEADING_2 })
   ];
 
@@ -52,6 +55,7 @@ export async function downloadMiniseriesWordDoc(series: any): Promise<void> {
 
   episodes.forEach((episode: any, episodeIndex: number) => {
     const seo = episode?.socialPackage || {};
+    const shareability = episode?.shareabilityPlan || {};
     children.push(
       new Paragraph({ text: `CAPÍTULO ${episode.episodeNumber || episodeIndex + 1}: ${text(episode.episodeTitle, 'Sin título')}`, heading: HeadingLevel.HEADING_1 }),
       field('Duración', '50 segundos'),
@@ -60,6 +64,13 @@ export async function downloadMiniseriesWordDoc(series: any): Promise<void> {
       field('Conflicto', episode.conflict),
       field('Giro', episode.twist),
       field('Cierre / cliffhanger', episode.cliffhanger),
+      new Paragraph({ text: 'PLAN DE COMPARTIBILIDAD Y APRENDIZAJE', heading: HeadingLevel.HEADING_2 }),
+      field('Problema o deseo de audiencia', shareability.audienceProblemOrDesire),
+      field('Hook en una frase', shareability.hookSentence || episode.hook),
+      field('Transformación rápida', shareability.rapidTransformation),
+      field('Motivo para enviarlo', shareability.reasonToShare),
+      field('Señales por revisar', Array.isArray(shareability.metricsToReview) ? shareability.metricsToReview.join(', ') : shareability.metricsToReview),
+      field('Estado de datos', shareability.dataStatus),
       new Paragraph({ text: 'SEO Y PUBLICACIÓN', heading: HeadingLevel.HEADING_2 }),
       field('Título para TikTok', seo.tiktokTitle),
       field('Título para Facebook', seo.facebookTitle),

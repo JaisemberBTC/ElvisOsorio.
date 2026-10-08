@@ -31,6 +31,7 @@ export interface MicrofictionQualityChecklist {
   viabilidadProduccion: MicrofictionQualityControlItem;
   continuidadVisual: MicrofictionQualityControlItem;
   presupuestoFonetico: MicrofictionQualityControlItem;
+  potencialCompartir: MicrofictionQualityControlItem;
 }
 
 export function buildQualityChecklist(
@@ -55,9 +56,15 @@ export function buildQualityChecklist(
     coherenciaGiro: item('cliffhanger', 'Giro o cierre', cliffhanger?.trim() ? 'passed' : 'info', cliffhanger?.trim() ? `Cierre declarado: ${cliffhanger}` : 'Revisar que el giro o cliffhanger conecte causalmente con el capítulo siguiente.'),
     viabilidadProduccion: item('duration', 'Duración y estructura', sceneList.length === 5 && durationSec === 50 ? 'passed' : 'warning', `Estructura actual: ${sceneList.length} escenas, ${durationSec} s declarados; la meta Flow es 5 × 10 s = 50 s.`),
     continuidadVisual: item('continuity', 'Continuidad visual', allScenesHaveVisuals ? 'info' : 'warning', allScenesHaveVisuals ? 'Cada escena tiene acción, entorno y cámara; revisar además la biblia de identidad entre planos.' : 'Completa acción, entorno y cámara en cada escena.'),
-    presupuestoFonetico: item('dialogue', 'Diálogo por segmento', wordsPerScene.length > 0 && wordsPerScene.every((count) => count >= 19 && count <= 20) ? 'passed' : 'warning', wordsPerScene.length ? `Palabras habladas por escena: ${wordsPerScene.join(', ')}. Meta: 19–20 palabras, dos turnos equilibrados y cerca de 9,2 segundos de voz; Flow puede variar la cadencia.` : 'Todavía no hay diálogos para revisar.')
+    presupuestoFonetico: item('dialogue', 'Diálogo por segmento', wordsPerScene.length > 0 && wordsPerScene.every((count) => count >= 19 && count <= 20) ? 'passed' : 'warning', wordsPerScene.length ? `Palabras habladas por escena: ${wordsPerScene.join(', ')}. Meta: 19–20 palabras, dos turnos equilibrados y cerca de 9,2 segundos de voz; Flow puede variar la cadencia.` : 'Todavía no hay diálogos para revisar.'),
+    potencialCompartir: item('shareability', 'Valor para compartir', 'info', 'Identifica el problema o deseo intenso, una transformación rápida y a quién querría enviárselo alguien. Validar la hipótesis con retención, finalización, compartidos/envíos, guardados y comentarios reales; no inventar resultados.')
   };
 }
+
+export const SHAREABILITY_RULE = `REGLA EDITORIAL DE COMPARTIBILIDAD Y APRENDIZAJE (OBLIGATORIA)
+Encuentra un problema o deseo intenso de una persona concreta de la audiencia; exprésalo en una frase breve, específica e imposible de ignorar; entrega una transformación rápida y emocionalmente honesta dentro del video.
+Persigue crear un video que esa persona quiera enviarle inmediatamente a otra porque la hace sentirse comprendida, le ofrece esperanza o le da un paso útil. La compartibilidad debe nacer del valor humano de la historia, nunca de culpa, presión o un CTA insistente.
+Repite el ciclo idea → video → medición → aprendizaje en cada nueva miniserie hasta que los datos reales revelen qué quiere compartir la audiencia. Revisa, cuando estén disponibles, retención de 0–3 s, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios. Sin datos suministrados, declara hipótesis y qué señal observar; nunca inventes analíticas ni prometas viralidad. Usa lo aprendido para ajustar una variable creativa por vez.`;
 
 const commonFormat = `FORMATO DE ENTREGA OBLIGATORIO
 - De 2 a 5 capítulos, elegidos por el usuario.
@@ -72,6 +79,7 @@ const commonFormat = `FORMATO DE ENTREGA OBLIGATORIO
 - Añade SEO individual por capítulo: títulos para TikTok, Facebook y YouTube Shorts, caption, palabras clave, hashtags, hook de portada y comentario fijado.
 - Trata los versículos con cuidado: distingue referencia, cita textual verificada y paráfrasis. No inventes citas ni prometas milagros garantizados.
 - Usa recursos narrativos generales (problema inmediato, curiosidad, escalada, revelación, continuidad); no copies personajes, frases, música, tramas, imágenes, marcas ni estética distintiva de otros creadores.
+${SHAREABILITY_RULE}
 - Diseña para retención; no prometas porcentajes, viralidad ni resultados analíticos que no se hayan medido.
 `;
 

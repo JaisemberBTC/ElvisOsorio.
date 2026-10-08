@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
+import { SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
 
 export interface LLMProvider {
   readonly id: string;
@@ -295,14 +296,15 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       lastEpisodeNumber: totalParts,
       nextEpisodeSeed: `Coda posterior a ${outline[totalParts - 1].title}: una decisión cotidiana que sostiene la esperanza`,
       usedHooks: outline.map((plan) => plan.hook),
+      audienceShareabilityRule: SHAREABILITY_RULE,
       continuityLock: true
     },
     episodes: [] as any[]
   };
 
   const sceneActions = (plan: any, episodeNumber: number) => [
-    `En el primer segundo, ${protagonist.name} encuentra el sobre color crema junto a la Biblia abierta. El borde está húmedo por una taza volcada; ella lo sostiene sin abrirlo. La imagen plantea la pregunta del capítulo «${plan.hook}».`,
-    `${companion.name} entra desde el pasillo y nota que ${protagonist.name} esconde el sobre. Una mirada y una mano que se detiene revelan que ambos reconocen la letra.`,
+    `En el primer segundo, ${protagonist.name} encuentra el sobre color crema junto a la Biblia abierta; el temblor de su mano deja ver el miedo a una verdad familiar. ${companion.name} está frente a ella y le acerca la mano sin presionarla. ${protagonist.name} decide abrirlo acompañada: la escena transforma aislamiento en apoyo, aunque el secreto siga pendiente. La imagen plantea la pregunta del capítulo «${plan.hook}».`,
+    `${companion.name} reconoce la letra del sobre y admite que lleva años ocultando una parte de la historia. Una mirada y una mano que se detiene revelan que ambos conocen el costo de esa verdad.`,
     `${protagonist.name} abre el sobre y encuentra una fotografía familiar doblada y una fecha escrita a mano. ${companion.name} baja la mirada; una llamada vibra sobre la mesa, sin texto legible.`,
     `La conversación se vuelve más tensa. ${protagonist.name} respira, mira la Biblia y hace una oración breve en voz baja; ${companion.name} responde con una verdad concreta, sin atribuir palabras inventadas a Dios.`,
     episodeNumber < totalParts
@@ -311,9 +313,11 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   ];
   const sceneDialogues = (plan: any, episodeNumber: number) => {
     const hookWords = spokenWordCount(plan.hook);
-    const openingReply = hookWords >= 11
-      ? 'Espera; todavía falta una parte que nadie ha dicho.'
-      : 'No la abras todavía; dime primero qué sabes de esto.';
+    const openingReply = hookWords >= 12
+      ? 'Respira; no estás sola. Vamos paso a paso.'
+      : hookWords >= 11
+        ? 'Respira; no estás sola, me quedo aquí contigo ahora.'
+        : 'Respira; no tienes que abrir esa carta completamente sola hoy.';
     return [
       [[protagonist.name, plan.hook], [companion.name, openingReply]],
       [[companion.name, 'Reconozco esta letra; lleva años escondiendo un secreto de familia.'], [protagonist.name, 'Mira la firma; dime si también recuerdas a quién pertenece.']],
@@ -370,7 +374,7 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       youtubeTitle: `${plan.title} | Miniserie de fe y oración — Capítulo ${episodeNumber}`,
       facebookTitle: `${plan.title}: una historia de fe, familia y perdón (Capítulo ${episodeNumber})`,
       tiktokTitle: `${plan.title} | Parte ${episodeNumber} de ${totalParts}`,
-      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Una historia original sobre ${topic.toLocaleLowerCase('es')}, oración y esperanza realista. ${episodeNumber < totalParts ? `El siguiente capítulo continúa: ${plan.cliffhanger}` : 'La reparación comienza con una conversación honesta.'}`,
+      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Una historia original sobre ${topic.toLocaleLowerCase('es')}, oración y esperanza realista. Si conoces a alguien que necesita sentirse acompañado ante una verdad difícil, puedes enviársela como un gesto de apoyo. ${episodeNumber < totalParts ? `El siguiente capítulo continúa: ${plan.cliffhanger}` : 'La reparación comienza con una conversación honesta.'}`,
       hashtags: ['#MiniserieDeFe', '#Oracion', '#HistoriasDeFe', '#Esperanza', `#Capitulo${episodeNumber}`, '#FeEnLaVidaReal'],
       pinnedComment: '¿Qué paso pequeño te ha ayudado a recuperar la esperanza?',
       seoKeywords: ['miniserie cristiana', 'historia de fe y oración', 'esperanza en familia', 'microdrama de fe', plan.title.toLocaleLowerCase('es')],
@@ -387,6 +391,14 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       escalation: `${plan.reveal}; la presión obliga a cada personaje a elegir cómo responder.`,
       twist: plan.reveal,
       cliffhanger: plan.cliffhanger,
+      shareabilityPlan: {
+        audienceProblemOrDesire: plan.conflict,
+        hookSentence: plan.hook,
+        rapidTransformation: `${protagonist.name} deja de enfrentar sola la incertidumbre y da un primer paso de confianza; el conflicto mayor permanece abierto.`,
+        reasonToShare: 'Puede enviarse a alguien que atraviesa una verdad familiar difícil porque ofrece compañía y esperanza realista, no una solución mágica.',
+        metricsToReview: ['retención 0–3 s', 'tiempo promedio', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios'],
+        dataStatus: 'Hipótesis editorial; no equivale a datos medidos de audiencia.'
+      },
       lockedEnvironmentId: series.lockedEnvironmentId,
       lockedEnvironmentName: location,
       lockedEnvironmentPromptEn: series.lockedEnvironmentPromptEn,
@@ -527,6 +539,15 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
 function finalizeSeries(series: any) {
   const allPrompts = new Set<string>();
   for (const episode of series.episodes) {
+    const audienceProblemOrDesire = tidy(episode.conflict || episode.objective, 'problema o deseo central por concretar');
+    episode.shareabilityPlan = episode.shareabilityPlan || {
+      audienceProblemOrDesire,
+      hookSentence: tidy(episode.hook, 'Hook por revisar'),
+      rapidTransformation: tidy(episode.reveal || episode.twist || episode.escalation, 'entregar un primer cambio emocional o una decisión observable sin resolver mágicamente todo el arco'),
+      reasonToShare: `Hipótesis: alguien que atraviesa «${audienceProblemOrDesire}» podría enviárselo a otra persona en una situación parecida para ofrecerle compañía y una perspectiva útil; validar con datos reales.`,
+      metricsToReview: ['retención 0–3 s', 'tiempo promedio', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios'],
+      dataStatus: 'Hipótesis editorial; usar datos reales cuando estén disponibles y no inventar resultados.'
+    };
     episode.scenes = episode.scenes.slice(0, 5);
     episode.scenes.forEach((scene: any, index: number) => {
       scene.durationSec = 10;
@@ -558,7 +579,7 @@ export async function generateOpenSourceMiniseries(options: MiniseriesAgentOptio
   const series = createFallbackMiniseries(normalized);
   if (!provider) return { miniseries: series, provider: 'plantilla-local', isFallback: true };
   try {
-    const systemPrompt = 'Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.';
+    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\n${SHAREABILITY_RULE}`;
     const output = await provider.completeJSON(systemPrompt, buildGenerationPrompt(normalized, series));
     mergeModelOutput(series, output);
     finalizeSeries(series);

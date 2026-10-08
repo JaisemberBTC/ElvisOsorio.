@@ -222,6 +222,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
       `LOGLINE: ${currentSeries.logline}\n` +
       `ENTORNO INMUTABLE: ${currentSeries.lockedEnvironmentName || 'Aposento Sagrado'} (${currentSeries.lockedEnvironmentId})\n` +
       `PROMPT ARQUITECTURA:\n${currentSeries.lockedEnvironmentPromptEn || ''}\n\n` +
+      `REGLA DE COMPARTIBILIDAD: ${currentSeries.seriesBible?.audienceShareabilityRule || 'Encuentra un problema o deseo intenso, exprésalo en una frase imposible de ignorar, entrega una transformación rápida y crea un video que una persona quiera enviarle inmediatamente a otra. Aprende de datos reales, no inventes métricas ni prometas viralidad.'}\n\n` +
       `ELENCO Y MODEL SHEETS:\n` +
       (currentSeries.characters || CARTOON_CHARACTERS_FE).map(c => (
         `[${c.name.toUpperCase()} - ${c.role}]\n` +
@@ -234,14 +235,20 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   };
 
   const handleCopyQualityChecklist = (episode: MiniserieEpisode = editableEpisode) => {
-    const qc = (episode as any).qualityChecklist || buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger);
+    const qc = { ...buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger), ...((episode as any).qualityChecklist || {}) };
+    const shareabilityPlan = (episode as any).shareabilityPlan || {};
     const text = `LISTA DE CONTROL DE CALIDAD Y VIABILIDAD (SECCIÓN H) - ${episode.episodeTitle}\n` +
       `1. Gancho <3s: [${qc.ganchoPrimeros3s.status.toUpperCase()}] ${qc.ganchoPrimeros3s.detail}\n` +
       `2. Conflicto claro: [${qc.claridadConflicto.status.toUpperCase()}] ${qc.claridadConflicto.detail}\n` +
       `3. Giro y revelación: [${qc.coherenciaGiro.status.toUpperCase()}] ${qc.coherenciaGiro.detail}\n` +
       `4. Viabilidad de producción: [${qc.viabilidadProduccion.status.toUpperCase()}] ${qc.viabilidadProduccion.detail}\n` +
       `5. Presupuesto fonético: [${qc.presupuestoFonetico.status.toUpperCase()}] ${qc.presupuestoFonetico.detail}\n` +
-      `6. Continuidad visual: [${qc.continuidadVisual.status.toUpperCase()}] ${qc.continuidadVisual.detail}\n`;
+      `6. Continuidad visual: [${qc.continuidadVisual.status.toUpperCase()}] ${qc.continuidadVisual.detail}\n` +
+      `7. Valor para compartir: [${qc.potencialCompartir.status.toUpperCase()}] ${qc.potencialCompartir.detail}\n` +
+      `Problema/deseo: ${shareabilityPlan.audienceProblemOrDesire || 'Por concretar con el tema.'}\n` +
+      `Transformación rápida: ${shareabilityPlan.rapidTransformation || 'Definir una transformación breve y honesta.'}\n` +
+      `Motivo para enviarlo: ${shareabilityPlan.reasonToShare || 'Identificar a quién le ofrecería valor humano.'}\n` +
+      `Señales a revisar: ${(shareabilityPlan.metricsToReview || ['retención inicial', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios']).join(', ')}. ${shareabilityPlan.dataStatus || 'Tratar como hipótesis hasta contar con métricas reales.'}\n`;
     handleCopy(text, 'copy_quality_checklist', '✅ ¡Lista de control de calidad (Sección H) copiada!');
   };
 
@@ -1317,7 +1324,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                 {/* Quality Control Checklist (Sección H del Documento Maestro) */}
                 {(() => {
-                  const qc = (episode as any).qualityChecklist || buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger);
+                  const qc = { ...buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger), ...((episode as any).qualityChecklist || {}) };
+                  const shareabilityPlan = (episode as any).shareabilityPlan;
                   return (
                     <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-emerald-500/30 space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1333,7 +1341,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                           <Copy className="w-3 h-3" /> Copiar Checklist
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px]">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 text-[10px]">
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
                           <span className="text-slate-400 block font-semibold">1. Gancho &lt;3s</span>
                           <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
@@ -1357,6 +1365,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
                           <span className="text-slate-400 block font-semibold">6. Continuidad</span>
                           <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Model Sheet</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900 border border-amber-400/20 space-y-0.5">
+                          <span className="text-slate-400 block font-semibold">7. Compartibilidad</span>
+                          <span className="text-amber-300 font-bold">Validar con datos</span>
+                          <p className="text-[9px] text-slate-400" title={shareabilityPlan?.reasonToShare || '¿A quién se lo enviarían y por qué?'}>{shareabilityPlan?.reasonToShare || '¿A quién se lo enviarían y por qué?'}</p>
                         </div>
                       </div>
                     </div>
@@ -1837,7 +1850,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
               {/* Quality Control Checklist Card (Sección H de Prompt 2) */}
               {(() => {
-                const qc = (editableEpisode as any).qualityChecklist || buildQualityChecklist(editableEpisode.scenes || [], editableEpisode.hook, editableEpisode.cliffhanger);
+                const qc = { ...buildQualityChecklist(editableEpisode.scenes || [], editableEpisode.hook, editableEpisode.cliffhanger), ...((editableEpisode as any).qualityChecklist || {}) };
+                const shareabilityPlan = (editableEpisode as any).shareabilityPlan;
                 return (
                   <div className="p-4 rounded-3xl bg-slate-900/90 border border-emerald-500/30 space-y-3 shadow-xl">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1863,7 +1877,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5 text-xs">
                       <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
                         <span className="text-[10px] text-slate-400 block font-bold uppercase">1. Gancho &lt;3s</span>
                         <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
@@ -1897,7 +1911,12 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
                         <span className="text-[10px] text-slate-400 block font-bold uppercase">6. Continuidad</span>
                         <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Inmutable</span>
-                        <p className="text-[9px] text-slate-400 truncate font-sans">Model sheets & entorno fijo</p>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">Model sheets &amp; entorno fijo</p>
+                      </div>
+                      <div className="p-2.5 rounded-2xl bg-slate-950 border border-amber-400/20 space-y-1">
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">7. Compartibilidad</span>
+                        <span className="text-amber-300 font-bold">Validar con datos</span>
+                        <p className="text-[9px] text-slate-400 font-sans" title={shareabilityPlan?.reasonToShare || '¿A quién se lo enviarían y qué señal lo confirma?'}>{shareabilityPlan?.reasonToShare || '¿A quién se lo enviarían y qué señal lo confirma?'}</p>
                       </div>
                     </div>
                   </div>

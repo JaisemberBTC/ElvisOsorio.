@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import JSZip from 'jszip';
 import {
   buildLocalMiniseriesForTest,
-  createConfiguredMiniseriesProvider
+  createConfiguredMiniseriesProvider,
+  generateOpenSourceMiniseries
 } from './miniseriesOpenSourceAgent.ts';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport.ts';
-import { buildQualityChecklist } from '../skills/verticalMicrofictionSkill.ts';
+import { buildQualityChecklist, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
 import { buildCharacterIdentityPrompt, buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
 
 for (const totalParts of [2, 3, 4, 5]) {
@@ -21,6 +22,7 @@ for (const totalParts of [2, 3, 4, 5]) {
     assert.equal(series.totalPartsPlanned, totalParts);
     assert.equal(series.characters.length, 2);
     assert.equal(series.seriesBible.continuityLock, true);
+    assert.equal(series.seriesBible.audienceShareabilityRule, SHAREABILITY_RULE);
     assert.equal(new Set(series.episodes.map((episode: any) => episode.hook)).size, totalParts);
 
     for (const episode of series.episodes) {
@@ -52,9 +54,35 @@ for (const totalParts of [2, 3, 4, 5]) {
       assert.ok(episode.socialPackage.facebookTitle);
       assert.ok(episode.socialPackage.youtubeTitle);
       assert.ok(episode.socialPackage.seoKeywords.length > 0);
+      assert.ok(episode.shareabilityPlan.audienceProblemOrDesire);
+      assert.ok(episode.shareabilityPlan.rapidTransformation);
+      assert.ok(episode.shareabilityPlan.reasonToShare.includes('compañía'));
+      assert.ok(episode.shareabilityPlan.metricsToReview.includes('compartidos/envíos'));
+      assert.ok(episode.socialPackage.caption.includes('puedes enviársela'));
+      assert.ok(episode.scenes[0].action.includes('aislamiento en apoyo'));
     }
   });
 }
+
+test('el agente exige problema intenso, transformación, intención de envío y aprendizaje con datos reales', async () => {
+  let capturedSystemPrompt = '';
+  const provider = {
+    id: 'prompt-capture',
+    async completeJSON(systemPrompt: string) {
+      capturedSystemPrompt = systemPrompt;
+      return {};
+    }
+  };
+
+  await generateOpenSourceMiniseries({ topic: 'Salmo 27: encontrar valor en medio del miedo', totalParts: 2 }, provider);
+
+  assert.ok(capturedSystemPrompt.includes('problema o deseo intenso'));
+  assert.ok(capturedSystemPrompt.includes('imposible de ignorar'));
+  assert.ok(capturedSystemPrompt.includes('transformación rápida'));
+  assert.ok(capturedSystemPrompt.includes('enviarle inmediatamente a otra'));
+  assert.ok(capturedSystemPrompt.includes('retención de 0–3 s'));
+  assert.ok(capturedSystemPrompt.includes('nunca inventes analíticas'));
+});
 
 test('cada prompt de Flow limita el reparto a quienes aparecen en el segmento', () => {
   const series = buildLocalMiniseriesForTest({ topic: 'Una conversación familiar', totalParts: 2 });
@@ -92,11 +120,15 @@ test('el proveedor se configura como Ollama o compatible y admite fallback local
   );
 });
 
-test('el checklist advierte si el diálogo no alcanza el objetivo de voz continua', () => {
+test('el checklist advierte sobre diálogo y exige validar la compartibilidad con datos', () => {
   const shortScene = [{ dialogueExchange: [{ dialogueSpanish: 'Tengo miedo.' }, { dialogueSpanish: 'Estoy aquí.' }] }];
   const completeScene = [{ dialogueExchange: [{ dialogueSpanish: 'Le pedí a Dios claridad, no que todo cambiara hoy.' }, { dialogueSpanish: 'La fecha de esta foto cambia todo lo que sabíamos.' }] }];
   assert.equal(buildQualityChecklist(shortScene, 'Hook', 'Cierre').presupuestoFonetico.status, 'warning');
   assert.equal(buildQualityChecklist(completeScene, 'Hook', 'Cierre').presupuestoFonetico.status, 'passed');
+  const shareability = buildQualityChecklist(completeScene, 'Hook', 'Cierre').potencialCompartir;
+  assert.equal(shareability.status, 'info');
+  assert.ok(shareability.detail.includes('compartidos/envíos'));
+  assert.ok(shareability.detail.includes('no inventar resultados'));
 });
 
 test('el documento Word reúne prompts Flow y metadatos SEO', async () => {
@@ -124,6 +156,9 @@ test('el documento Word reúne prompts Flow y metadatos SEO', async () => {
     const zip = await JSZip.loadAsync(Buffer.from(await exportedBlob!.arrayBuffer()));
     const documentXml = await zip.file('word/document.xml')?.async('text');
     assert.ok(documentXml?.includes('PROMPTS LISTOS PARA FLOW'));
+    assert.ok(documentXml?.includes('REGLA EDITORIAL DE COMPARTIBILIDAD'));
+    assert.ok(documentXml?.includes('PLAN DE COMPARTIBILIDAD Y APRENDIZAJE'));
+    assert.ok(documentXml?.includes('Motivo para enviarlo'));
     assert.ok(documentXml && /SEO/i.test(documentXml));
     assert.ok(documentXml?.includes('TikTok'));
     assert.ok(documentXml?.includes('DIÁLOGO EXACTO EN ESPAÑOL LATINOAMERICANO'));

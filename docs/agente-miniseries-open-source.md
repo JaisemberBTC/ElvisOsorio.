@@ -12,6 +12,14 @@ Cada prompt repite la ficha textual canónica del reparto visible en ese segment
 
 Los prompts de segmento bloquean rostro, edad aparente, piel, cabello, complexión, vestuario, accesorios, voz y entorno, y limitan el reparto al elenco visible de la toma. Para sostener la continuidad, conserva intactas las descripciones canónicas cuando uses cada prompt en Flow.
 
+## Regla editorial: problema, transformación y compartibilidad
+
+Cada miniserie identifica primero un problema o deseo intenso de una persona concreta; lo expresa en una frase breve e imposible de ignorar y entrega una transformación rápida, honesta y visible. El criterio central es crear una historia que alguien quiera enviarle inmediatamente a otra persona porque le ofrece reconocimiento, esperanza o un paso útil, no por culpa ni presión para compartir.
+
+El proceso se repite como ciclo de idea → video → medición → aprendizaje. Cuando haya datos reales, se revisan retención inicial, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios para entender qué quiere compartir la audiencia y ajustar una variable creativa por vez. Sin datos, el agente debe marcar hipótesis y señales por observar; no puede inventar métricas ni prometer viralidad.
+
+> Regla del creador: “Encuentra un problema o deseo intenso, exprésalo en una frase imposible de ignorar, entrega una transformación rápida y repite el proceso hasta que los datos te revelen qué quiere compartir tu audiencia. Persigue crear un video que una persona quiera enviarle inmediatamente a otra. Haz eso miles de veces y la viralidad se vuelve una consecuencia.”
+
 ## Activar un modelo local con Ollama
 
 1. Instala Ollama en el equipo que ejecuta el servidor de la aplicación.
@@ -59,7 +67,7 @@ npm run test:agent
 npm run build
 ```
 
-Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, música y continuidad visual mediante referencias canónicas, el reparto visible por segmento, y la selección de proveedores sin hacer llamadas de red.
+Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, música y continuidad visual mediante prompts textuales, la regla de compartibilidad y aprendizaje por datos, el reparto visible por segmento, y la selección de proveedores sin hacer llamadas de red.
 
 ## Notas de uso y licencia
 
