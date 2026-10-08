@@ -1,27 +1,20 @@
 /**
- * HABILIDADES DE IA PARA CREACIÓN DE MINISERIES Y MICROFICCIÓN VERTICAL (9:16)
- * ==============================================================================
- * Extraídas directamente del documento maestro de especificación:
- * 
- * 1. PROMPT 1 -> Habilidad de Arquitectura de Producción y Control Técnico
- * 2. PROMPT 2 -> Habilidad de Guionista y Editor de Microficción Vertical 9:16
- * 3. PROMPT 3 -> Habilidad de Formulación de Conflicto y Disparo Rápido
- * 
- * Estas habilidades se integran directamente en el flujo y motor de la IA de
- * la sección de Miniseries, asegurando continuidad visual, presupuesto fonético,
- * ganchos <3s, revelaciones preparadas y control de calidad A-H.
+ * HABILIDADES DE PRODUCCIÓN PARA MINISERIES FE FLOW
+ * Arquitectura narrativa compartida por la interfaz; la generación LLM vive en
+ * src/server/miniseriesOpenSourceAgent.ts y puede usar Ollama/API compatible.
  */
 
 export interface MicrofictionSkillRequest {
   ideaCentral: string;
   tono?: string;
-  duracionPorEpisodioSec?: number; // 60 a 75 segundos
-  numeroEpisodios?: number; // 1 a 10
-  personajesConservar?: string; // Rasgos protegidos
+  duracionPorEpisodioSec?: number;
+  numeroEpisodios?: number;
+  personajesConservar?: string;
   publicoPlataforma?: 'TikTok' | 'Instagram Reels' | 'YouTube Shorts' | 'Universal 9:16';
   llamadaAccion?: string;
-  noIncluir?: string; // Elementos o temas a evitar
+  noIncluir?: string;
   lockedEnvironmentId?: string;
+  bibleReference?: string;
 }
 
 export interface MicrofictionQualityControlItem {
@@ -38,300 +31,132 @@ export interface MicrofictionQualityChecklist {
   viabilidadProduccion: MicrofictionQualityControlItem;
   continuidadVisual: MicrofictionQualityControlItem;
   presupuestoFonetico: MicrofictionQualityControlItem;
+  potencialCompartir: MicrofictionQualityControlItem;
 }
 
-/**
- * 1. HABILIDAD: ARQUITECTURA DE PRODUCCIÓN Y CONTROL TÉCNICO (Prompt 1)
- */
-export const SKILL_PRODUCTION_ARCHITECTURE = {
-  id: "skill_production_architecture",
-  name: "Arquitectura de Producción y Control Técnico",
-  source: "Prompt 1 — Integrar el módulo en mi página",
-  badge: "Control Técnico 9:16",
-  version: "3.2.0",
-  description: "Estructura la producción de microficción serializada vertical (60-75s por episodio, 1 a 10 capítulos), fijando controles técnicos, exclusiones estrictas, modularidad de copiado y biblia de continuidad.",
-  rawPromptText: `Quiero integrar un generador de historias y microficción serializada vertical (9:16) en mi página web.
-
-Requisitos de integración técnica:
-1. No toques, no rompas ni rediseñes las páginas, rutas, funciones y coherencia visual del proyecto.
-2. Añade los controles necesarios para que el usuario pueda usar el generador:
-   - Idea o conflicto central (texto libre).
-   - Personajes que se quieren conservar o rasgos protegidos (opcional).
-   - Público o plataforma (TikTok, Instagram Reels, YouTube Shorts, Universal 9:16).
-   - Tono (melodrama, drama conmovedor, misterio, etc.).
-   - Duración por episodio (60 a 75 segundos, dividido en planos de 10s).
-   - Número de episodios (1 a 10 capítulos serializados).
-   - Llamada a la acción / interacción final.
-   - "NO INCLUIR": campo para elementos o temas que no deben aparecer bajo ninguna circunstancia.
-3. El resultado debe ser modular y fácil de copiar por partes (guion completo, episodios por separado, prompts visuales independientes, biblia de continuidad).
-4. Asegúrate de que los diálogos respetan el presupuesto fonético (<2.5 palabras/segundo) para que el audio quepa naturalmente en el tiempo disponible.`,
-  coreRules: [
-    "Conservar todas las páginas, rutas, funciones y coherencia visual del proyecto.",
-    "Formulario paramétrico: Idea central, personajes protegidos, público/plataforma, tono, duración (60-75s), episodios (1 a 10), llamada a la acción y exclusiones ('NO INCLUIR').",
-    "Generar respuestas modulares copiables por separado (guion, episodio, prompts visuales, biblia narrativa).",
-    "Preservar el elenco y la biblia narrativa para continuaciones.",
-    "Asegurar que el diálogo cabe en la duración solicitada y que cada escena es producible sin inventar datos inconexos."
-  ]
-};
-
-/**
- * 2. HABILIDAD: GUIONISTA Y EDITOR DE MICROFICCIÓN VERTICAL 9:16 (Prompt 2)
- */
-export const SKILL_MICROFICTION_SCRIPT_ENGINE = {
-  id: "skill_microfiction_script_engine",
-  name: "Guionista y Editor de Microficción Vertical 9:16",
-  source: "Prompt 2 — Instrucción del generador de historias",
-  badge: "Motor Narrativo & Fonético",
-  version: "3.2.0",
-  description: "Motor narrativo y fonético para melodramas y microficciones serializadas con gancho <3s, revelación emocional, cliffhanger y formato de respuesta canónico A a H.",
-  rawPromptText: `Actúa como guionista y editor de microficción vertical en español (formato 9:16 para TikTok, Instagram Reels y YouTube Shorts). Tu trabajo es crear miniseries y melodramas breves de alta retención.
-
-OBJETIVO NARRATIVO:
-Escribe melodramas y dramas breves con un conflicto comprensible, una emoción reconocible y personajes memorables.
-
-REGLAS DE ORIGINALIDAD:
-- Crea nombres, diseños, motivaciones, escenarios, diálogos y giros nuevos y frescos.
-- Si el usuario proporciona una referencia o inspiración, genera una historia completamente original respetando esa semilla.
-- NUNCA repitas el mismo entorno ni el mismo gancho entre historias diferentes. Cada historia nace en su propio espacio dramático único.
-
-ESTRUCTURA DEL EPISODIO:
-1. Abre con una acción, frase o imagen que plantee una intriga concreta durante los primeros 3 segundos.
-2. Explica pronto quién quiere qué y qué puede perder (apuestas claras).
-3. Usa diálogos breves, naturales y distintos para cada personaje. Alterna momentos de tensión y alivio.
-4. Escala el problema en pasos comprensibles. Revela información gradualmente.
-5. Cerca del final, entrega una revelación, decisión o inversión emocional preparada por la historia.
-6. Si es una serie de varios episodios, termina con una pregunta o peligro específico y nuevo. No cortes a mitad de frase.
-7. Incluye una llamada a comentar que nazca orgánicamente de la historia.
-
-PRODUCCIÓN Y CONTINUIDAD:
-- Escribe para video vertical 9:16.
-- Duración indicada: 60–75 segundos, dividido en planos de 10 segundos.
-- Presupuesto fonético: el diálogo hablado ocupa estrictamente entre 2.0 y 2.5 palabras por segundo para garantizar dicción natural sin atropello ni silencios muertos.
-- Por escena indica: tiempo aproximado, lugar, acción visible, personaje que habla, diálogo exacto.
-- Para cada personaje fija especie/tipo, forma y color, ropa, accesorio, voz y personalidad.
-- Mantén una biblia de continuidad inmutable.
-- Evita violencia gráfica o contenido que infrinja normas comunitarias.
-
-FORMATO DE RESPUESTA REQUERIDO (A a H):
-A. Título y premisa en una frase (logline).
-B. Personajes y guía visual consistente (Model sheet inmutable).
-C. Resumen de continuidad o arco de los episodios solicitados.
-D. Guion con escenas y códigos de tiempo, marcando diálogos con el nombre del personaje.
-E. Texto exacto para pantalla y sugerencias de sonidos/edición (SFX).
-F. Prompt visual de cada escena, independiente y listo para copiar en generadores de video (Kling, Runway, Luma, Sora).
-G. Caption, llamada a comentar y entre 3 y 6 hashtags relevantes.
-H. Lista final de control: gancho, claridad del conflicto, coherencia del giro y viabilidad de producción.`,
-  systemInstructionPrompt: `Eres guionista y editor de microficción vertical en español. Creas miniseries y melodramas breves de alta retención.
-
-OBJETIVO NARRATIVO:
-Escribe melodramas y dramas breves con un conflicto comprensible, una emoción reconocible y personajes memorables.
-
-REGLAS DE ORIGINALIDAD:
-- Crea nombres, diseños, motivaciones, escenarios, diálogos y giros nuevos y frescos.
-- Si el usuario proporciona una referencia o inspiración, genera una historia completamente original respetando esa semilla.
-- No afirmes que el resultado garantiza viralidad vacía ni que conoces secretos ocultos; garantiza calidad estructural y técnica comprobable.
-
-ESTRUCTURA DEL EPISODIO:
-1. Abre con una acción, frase o imagen que plantee una intriga concreta durante los primeros 3 segundos.
-2. Explica pronto quién quiere qué y qué puede perder.
-3. Usa diálogos breves, naturales y distintos para cada personaje. Alterna momentos de tensión y momentos de alivio.
-4. Escala el problema en pasos comprensibles. Revela información gradualmente, sin confusiones.
-5. Cerca del final, entrega una revelación, decisión o inversión emocional preparada por la historia.
-6. Si es una serie de varios episodios, termina con una pregunta o peligro específico y nuevo. No cortes a mitad de frase.
-7. Incluye una llamada a comentar que nazca orgánicamente de la historia (por ejemplo, pedir que elijan bando o postura moral).
-
-PRODUCCIÓN Y CONTINUIDAD:
-- Escribe para video vertical 9:16.
-- Respeta la duración indicada (60–75 segundos, dividido en planos de 10 segundos).
-- Presupuesto fonético: el diálogo hablado ocupa estrictamente entre 2.0 y 2.5 palabras por segundo para garantizar dicción natural sin atropello ni silencios muertos.
-- Por escena indica: tiempo aproximado, lugar, acción visible, personaje que habla, diálogo exacto.
-- Para cada personaje fija especie/tipo, forma y color, ropa, accesorio, voz y personalidad.
-- Mantén una biblia de continuidad: hechos ya confirmados, secretos aún no revelados, estado de relaciones.
-- Evita violencia gráfica, sexualización de personajes o contenido que infrinja normas comunitarias.
-
-FORMATO DE RESPUESTA REQUERIDO (A a H):
-A. Título y premisa en una frase (logline).
-B. Personajes y guía visual consistente (Model sheet inmutable).
-C. Resumen de continuidad o arco de los episodios solicitados.
-D. Guion con escenas y códigos de tiempo, marcando diálogos con el nombre del personaje.
-E. Texto exacto para pantalla y sugerencias de sonidos/edición (SFX).
-F. Prompt visual de cada escena, independiente y listo para copiar en generadores de video (Kling, Runway, Luma, Sora).
-G. Caption, llamada a comentar y entre 3 y 6 hashtags relevantes.
-H. Lista final de control: gancho, claridad del conflicto, coherencia del giro y viabilidad de producción.`,
-  coreRules: [
-    "Gancho visual y verbal antes del segundo 3.",
-    "Exposición rápida de quién quiere qué y qué puede perder.",
-    "Diálogos con ritmo fonético de 2.0 a 2.5 palabras/segundo.",
-    "Escalada en pasos lógicos sin contradicciones.",
-    "Revelación preparada y cliffhanger antes de los créditos.",
-    "Llamada a comentar nacida de la trama.",
-    "Formato estructurado de 8 secciones (A a H)."
-  ]
-};
-
-/**
- * 3. HABILIDAD: PLANTILLA DE DISPARO RÁPIDO & FORMULACIÓN DE HISTORIA (Prompt 3)
- */
-export const SKILL_FAST_PROMPT_TEMPLATE = {
-  id: "skill_fast_prompt_template",
-  name: "Formulación de Conflicto y Disparo Rápido",
-  source: "Prompt 3 — Producir la primera historia",
-  badge: "Disparo Paramétrico",
-  version: "3.2.0",
-  description: "Formatea cualquier idea en una entrada estructurada con parámetros de control (IDEA CENTRAL, TONO, DURACIÓN, EPISODIOS, PERSONAJES, PÚBLICO, NO INCLUIR) y gancho inmediato.",
-  rawPromptText: `Usa las dos habilidades anteriores (Prompt 1 y Prompt 2) para crear la primera historia completa.
-
-Parámetros de entrada:
-- IDEA CENTRAL: [describe la premisa o conflicto aquí]
-- TONO: [melodrama, drama conmovedor, misterio, etc.]
-- DURACIÓN: [60 a 75 segundos por episodio]
-- NÚMERO DE EPISODIOS: [1 a 10 capítulos]
-- PERSONAJES QUE QUIERO CONSERVAR: [personajes protegidos si los hay]
-- PÚBLICO O PLATAFORMA: [TikTok, Instagram Reels, YouTube Shorts o Universal 9:16]
-- LLAMADA A LA ACCIÓN: [llamada a comentar u opinar]
-- NO INCLUIR: [temas o elementos prohibidos]
-
-Reglas inquebrantables de generación:
-1. Abre con un gancho concreto y directo antes del segundo 3.
-2. Expón claramente quién quiere qué y qué puede perder.
-3. Diálogos breves en español calibrados a <2.5 palabras/segundo.
-4. Genera exactamente las secciones de la A a la H solicitadas, sin omitir los prompts visuales ni la lista final de control de calidad.`,
-  formatTemplate: (req: MicrofictionSkillRequest): string => {
-    const topic = req.ideaCentral.trim() || "Un conflicto inesperado que pone a prueba la fe y el amor familiar";
-    const tone = req.tono || "melodrama + misterio + fe profunda";
-    const duration = req.duracionPorEpisodioSec || 70;
-    const episodes = req.numeroEpisodios || 3;
-    const chars = req.personajesConservar || "Protagonista con fe inquebrantable, co-protagonista en duda y Maestro Jesús";
-    const audience = req.publicoPlataforma || "TikTok / Reels / Shorts";
-    const exclusions = req.noIncluir || "Violencia gráfica, jerga vulgar, ropa anacrónica o cambios de escenario inexplicables";
-    const cta = req.llamadaAccion || "Comenta qué harías tú y comparte para ver el desenlace en la siguiente parte";
-
-    return `Crea una miniserie ORIGINAL para [${audience}], en español latinoamericano:
-
-IDEA CENTRAL: ${topic}
-TONO: ${tone}
-DURACIÓN POR EPISODIO: [${duration} segundos]
-NÚMERO DE EPISODIOS: [${episodes}]
-PERSONAJES QUE QUIERO CONSERVAR: ${chars}
-PÚBLICO: [${audience}]
-LLAMADA A LA ACCIÓN: ${cta}
-NO INCLUIR: ${exclusions}
-
-Quiero un gancho visual y verbal desde el primer segundo (<3s), un conflicto que se entienda de inmediato (quién quiere qué y qué puede perder), diálogos calibrados para 10s por plano con sincronización labial en español, y la entrega completa en el formato A-H.`;
-  },
-  suggestedPresets: [
-    {
-      title: "Prueba Sugerida del Documento: El Recibo del Futuro",
-      topic: "Una frutera recibe cada noche un recibo de una venta que todavía no ocurrió; el recibo lleva el nombre y firma de su padre desaparecido hace 7 años.",
-      tone: "melodrama + misterio + suspenso emotivo",
-      characters: "Frutera valiente y trabajadora llamada Elena; abuela sabia; figura misteriosa en sombras",
-      noInclude: "armas de fuego, violencia explícita, resoluciones mágicas sin base emocional"
-    },
-    {
-      title: "Milagro a las 3:00 AM en Cuidados Intensivos",
-      topic: "A las 3:00 AM los monitores se apagan y los médicos declaran que no hay nada más que hacer, pero una madre susurra una oración al pie de la cama.",
-      tone: "drama de fe + milagro sobrenatural + emoción conmovedora",
-      characters: "Sara (madre de 38 años), Doctor Morales (médico escéptico de 50 años), Maestro Jesús",
-      noInclude: "desesperanza final, burlas a la medicina, cambios de vestimenta en el hospital"
-    },
-    {
-      title: "La Herencia Oculta y el Perdón entre Hermanos",
-      topic: "Dos hermanos distanciados deben abrir la última carta de su madre en la vieja carpintería familiar antes de que el banco embargue el taller.",
-      tone: "melodrama familiar + suspenso + restauración",
-      characters: "Mateo (carpintero leal), Julián (hermano pródigo endeudado), Maestro Jesús",
-      noInclude: "golpes o violencia física, desenlaces fríos sin reconciliación"
-    },
-    {
-      title: "El Huerto de los Prodigios Olvidados",
-      topic: "En un pueblo golpeado por la sequía, una anciana se niega a vender su parcela porque asegura que cada atardecer los frutos crecen por una promesa divina.",
-      tone: "fábula contemporánea + misterio de fe + esperanza",
-      characters: "Doña Marta (anciana de mirada dulce), Lucas (joven agrimensor ambicioso), Maestro Jesús",
-      noInclude: "tecnología anacrónica, cinismo destructivo"
-    },
-    {
-      title: "Fíate de Jehová de Todo Tu Corazón (Proverbios 3:5)",
-      topic: "Un arquitecto ve colapsar su proyecto de vida por confiar en su propia prudencia, hasta que en la medianoche rinde sus planos al Maestro de Galilea.",
-      tone: "drama reflexivo + sabiduría bíblica + paz sobrenatural",
-      characters: "Samuel (arquitecto de 35 años), Inés (su esposa de fe), Maestro Jesús",
-      noInclude: "violencia gráfica, armas, lenguaje anacrónico, máquinas de hospital"
-    }
-  ]
-};
-
-/**
- * Valida un guion generado frente a la Lista de Control de Calidad (Sección H de Prompt 2)
- */
 export function buildQualityChecklist(
-  scenes: Array<{
-    durationSec?: number;
-    narration?: string;
-    action?: string;
-    dialogueExchange?: Array<{ dialogueSpanish?: string; allocatedSeconds?: number }>;
-  }>,
-  hookText: string,
-  cliffhangerText: string,
-  targetDurationSec: number = 70
+  scenes: any[],
+  hook: string,
+  cliffhanger = '',
+  durationSec = 50
 ): MicrofictionQualityChecklist {
-  const hasQuickHook = Boolean(hookText && hookText.length >= 15);
-  const totalWords = scenes.reduce((acc, sc) => {
-    if (sc.dialogueExchange && sc.dialogueExchange.length > 0) {
-      return acc + sc.dialogueExchange.reduce((sum, d) => sum + (d.dialogueSpanish ? d.dialogueSpanish.trim().split(/\s+/).length : 0), 0);
-    }
-    return acc + (sc.narration ? sc.narration.trim().split(/\s+/).length : 0);
-  }, 0);
-
-  const wordsPerSecond = Math.round((totalWords / Math.max(1, targetDurationSec)) * 10) / 10;
-  const isPacingOptimal = wordsPerSecond >= 1.6 && wordsPerSecond <= 2.5;
+  const sceneList = Array.isArray(scenes) ? scenes : [];
+  const wordsPerScene = sceneList.map((scene) =>
+    (scene?.dialogueExchange || []).reduce((sum: number, turn: any) =>
+      sum + String(turn?.dialogueSpanish || '').trim().split(/\s+/).filter(Boolean).length, 0)
+  );
+  const allScenesHaveVisuals = sceneList.length > 0 && sceneList.every((scene) =>
+    Boolean(scene?.action && scene?.environment && scene?.camera)
+  );
+  const item = (key: string, label: string, status: MicrofictionQualityControlItem['status'], detail: string) => ({ key, label, status, detail });
 
   return {
-    ganchoPrimeros3s: {
-      key: "hook_3s",
-      label: "Gancho en los primeros 3 segundos",
-      status: hasQuickHook ? "passed" : "warning",
-      detail: hasQuickHook
-        ? `Gancho de impacto formulado: "${hookText.slice(0, 50)}..."`
-        : "El gancho debe plantear una intriga concreta antes de los 3s."
-    },
-    claridadConflicto: {
-      key: "conflict_clarity",
-      label: "Claridad del conflicto (quién quiere qué y qué puede perder)",
-      status: "passed",
-      detail: "Conflicto central expuesto con consecuencias directas para los personajes en cuadro."
-    },
-    coherenciaGiro: {
-      key: "twist_coherence",
-      label: "Coherencia de la revelación y cliffhanger",
-      status: cliffhangerText && cliffhangerText.length > 20 ? "passed" : "warning",
-      detail: cliffhangerText
-        ? `Cierre dramático preparado: "${cliffhangerText.slice(0, 50)}..."`
-        : "Se requiere un cierre con peligro o pregunta específica para encadenar el siguiente episodio."
-    },
-    viabilidadProduccion: {
-      key: "production_feasibility",
-      label: "Viabilidad de producción (planos de 10s en 9:16)",
-      status: scenes.length > 0 ? "passed" : "warning",
-      detail: `${scenes.length} planos continuos de 10s presupuestados para video vertical 9:16.`
-    },
-    continuidadVisual: {
-      key: "visual_continuity",
-      label: "Biblia de continuidad y model sheets inmutables",
-      status: "passed",
-      detail: "Identidad visual de personajes, escenario y objetos narrativos fija en todos los planos."
-    },
-    presupuestoFonetico: {
-      key: "phonetic_budget",
-      label: "Presupuesto fonético (2.0 a 2.5 palabras/segundo)",
-      status: isPacingOptimal ? "passed" : "warning",
-      detail: `${totalWords} palabras en ${targetDurationSec}s (${wordsPerSecond} pal/s). ${isPacingOptimal ? "Cadencia fluida óptima sin silencios ni saturación." : "Revisar ritmo para evitar que el diálogo se corte."}`
-    }
+    ganchoPrimeros3s: item('hook', 'Hook inicial', hook?.trim() ? 'passed' : 'warning', hook?.trim() ? `Hook definido: ${hook}` : 'Falta definir un hook específico para abrir la historia.'),
+    claridadConflicto: item('conflict', 'Conflicto', sceneList.length >= 2 ? 'info' : 'warning', sceneList.length >= 2 ? 'La secuencia tiene varias escenas para presentar y hacer avanzar el conflicto.' : 'Agrega escenas que expliquen qué está en juego.'),
+    coherenciaGiro: item('cliffhanger', 'Giro o cierre', cliffhanger?.trim() ? 'passed' : 'info', cliffhanger?.trim() ? `Cierre declarado: ${cliffhanger}` : 'Revisar que el giro o cliffhanger conecte causalmente con el capítulo siguiente.'),
+    viabilidadProduccion: item('duration', 'Duración y estructura', sceneList.length === 5 && durationSec === 50 ? 'passed' : 'warning', `Estructura actual: ${sceneList.length} escenas, ${durationSec} s declarados; la meta Flow es 5 × 10 s = 50 s.`),
+    continuidadVisual: item('continuity', 'Continuidad visual', allScenesHaveVisuals ? 'info' : 'warning', allScenesHaveVisuals ? 'Cada escena tiene acción, entorno y cámara; revisar además la biblia de identidad entre planos.' : 'Completa acción, entorno y cámara en cada escena.'),
+    presupuestoFonetico: item('dialogue', 'Diálogo por segmento', wordsPerScene.length > 0 && wordsPerScene.every((count) => count >= 19 && count <= 20) ? 'passed' : 'warning', wordsPerScene.length ? `Palabras habladas por escena: ${wordsPerScene.join(', ')}. Meta: 19–20 palabras, dos turnos equilibrados y cerca de 9,2 segundos de voz; Flow puede variar la cadencia.` : 'Todavía no hay diálogos para revisar.'),
+    potencialCompartir: item('shareability', 'Valor para compartir', 'info', 'Identifica el problema o deseo intenso, una transformación rápida y a quién querría enviárselo alguien. Validar la hipótesis con retención, finalización, compartidos/envíos, guardados y comentarios reales; no inventar resultados.')
   };
 }
 
-/**
- * Resumen de habilidades listas para inyectar en la interfaz de Miniseries
- */
-export const VERTICAL_MICROFICTION_SKILLS = [
-  SKILL_PRODUCTION_ARCHITECTURE,
-  SKILL_MICROFICTION_SCRIPT_ENGINE,
-  SKILL_FAST_PROMPT_TEMPLATE
-];
+export const SHAREABILITY_RULE = `REGLA EDITORIAL DE COMPARTIBILIDAD Y APRENDIZAJE (OBLIGATORIA)
+Encuentra un problema o deseo intenso de una persona concreta de la audiencia; exprésalo en una frase breve, específica e imposible de ignorar; entrega una transformación rápida y emocionalmente honesta dentro del video.
+Persigue crear un video que esa persona quiera enviarle inmediatamente a otra porque la hace sentirse comprendida, le ofrece esperanza o le da un paso útil. La compartibilidad debe nacer del valor humano de la historia, nunca de culpa, presión o un CTA insistente.
+Repite el ciclo idea → video → medición → aprendizaje en cada nueva miniserie hasta que los datos reales revelen qué quiere compartir la audiencia. Revisa, cuando estén disponibles, retención de 0–3 s, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios. Sin datos suministrados, declara hipótesis y qué señal observar; nunca inventes analíticas ni prometas viralidad. Usa lo aprendido para ajustar una variable creativa por vez.`;
+
+const commonFormat = `FORMATO DE ENTREGA OBLIGATORIO
+- De 2 a 5 capítulos, elegidos por el usuario.
+- Cada capítulo dura exactamente 50 segundos: cinco prompts Flow autónomos de diez segundos.
+- Escribe en español latinoamericano natural. Cada prompt incluye acción, personajes presentes, entorno, cámara, lente, movimiento, luz, actuación, diálogo literal, voces, música original, SFX, ambiente, subtítulo sugerido y restricciones.
+- Repite en los cinco prompts la biblia necesaria para que cada segmento funcione si se pega por separado en Flow.
+- Reparte diálogo natural entre dos personajes visibles: 19–20 palabras habladas por segmento, normalmente 9–11 por turno; apunta a 9,2 segundos de voz con pausas muy breves, sin acelerar ni dejar silencios largos.
+- Mantén rostro, edad aparente, piel, cabello, vestuario, accesorios, voz, escenario, utilería, luz, paleta y eje de cámara entre capítulos.
+- Personajes humanos hiperrealistas en live-action, con actuación natural; no caricatura ni estética 3D.
+- Planifica el arco completo antes de escribir: objetivo, conflicto, escalada, revelación y cliffhanger de cada capítulo, todos causalmente conectados.
+- La música instrumental debe ser original para cada serie, tener un motivo reconocible y variar según la emoción. Incluir efectos y mezcla bajo el diálogo.
+- Añade SEO individual por capítulo: títulos para TikTok, Facebook y YouTube Shorts, caption, palabras clave, hashtags, hook de portada y comentario fijado.
+- Trata los versículos con cuidado: distingue referencia, cita textual verificada y paráfrasis. No inventes citas ni prometas milagros garantizados.
+- Usa recursos narrativos generales (problema inmediato, curiosidad, escalada, revelación, continuidad); no copies personajes, frases, música, tramas, imágenes, marcas ni estética distintiva de otros creadores.
+${SHAREABILITY_RULE}
+- Diseña para retención; no prometas porcentajes, viralidad ni resultados analíticos que no se hayan medido.
+`;
+
+export const SKILL_PRODUCTION_ARCHITECTURE = {
+  id: 'skill_production_architecture',
+  name: 'Arquitectura de Producción y Continuidad Flow',
+  source: 'FeFlow Open Agent',
+  badge: 'Flow 9:16 · 50 s',
+  version: '4.0.0',
+  description: 'Organiza 2–5 capítulos de 50 segundos en cinco prompts Flow autosuficientes de 10 segundos, con biblia visual, sonora y de continuidad.',
+  rawPromptText: `Eres arquitecto de producción de miniseries verticales. Antes de escribir escenas, fija una biblia de personajes, entorno, utilería, color, cámara, voces y música. Planifica el arco completo de 2–5 capítulos y luego divide cada capítulo en cinco prompts independientes de diez segundos. Repite las anclas de continuidad en cada prompt; cada prompt debe poder usarse por sí solo en Flow.\n\n${commonFormat}`
+};
+
+export const SKILL_MICROFICTION_SCRIPT_ENGINE = {
+  id: 'skill_microfiction_script_engine',
+  name: 'Guionista de Microficción de Fe',
+  source: 'FeFlow Open Agent',
+  badge: 'Hook · Escalada · Resolución',
+  version: '4.0.0',
+  description: 'Escribe dramas originales de fe, oración y esperanza con una apertura inmediata, diálogo latinoamericano y cliffhangers causales.',
+  rawPromptText: `Escribe una miniserie original de fe, oración y esperanza para video vertical. Abre en medio de una anomalía, una pérdida o una decisión durante los primeros dos segundos. Expón pronto quién necesita qué y qué puede perder. Dosifica la información, cambia la tensión o revela un detalle cada cinco a ocho segundos, y termina cada capítulo con una consecuencia pendiente. Resuelve el arco final con esperanza plausible y acciones observables, sin garantizar milagros ni simplificar el dolor.\n\n${commonFormat}`
+};
+
+export const SKILL_FAST_PROMPT_TEMPLATE = {
+  id: 'skill_fast_prompt_template',
+  name: 'Formulación de Historia y Disparo Rápido',
+  source: 'FeFlow Open Agent',
+  badge: 'Tema → Miniserie',
+  version: '4.0.0',
+  description: 'Formatea un tema, versículo y elenco para el agente abierto; la cantidad de capítulos se limita a 2–5 y cada uno dura 50 segundos.',
+  rawPromptText: `Usa esta entrada para crear la miniserie completa. Primero fija continuidad y arco; después entrega cinco prompts Flow autónomos por capítulo y su paquete SEO.\n\n${commonFormat}`,
+  formatTemplate: (req: MicrofictionSkillRequest): string => {
+    const topic = req.ideaCentral.trim() || 'Una familia encuentra esperanza al enfrentar una verdad difícil';
+    const tone = req.tono || 'humano, reverente, cinematográfico y emocional sin manipulación';
+    const episodes = Math.max(2, Math.min(5, Math.round(Number(req.numeroEpisodios) || 3)));
+    const chars = req.personajesConservar || 'Define dos personajes humanos adultos, con identidad visual, vestuario y voz constantes';
+    const audience = req.publicoPlataforma || 'Universal 9:16';
+    const exclusions = req.noIncluir || 'violencia gráfica, lenguaje vulgar, textos ilegibles, caricatura, promesas de milagros garantizados';
+    const cta = req.llamadaAccion || 'Pregunta reflexiva suave, solo en el copy SEO';
+    const verse = req.bibleReference || 'Propón una referencia temática; no cites literalmente si no está verificada';
+    return `TEMA: ${topic}\nTONO: ${tone}\nREFERENCIA BÍBLICA: ${verse}\nCAPÍTULOS: ${episodes}\nDURACIÓN: 50 segundos por capítulo, cinco prompts de 10 segundos\nELENCO: ${chars}\nPLATAFORMA: ${audience}\nCTA: ${cta}\nNO INCLUIR: ${exclusions}\n\n${commonFormat}`;
+  },
+  suggestedPresets: [
+    {
+      title: 'La carta junto a la Biblia',
+      topic: 'Una hija encuentra una carta familiar que contradice lo que le contaron y debe decidir si escuchará a su hermano.',
+      tone: 'misterio íntimo, drama familiar, fe y esperanza realista',
+      characters: 'Lucía (34 años, cabello castaño ondulado, suéter terracota); Tomás (38 años, barba de dos días, chaqueta azul marino)',
+      noInclude: 'violencia gráfica, insultos, desenlace milagroso automático'
+    },
+    {
+      title: 'Una oración en la sala de espera',
+      topic: 'Durante una larga noche de hospital, dos hermanos deben decirse una verdad que llevan años evitando.',
+      tone: 'drama humano, oración, tensión contenida y esperanza',
+      characters: 'Marina (36 años, cabello negro recogido); Andrés (40 años, camisa gris y reloj antiguo)',
+      noInclude: 'diagnósticos inventados, burla a la medicina, promesas de curación'
+    },
+    {
+      title: 'La llamada que nadie esperaba',
+      topic: 'Un padre ausente llama después de años y pide conversar; su hija decide qué límites necesita antes de responder.',
+      tone: 'reconciliación gradual, misterio emocional, fe cotidiana',
+      characters: 'Elena (32 años, cabello corto, chaqueta verde); Rafael (58 años, cabello canoso, camisa de trabajo)',
+      noInclude: 'perdón obligatorio, manipulación emocional, soluciones instantáneas'
+    },
+    {
+      title: 'La deuda a la luz del día',
+      topic: 'Una familia descubre una deuda oculta y debe elegir entre culpar a alguien o pedir ayuda con honestidad.',
+      tone: 'suspenso cotidiano, decisiones morales, consuelo',
+      characters: 'Camila (35 años, blusa azul); Julián (37 años, suéter gris); Inés (60 años, chal vino)',
+      noInclude: 'violencia gráfica, estereotipos, promesas de riqueza milagrosa'
+    },
+    {
+      title: 'El primer paso para pedir perdón',
+      topic: 'Dos hermanas se reencuentran en la cocina de su madre después de una discusión que cambió la familia.',
+      tone: 'íntimo, espiritual, cálido y realista',
+      characters: 'Sara (29 años, cabello rizado oscuro); Paula (33 años, cabello negro largo)',
+      noInclude: 'borrado de límites personales, reconciliación forzada, citas bíblicas inventadas'
+    }
+  ]
+};
