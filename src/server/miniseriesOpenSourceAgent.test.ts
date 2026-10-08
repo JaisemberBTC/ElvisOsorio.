@@ -7,7 +7,7 @@ import {
   generateOpenSourceMiniseries
 } from './miniseriesOpenSourceAgent.ts';
 import { downloadMiniseriesWordDoc } from '../utils/docxMiniseriesExport.ts';
-import { buildQualityChecklist, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
+import { BIBLICAL_VIDEO_CREATION_RULE, buildQualityChecklist, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
 import { buildCharacterIdentityPrompt, buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
 
 for (const totalParts of [2, 3, 4, 5]) {
@@ -22,7 +22,9 @@ for (const totalParts of [2, 3, 4, 5]) {
     assert.equal(series.totalPartsPlanned, totalParts);
     assert.equal(series.characters.length, 2);
     assert.equal(series.seriesBible.continuityLock, true);
+    assert.equal(series.seriesBible.biblicalVideoCreationRule, BIBLICAL_VIDEO_CREATION_RULE);
     assert.equal(series.seriesBible.audienceShareabilityRule, SHAREABILITY_RULE);
+    assert.equal(series.seriesBible.prePublishChecklist.length, 2);
     assert.equal(new Set(series.episodes.map((episode: any) => episode.hook)).size, totalParts);
 
     for (const episode of series.episodes) {
@@ -77,6 +79,13 @@ test('el agente exige problema intenso, transformación, intención de envío y 
   await generateOpenSourceMiniseries({ topic: 'Salmo 27: encontrar valor en medio del miedo', totalParts: 2 }, provider);
 
   assert.ok(capturedSystemPrompt.includes('problema o deseo intenso'));
+  assert.ok(capturedSystemPrompt.includes('0–3 s hook'));
+  assert.ok(capturedSystemPrompt.includes('12–30 s escalada'));
+  assert.ok(capturedSystemPrompt.includes('30–40 s enseñanza'));
+  assert.ok(capturedSystemPrompt.includes('40–50 s transformación'));
+  assert.ok(capturedSystemPrompt.includes('cambio visual perceptible cada 2–4 s'));
+  assert.ok(capturedSystemPrompt.includes('FIDELIDAD BÍBLICA'));
+  assert.ok(capturedSystemPrompt.includes('marcar “contenido creado para niños”'));
   assert.ok(capturedSystemPrompt.includes('imposible de ignorar'));
   assert.ok(capturedSystemPrompt.includes('transformación rápida'));
   assert.ok(capturedSystemPrompt.includes('enviarle inmediatamente a otra'));
@@ -93,6 +102,8 @@ test('cada prompt de Flow limita el reparto a quienes aparecen en el segmento', 
   const prompt = buildFlowPrompt(series, episode, scene);
   assert.ok(prompt.includes(series.characters[0].name));
   assert.ok(prompt.includes(series.characters[1].name));
+  assert.ok(prompt.includes('cambio visual perceptible cada 2–4 segundos'));
+  assert.ok(prompt.includes('subtítulos completos, grandes, legibles y revisados en español'));
   assert.ok(!prompt.includes('Extra que no aparece'));
 });
 
@@ -157,6 +168,8 @@ test('el documento Word reúne prompts Flow y metadatos SEO', async () => {
     const documentXml = await zip.file('word/document.xml')?.async('text');
     assert.ok(documentXml?.includes('PROMPTS LISTOS PARA FLOW'));
     assert.ok(documentXml?.includes('REGLA EDITORIAL DE COMPARTIBILIDAD'));
+    assert.ok(documentXml?.includes('PARÁMETROS DE VIDEO BÍBLICO CORTO'));
+    assert.ok(documentXml?.includes('CHECKLIST MANUAL DE PUBLICACIÓN'));
     assert.ok(documentXml?.includes('PLAN DE COMPARTIBILIDAD Y APRENDIZAJE'));
     assert.ok(documentXml?.includes('Motivo para enviarlo'));
     assert.ok(documentXml && /SEO/i.test(documentXml));

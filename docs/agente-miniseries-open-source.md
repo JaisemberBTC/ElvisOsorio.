@@ -20,6 +20,16 @@ El proceso se repite como ciclo de idea → video → medición → aprendizaje.
 
 > Regla del creador: “Encuentra un problema o deseo intenso, exprésalo en una frase imposible de ignorar, entrega una transformación rápida y repite el proceso hasta que los datos te revelen qué quiere compartir tu audiencia. Persigue crear un video que una persona quiera enviarle inmediatamente a otra. Haz eso miles de veces y la viralidad se vuelve una consecuencia.”
 
+## Parámetros de video del documento de canal
+
+El creador compartió pautas para historias bíblicas, YouTube y Facebook. El agente las aplica sin cambiar el formato ya aprobado de **50 segundos por capítulo, cinco segmentos Flow de 10 segundos**: hook en 0–3 s; conflicto humano en 3–12 s; escalada en 12–30 s; enseñanza bíblica conectada con la vida actual en 30–40 s; transformación y cierre compartible en 40–50 s. La apertura empieza con un rostro o acción, sin saludo ni introducción académica.
+
+El posicionamiento es contar luchas, miedo, fe y transformación bíblicas para ayudar a comprender cómo Dios obra en momentos difíciles. Los pilares sugeridos son personajes y detalles poco explicados, lo que ocurre antes de un milagro, errores con consecuencias, historias para quien atraviesa una situación presente y preguntas que Dios o Jesús hacen. Las palabras clave se usan con naturalidad, no como relleno.
+
+Cada clip conserva continuidad pero evita verse inmóvil: incorpora una variación visual perceptible cada 2–4 s en una toma continua. Se priorizan encuadre vertical 9:16, subtítulos completos en español revisados durante edición, una frase breve de texto por escena, cámara motivada, paleta cálida (dorado, arena, azul oscuro y rojo tierra) y música por debajo de la voz.
+
+La historia debe conectar el pasaje bíblico con una situación presente sin inventar citas, hechos, milagros ni promesas. Toda dramatización o diálogo imaginado debe distinguirse del relato bíblico. Los títulos y miniaturas deben describir fielmente el video. Antes de publicar, el creador puede revisar el idioma, los subtítulos, el público y los comentarios según las reglas de cada plataforma; el agente solo entrega recordatorios y no cambia cuentas, programa publicaciones ni sube videos.
+
 ## Activar un modelo local con Ollama
 
 1. Instala Ollama en el equipo que ejecuta el servidor de la aplicación.

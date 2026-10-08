@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
-import { SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
+import { BIBLICAL_VIDEO_CREATION_RULE, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
 
 export interface LLMProvider {
   readonly id: string;
@@ -296,7 +296,12 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       lastEpisodeNumber: totalParts,
       nextEpisodeSeed: `Coda posterior a ${outline[totalParts - 1].title}: una decisión cotidiana que sostiene la esperanza`,
       usedHooks: outline.map((plan) => plan.hook),
+      biblicalVideoCreationRule: BIBLICAL_VIDEO_CREATION_RULE,
       audienceShareabilityRule: SHAREABILITY_RULE,
+      prePublishChecklist: [
+        'YouTube: idioma español; publicar como Público si ese es el objetivo; subtítulos activados y revisados; título y miniatura fieles; no marcar “contenido creado para niños” salvo que realmente esté dirigido a niños.',
+        'Facebook: usar perfil profesional o página según corresponda; subir el archivo original sin marca de agua de otra plataforma; permitir comentarios si se desea, responder preguntas valiosas con videos y revisar periódicamente la calidad de cuenta/página y la elegibilidad para recomendaciones.'
+      ],
       continuityLock: true
     },
     episodes: [] as any[]
@@ -579,7 +584,7 @@ export async function generateOpenSourceMiniseries(options: MiniseriesAgentOptio
   const series = createFallbackMiniseries(normalized);
   if (!provider) return { miniseries: series, provider: 'plantilla-local', isFallback: true };
   try {
-    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\n${SHAREABILITY_RULE}`;
+    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\n${BIBLICAL_VIDEO_CREATION_RULE}\n\n${SHAREABILITY_RULE}`;
     const output = await provider.completeJSON(systemPrompt, buildGenerationPrompt(normalized, series));
     mergeModelOutput(series, output);
     finalizeSeries(series);

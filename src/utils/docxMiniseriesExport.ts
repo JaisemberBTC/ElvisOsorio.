@@ -1,6 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { buildFlowPrompt } from './flowPromptBuilder';
-import { SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill';
+import { BIBLICAL_VIDEO_CREATION_RULE, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill';
 
 const text = (value: unknown, fallback = '—') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
 
@@ -39,6 +39,10 @@ export async function downloadMiniseriesWordDoc(series: any): Promise<void> {
     field('Regla de continuidad', text(world.continuityRule, 'Mantener identidad, vestuario, voces, entorno y utilería entre segmentos.')),
     field('Música original de la serie', text(audio.originalScore || audio.genre)),
     field('Mezcla de audio', text(audio.mixNotes)),
+    new Paragraph({ text: 'PARÁMETROS DE VIDEO BÍBLICO CORTO', heading: HeadingLevel.HEADING_2 }),
+    plain(text(bible.biblicalVideoCreationRule, BIBLICAL_VIDEO_CREATION_RULE)),
+    new Paragraph({ text: 'CHECKLIST MANUAL DE PUBLICACIÓN', heading: HeadingLevel.HEADING_2 }),
+    ...((Array.isArray(bible.prePublishChecklist) && bible.prePublishChecklist.length ? bible.prePublishChecklist : ['Revisar idioma español, subtítulos, título/miniatura veraces y configuración de audiencia/visibilidad antes de publicar.']) as string[]).map((item) => plain(item)),
     new Paragraph({ text: 'REGLA EDITORIAL DE COMPARTIBILIDAD', heading: HeadingLevel.HEADING_2 }),
     plain(SHAREABILITY_RULE),
     new Paragraph({ text: 'PERSONAJES', heading: HeadingLevel.HEADING_2 })

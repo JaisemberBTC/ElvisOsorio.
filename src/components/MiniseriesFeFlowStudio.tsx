@@ -222,7 +222,9 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
       `LOGLINE: ${currentSeries.logline}\n` +
       `ENTORNO INMUTABLE: ${currentSeries.lockedEnvironmentName || 'Aposento Sagrado'} (${currentSeries.lockedEnvironmentId})\n` +
       `PROMPT ARQUITECTURA:\n${currentSeries.lockedEnvironmentPromptEn || ''}\n\n` +
+      `PARÁMETROS DE VIDEO:\n${currentSeries.seriesBible?.biblicalVideoCreationRule || 'Video 9:16, 50 s por capítulo, con gancho inmediato, conflicto humano, escalada, enseñanza bíblica aplicada y cierre compartible. Subtítulos en español; fidelidad bíblica y títulos veraces.'}\n\n` +
       `REGLA DE COMPARTIBILIDAD: ${currentSeries.seriesBible?.audienceShareabilityRule || 'Encuentra un problema o deseo intenso, exprésalo en una frase imposible de ignorar, entrega una transformación rápida y crea un video que una persona quiera enviarle inmediatamente a otra. Aprende de datos reales, no inventes métricas ni prometas viralidad.'}\n\n` +
+      `CHECKLIST MANUAL DE PUBLICACIÓN:\n${(currentSeries.seriesBible?.prePublishChecklist || ['Subtítulos en español revisados; título y miniatura fieles; elegir visibilidad y audiencia en cada plataforma.']).join('\n')}\n\n` +
       `ELENCO Y MODEL SHEETS:\n` +
       (currentSeries.characters || CARTOON_CHARACTERS_FE).map(c => (
         `[${c.name.toUpperCase()} - ${c.role}]\n` +
