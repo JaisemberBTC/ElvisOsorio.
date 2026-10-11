@@ -192,7 +192,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const handleCopyFullScript = (episode: MiniserieEpisode = editableEpisode) => {
     const text = `GUION TÉCNICO Y NARRATIVA SERIALIZADA - ${currentSeries.seriesTitle} (${episode.episodeTitle})\n` +
       `FORMATO: 9:16 Vertical • CADENCIA: ~2.0-2.2 pal/s • DURACIÓN TOTAL: ~${(episode.scenes || []).reduce((a, s) => a + (s.durationSec || 10), 0)}s\n` +
-      `GANCHO DE APERTURA (<3s): "${episode.hook}"\n\n` +
+      `HOOK HABLADO (0–1 s, máximo 8 palabras): "${episode.hook}"\n\n` +
       (episode.scenes || []).map((sc) => (
         `===================================================\n` +
         `PLANO ${sc.sceneNumber} [${sc.timeframe || '00:00-00:10'}] - DURACIÓN: ${sc.durationSec || 10}s\n` +
@@ -240,7 +240,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     const qc = { ...buildQualityChecklist(episode.scenes || [], episode.hook, episode.cliffhanger), ...((episode as any).qualityChecklist || {}) };
     const shareabilityPlan = (episode as any).shareabilityPlan || {};
     const text = `LISTA DE CONTROL DE CALIDAD Y VIABILIDAD (SECCIÓN H) - ${episode.episodeTitle}\n` +
-      `1. Gancho <3s: [${qc.ganchoPrimeros3s.status.toUpperCase()}] ${qc.ganchoPrimeros3s.detail}\n` +
+      `1. Hook en primer segundo: [${qc.ganchoPrimeros3s.status.toUpperCase()}] ${qc.ganchoPrimeros3s.detail}\n` +
       `2. Conflicto claro: [${qc.claridadConflicto.status.toUpperCase()}] ${qc.claridadConflicto.detail}\n` +
       `3. Giro y revelación: [${qc.coherenciaGiro.status.toUpperCase()}] ${qc.coherenciaGiro.detail}\n` +
       `4. Viabilidad de producción: [${qc.viabilidadProduccion.status.toUpperCase()}] ${qc.viabilidadProduccion.detail}\n` +
@@ -731,25 +731,25 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white shadow-lg flex items-center gap-1.5">
                   <Flame className="w-3.5 h-3.5" />
-                  Mini Telenovelas de Fe Serializadas (45-75s)
+                  Miniseries de Fe para Flow · 50 s
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   Interacción entre Personajes (Dos en Cuadro)
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
-                  Diálogos en Español Clarificados en Inglés
+                  Instrucciones en Inglés · Diálogo en Español
                 </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-cinzel tracking-tight leading-tight">
-                Miniseries & Telenovelas de Fe con Flow
+                Miniseries de Fe con Flow
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-                Crea historias serializadas con la fórmula probada de retención: 
-                <strong className="text-amber-300"> Interacción real entre 2 o más personajes en el mismo plano</strong>, 
+                Diseña historias serializadas y ajusta una variable creativa por vez:
+                <strong className="text-amber-300"> acción y frase gancho desde el primer cuadro</strong>,
                 <strong className="text-purple-300"> Diálogos dramáticos en español con sincronización labial</strong>, 
-                <strong className="text-sky-300"> Prompts en inglés con especificación explícita de diálogo en español</strong> y 
+                <strong className="text-sky-300"> instrucciones en inglés y diálogo en español</strong> y
                 <strong className="text-emerald-300"> La serie completa entregada y dividida por capítulos de una sola vez</strong>.
               </p>
             </div>
@@ -856,7 +856,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                         Guionista de Microficción Vertical 9:16
                       </h4>
                       <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Gancho &lt;3s urgente ("quién quiere qué y qué puede perder"), originalidad absoluta de escenarios y ganchos, cadencia 2.0-2.5 pal/s y Lista de Control H.
+                        Hook de máximo 8 palabras desde el cuadro 0, primera palabra antes de 0,3 s, escenas Flow de 10 s e instrucciones técnicas en inglés.
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
@@ -1306,7 +1306,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                   <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-500/20 space-y-1">
                     <div className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
                       <Flame className="w-3 h-3" />
-                      <span>Gancho Inicial (0-3s):</span>
+                      <span>Acción + voz inicial (0–1 s):</span>
                     </div>
                     <p className="text-slate-200 leading-relaxed italic font-sans">
                       "{episode.hook}"
@@ -1345,8 +1345,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 text-[10px]">
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
-                          <span className="text-slate-400 block font-semibold">1. Gancho &lt;3s</span>
-                          <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
+                          <span className="text-slate-400 block font-semibold">1. Hook 0–1 s</span>
+                          <span className={`${qc.ganchoPrimeros3s.status === 'passed' ? 'text-emerald-300' : 'text-amber-300'} font-bold flex items-center gap-1`}>
+                            {qc.ganchoPrimeros3s.status === 'passed' ? '✓ Acción + voz' : '⚠ Revisar apertura'}
+                          </span>
                         </div>
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
                           <span className="text-slate-400 block font-semibold">2. Conflicto Claro</span>
@@ -1361,8 +1363,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                           <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Vertical 10s</span>
                         </div>
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
-                          <span className="text-slate-400 block font-semibold">5. Cadencia Oral</span>
-                          <span className="text-amber-300 font-bold flex items-center gap-1">✓ 2.0-2.5 pal/s</span>
+                          <span className="text-slate-400 block font-semibold">5. Diálogo / cadencia</span>
+                          <span className={`${qc.presupuestoFonetico.status === 'passed' ? 'text-emerald-300' : 'text-amber-300'} font-bold flex items-center gap-1`}>
+                            {qc.presupuestoFonetico.status === 'passed' ? '✓ Recuento revisado' : '⚠ Ajustar palabras'}
+                          </span>
                         </div>
                         <div className="p-2 rounded-xl bg-slate-900 border border-white/5 space-y-0.5">
                           <span className="text-slate-400 block font-semibold">6. Continuidad</span>
@@ -1866,7 +1870,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                             Lista Final de Control de Calidad y Viabilidad Técnica (Sección H de Prompt 2)
                           </h4>
                           <p className="text-[11px] text-slate-400">
-                            Validación estructural: gancho &lt;3s, claridad de conflicto, coherencia de revelación y presupuesto fonético.
+                            Validación estructural: hook de máximo 8 palabras y apertura en 0–1 s, claridad del conflicto, continuidad y presupuesto fonético.
                           </p>
                         </div>
                       </div>
@@ -1881,8 +1885,8 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5 text-xs">
                       <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
-                        <span className="text-[10px] text-slate-400 block font-bold uppercase">1. Gancho &lt;3s</span>
-                        <span className="text-emerald-300 font-bold flex items-center gap-1">✓ Validado</span>
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">1. Hook 0–1 s</span>
+                        <span className={`${qc.ganchoPrimeros3s.status === 'passed' ? 'text-emerald-300' : 'text-amber-300'} font-bold flex items-center gap-1`}>{qc.ganchoPrimeros3s.status === 'passed' ? '✓ Estructura del prompt' : '⚠ Revisar apertura'}</span>
                         <p className="text-[9px] text-slate-400 truncate font-sans">{editableEpisode.hook}</p>
                       </div>
 
@@ -1905,9 +1909,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                       </div>
 
                       <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
-                        <span className="text-[10px] text-slate-400 block font-bold uppercase">5. Cadencia Oral</span>
-                        <span className="text-amber-300 font-bold flex items-center gap-1">✓ 2.0-2.5 pal/s</span>
-                        <p className="text-[9px] text-slate-400 truncate font-sans">Sin silencios ni aceleración</p>
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">5. Presupuesto de diálogo</span>
+                        <span className={`${qc.presupuestoFonetico.status === 'passed' ? 'text-emerald-300' : 'text-amber-300'} font-bold flex items-center gap-1`}>
+                          {qc.presupuestoFonetico.status === 'passed' ? '✓ Recuento revisado' : '⚠ Ajustar palabras'}
+                        </span>
+                        <p className="text-[9px] text-slate-400 truncate font-sans">El audio final aún debe escucharse y medirse</p>
                       </div>
 
                       <div className="p-2.5 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-1">
@@ -2393,13 +2399,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/80" />
                   </div>
 
-                  {/* 1. TOP VIRAL HOOK BANNER (Fixed at the top, high contrast red/yellow) */}
-                  <div className="relative z-20 pt-7 px-3">
-                    <div className="py-2 px-3 rounded-xl bg-red-600/90 border border-red-400 text-center shadow-2xl backdrop-blur-sm animate-pulse">
-                      <span className="text-[11px] font-black text-white uppercase tracking-wider font-sans block leading-tight">
-                        {currentSeries.bannerHook}
-                      </span>
-                    </div>
+                  {/* Keep the opening frame clean; the hook is spoken, not duplicated in a flashing banner. */}
+                  <div className="relative z-20 pt-4 px-3">
+                    <span className="inline-flex px-2.5 py-1 rounded-full bg-black/50 border border-white/15 text-[9px] text-slate-200 font-semibold tracking-wide">
+                      Capítulo {currentEpisode.episodeNumber} · escena {activeScene.sceneNumber}
+                    </span>
                   </div>
 
                   {/* Middle Scene Info & Dynamic Dialogues */}
@@ -3079,7 +3083,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                     <span>🎬 Habilidad 2: Guion 9:16</span>
                   </div>
                   <p className="text-[10px] text-slate-300 leading-relaxed">
-                    Gancho &lt;3s ("quién quiere qué"), revelación, cliffhanger y cadencia 2.0-2.5 pal/s.
+                    Hook de máximo 8 palabras, acción desde el primer cuadro, primera palabra antes de 0,3 s, revelación y cliffhanger.
                   </p>
                 </div>
 

@@ -120,12 +120,14 @@ const CHARACTER_BASES = [
     id: 'protagonista_fe', name: 'Lucía Vega', role: 'Protagonista; busca la verdad y una forma de reparar el daño', apparentAge: '34 años', gender: 'femenino',
     skin: 'tono oliva medio con subtono cálido', face: 'rostro ovalado, pecas leves, ojos café oscuro', hair: 'cabello castaño oscuro, ondulado, a la altura de los hombros, raya lateral', build: 'complexión media, postura que pasa de tensa a abierta',
     wardrobe: 'suéter color terracota, camisa marfil y pantalón oscuro, sin cambios entre segmentos', accessories: 'anillo sencillo de plata en la mano derecha y bolso de lona marrón', voice: 'voz femenina adulta, cálida, algo ronca al emocionarse; español latinoamericano neutral',
+    promptAgeEn: '34-year-old woman', promptGenderEn: 'female', promptSkinEn: 'medium warm olive skin', promptFaceEn: 'oval face, faint freckles, dark brown eyes', promptHairEn: 'shoulder-length wavy dark brown hair with a side part', promptBuildEn: 'medium build, initially tense posture that gradually opens', promptWardrobeEn: 'terracotta sweater, ivory shirt, and dark trousers; unchanged between segments', promptAccessoriesEn: 'simple silver ring on her right hand and a brown canvas bag', promptVoiceEn: 'adult warm female voice, slightly husky when emotional; neutral Latin American Spanish accent',
     voicePresetName: 'voz femenina cálida y natural'
   },
   {
     id: 'companero_fe', name: 'Tomás Vega', role: 'Hermano y contraparte; oculta una verdad por miedo a perder a su familia', apparentAge: '38 años', gender: 'masculino',
     skin: 'tono moreno claro con subtono dorado', face: 'rostro rectangular, nariz recta, ojos café, una pequeña cicatriz en la ceja izquierda', hair: 'cabello negro corto con textura natural, barba de dos días', build: 'complexión delgada, hombros encorvados al inicio',
     wardrobe: 'chaqueta azul marino gastada, camiseta gris y jeans oscuros, sin cambios entre segmentos', accessories: 'reloj analógico negro en la muñeca izquierda', voice: 'voz masculina adulta de registro medio, respiración contenida; español latinoamericano neutral',
+    promptAgeEn: '38-year-old man', promptGenderEn: 'male', promptSkinEn: 'light brown skin with a golden undertone', promptFaceEn: 'rectangular face, straight nose, brown eyes, small scar on the left eyebrow', promptHairEn: 'short naturally textured black hair and two-day stubble', promptBuildEn: 'slender build, shoulders initially hunched', promptWardrobeEn: 'worn navy jacket, gray T-shirt, and dark jeans; unchanged between segments', promptAccessoriesEn: 'black analog watch on his left wrist', promptVoiceEn: 'adult male mid-register voice with restrained breathing; neutral Latin American Spanish accent',
     voicePresetName: 'voz masculina serena y contenida'
   }
 ];
@@ -155,18 +157,57 @@ const ARC_BANK: Record<number, any[]> = {
   ]
 };
 
+const OPENING_BEATS = [
+  {
+    hook: 'Esta carta lleva mi nombre.',
+    openingActionEn: 'At frame 0, a cream envelope slips from the open Bible and lands across an old family photograph. Lucía catches it before it falls, turns it toward Tomás, and sees her own name on the envelope; the camera is already close to the action.',
+    openingLineEs: 'Esta carta lleva mi nombre. Alguien la escondió hace años.',
+    openingReplyEs: 'Estoy aquí; la abrimos juntos, sin correr ni esconder nada.',
+    commentQuestion: 'Si encontraras una carta así, ¿a quién le preguntarías primero?'
+  },
+  {
+    hook: 'Ese teléfono volvió a sonar.',
+    openingActionEn: 'At frame 0, a phone vibrates across the wooden table beside the Bible. Lucía reaches for it, stops just before touching it, and looks at Tomás; keep the screen turned away with no readable text.',
+    openingLineEs: 'Ese teléfono volvió a sonar. Después de años, no respondas aún.',
+    openingReplyEs: 'Te acompaño; primero pensemos qué verdad revela esa llamada.',
+    commentQuestion: '¿Responderías esa llamada o pedirías saber quién es antes?'
+  },
+  {
+    hook: 'Esta foto señala el lugar.',
+    openingActionEn: 'At frame 0, a worn photograph slides out from a folded letter and lands between the siblings. Tomás recognizes the place and pulls his hand back; Lucía turns the photograph toward him without leaving the close framing.',
+    openingLineEs: 'Esta foto señala el lugar. Yo también lo recuerdo perfectamente.',
+    openingReplyEs: 'La firma coincide; podemos preguntar sin acusarnos antes de escuchar.',
+    commentQuestion: '¿Qué detalle de una foto te haría preguntar por tu familia?'
+  },
+  {
+    hook: 'Alguien está tras la puerta.',
+    openingActionEn: 'At frame 0, Lucía’s hand is already on the door handle. It turns slightly from the other side; she stops it with her palm and meets Tomás’s eyes, both hearing someone outside without opening the door.',
+    openingLineEs: 'Alguien está tras la puerta. Dime qué ocultaste tantos años.',
+    openingReplyEs: 'No te presiono; decidirás cuándo abrir y qué necesitas saber.',
+    commentQuestion: '¿Abrirías la puerta o pedirías primero escuchar toda la verdad?'
+  },
+  {
+    hook: 'No me pidas que olvide.',
+    openingActionEn: 'At frame 0, Lucía slides the opened letter across the table toward Tomás and keeps two fingers on its edge. He does not take it; both hold eye contact as the paper stops between them.',
+    openingLineEs: 'No me pidas que olvide. Primero demuestra que puedes cambiar.',
+    openingReplyEs: 'Tienes razón; reparar el daño tomará tiempo, escucha y hechos.',
+    commentQuestion: '¿Qué límite ayuda a reconstruir confianza sin fingir que nada pasó?'
+  }
+];
+
 function chooseLocation(topic: string, lockedEnvironmentId?: string) {
-  if (lockedEnvironmentId) return `Entorno fijado por el usuario (${lockedEnvironmentId}), representado como un lugar real y contemporáneo`;
-  if (/hospital|enfermedad|sanidad|m[eé]dico|cl[ií]nica/i.test(topic)) return 'sala de espera de un hospital de barrio en una ciudad latinoamericana';
-  if (/deuda|desalojo|casa|alquiler|familia|padre|madre/i.test(topic)) return 'cocina modesta de un apartamento familiar en una ciudad latinoamericana';
-  if (/duelo|p[eé]rdida|cementerio/i.test(topic)) return 'pequeña capilla de barrio y su patio, en una ciudad latinoamericana';
-  return 'sala y cocina conectadas de una vivienda familiar contemporánea en una ciudad latinoamericana';
+  if (lockedEnvironmentId) return `User-locked environment (${lockedEnvironmentId}), represented as a real contemporary location`;
+  if (/hospital|enfermedad|sanidad|m[eé]dico|cl[ií]nica/i.test(topic)) return 'a neighborhood hospital waiting room in a Latin American city';
+  if (/deuda|desalojo|casa|alquiler|familia|padre|madre/i.test(topic)) return 'the modest kitchen of a family apartment in a Latin American city';
+  if (/duelo|p[eé]rdida|cementerio/i.test(topic)) return 'a small neighborhood chapel and its courtyard in a Latin American city';
+  return 'the connected living room and kitchen of a contemporary family home in a Latin American city';
 }
 
 function characterRecord(base: any, customName?: string) {
   const name = customName || base.name;
   const visualIdentity = `${base.apparentAge}; piel ${base.skin}; ${base.face}; ${base.hair}; ${base.build}. Apariencia de persona real filmada en live-action.`;
-  const exactModelSheetLockEn = `${name}, ${visualIdentity} Fixed wardrobe: ${base.wardrobe}. Fixed accessories: ${base.accessories}. Preserve the exact same actor identity, face, age, skin, hair, body, wardrobe and accessories in every shot. Photorealistic live-action human, no stylization.`;
+  const visualIdentityEn = `${base.promptAgeEn}; ${base.promptSkinEn}; ${base.promptFaceEn}; ${base.promptHairEn}; ${base.promptBuildEn}. Photorealistic live-action human.`;
+  const exactModelSheetLockEn = `${name}, ${visualIdentityEn} Fixed wardrobe: ${base.promptWardrobeEn}. Fixed accessories: ${base.promptAccessoriesEn}. Preserve the exact same actor identity, face, age, skin, hair, body, wardrobe, accessories, and voice in every shot. No stylization.`;
   const avatarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" rx="24" fill="${base.gender === 'femenino' ? '#573b54' : '#25415a'}"/><circle cx="80" cy="58" r="31" fill="#c99573"/><path d="M30 154c5-37 24-56 50-56s45 19 50 56" fill="${base.gender === 'femenino' ? '#b96550' : '#263b55'}"/><path d="M48 55c3-29 18-42 34-42 20 0 34 18 33 43-10-6-20-18-25-28-8 17-23 26-42 27" fill="${base.gender === 'femenino' ? '#30252a' : '#211e20'}"/></svg>`;
   return {
     ...base,
@@ -181,6 +222,15 @@ function characterRecord(base: any, customName?: string) {
     visualIdentity,
     description: visualIdentity,
     exactModelSheetLockEn,
+    promptAgeEn: base.promptAgeEn,
+    promptGenderEn: base.promptGenderEn,
+    promptSkinEn: base.promptSkinEn,
+    promptFaceEn: base.promptFaceEn,
+    promptHairEn: base.promptHairEn,
+    promptBuildEn: base.promptBuildEn,
+    promptWardrobeEn: base.promptWardrobeEn,
+    promptAccessoriesEn: base.promptAccessoriesEn,
+    promptVoiceEn: base.promptVoiceEn,
     fixedIdentityPrompt: `${name}: ${visualIdentity} Vestuario fijo: ${base.wardrobe}. Accesorios: ${base.accessories}.`,
     fixedIdentityPromptEn: exactModelSheetLockEn,
     clothingStyle: base.wardrobe,
@@ -238,13 +288,13 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   const location = chooseLocation(topic, options.lockedEnvironmentId);
   const bibleReference = tidy(options.bibleReference, 'Salmo 34:18');
   const musicStyles = [
-    { genre: 'piano íntimo con cuerdas graves y pulsos suaves', bpm: 72, key: 're menor que resuelve hacia fa mayor', motif: 'tres notas ascendentes que vuelven como respuesta emocional' },
-    { genre: 'guitarra de nylon, cello cálido y textura ambiental original', bpm: 78, key: 'la menor con cierre luminoso', motif: 'arpegio breve de cinco notas que madura en cada capítulo' },
-    { genre: 'piano de fieltro, viola y percusión orgánica muy discreta', bpm: 68, key: 'mi menor con resolución abierta', motif: 'nota repetida que se convierte en una frase esperanzadora' }
+    { genre: 'intimate piano, low strings, and soft pulses', bpm: 72, key: 'D minor resolving toward F major', motif: 'three ascending notes that return as an emotional answer' },
+    { genre: 'nylon-string guitar, warm cello, and original ambient texture', bpm: 78, key: 'A minor with a luminous resolution', motif: 'a brief five-note arpeggio that matures in each chapter' },
+    { genre: 'felt piano, viola, and very subtle organic percussion', bpm: 68, key: 'E minor with an open resolution', motif: 'a repeated note that grows into a hopeful phrase' }
   ];
   const audioStyle = musicStyles[parseInt(storySeed.slice(0, 2), 16) % musicStyles.length];
-  const uniqueMotif = `${audioStyle.motif}; firma de serie ${storySeed.slice(0, 6)}`;
-  const outline = plans.map((plan, index) => ({ episodeNumber: index + 1, ...plan }));
+  const uniqueMotif = `${audioStyle.motif}; series signature ${storySeed.slice(0, 6)}`;
+  const outline = plans.map((plan, index) => ({ episodeNumber: index + 1, ...plan, ...OPENING_BEATS[index] }));
   const seriesId = `feflow_${storySeed.slice(0, 12)}_${Date.now().toString(36)}`;
   const series: any = {
     id: seriesId,
@@ -273,17 +323,17 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       characterBible: characters.map(({ id, name, role, visualIdentity, wardrobe, accessories, voice }: any) => ({ id, name, role, visualIdentity, wardrobe, accessories, voice })),
       worldBible: {
         location,
-        eraAndArchitecture: 'Época contemporánea; vivienda realista de clase trabajadora o media, materiales y utilería cotidianos, sin decorado fantástico.',
-        timeOfDay: 'La tarde avanza hacia la noche a lo largo de la historia; mantener la hora coherente en cada capítulo.',
-        weather: 'Clima templado, sin cambios de continuidad injustificados.',
-        palette: 'ocres, terracotas y azules naturales; luz práctica cálida en interior y sombras neutras, sin resplandor mágico',
-        cameraLanguage: 'cámara de observación íntima, 35 mm, movimientos discretos motivados por la acción y primeros planos para reacciones',
-        lighting: 'luz disponible de ventana y lámparas domésticas; contraste cinematográfico natural',
-        recurringProps: ['Biblia de tapas gastadas', 'sobre color crema', 'taza de cerámica azul', 'teléfono móvil con pantalla sin texto legible'],
-        continuityRule: 'El mismo espacio, distribución, muebles, objetos y ejes de cámara permanecen constantes en toda la serie.'
+        eraAndArchitecture: 'Contemporary era; realistic working- or middle-class home, everyday materials and props, no fantasy set dressing.',
+        timeOfDay: 'Afternoon gradually moves toward evening across the story; keep time consistent within each chapter.',
+        weather: 'Mild weather, with no unjustified continuity changes.',
+        palette: 'ochre, terracotta, and natural blues; warm practical interior light and neutral shadows, no magical glow',
+        cameraLanguage: 'intimate observational camera, 35 mm, subtle action-motivated movement, close reactions',
+        lighting: 'available window light and household lamps; natural cinematic contrast',
+        recurringProps: ['worn-cover Bible', 'cream envelope', 'blue ceramic cup', 'mobile phone with no readable screen text'],
+        continuityRule: 'Keep the same room, layout, furniture, objects, and camera axis throughout the series.'
       },
       audioBible: {
-        originalScore: `Tema musical original ${storySeed.slice(0, 6)}: ${audioStyle.genre}; ${audioStyle.bpm} BPM; ${audioStyle.key}; motivo ${uniqueMotif}.`,
+        originalScore: `Original score identity ${storySeed.slice(0, 6)}: ${audioStyle.genre}; ${audioStyle.bpm} BPM; ${audioStyle.key}; signature motif ${uniqueMotif}.`,
         genre: audioStyle.genre,
         bpm: audioStyle.bpm,
         key: audioStyle.key,
@@ -308,23 +358,17 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   };
 
   const sceneActions = (plan: any, episodeNumber: number) => [
-    `En el primer segundo, ${protagonist.name} encuentra el sobre color crema junto a la Biblia abierta; el temblor de su mano deja ver el miedo a una verdad familiar. ${companion.name} está frente a ella y le acerca la mano sin presionarla. ${protagonist.name} decide abrirlo acompañada: la escena transforma aislamiento en apoyo, aunque el secreto siga pendiente. La imagen plantea la pregunta del capítulo «${plan.hook}».`,
-    `${companion.name} reconoce la letra del sobre y admite que lleva años ocultando una parte de la historia. Una mirada y una mano que se detiene revelan que ambos conocen el costo de esa verdad.`,
-    `${protagonist.name} abre el sobre y encuentra una fotografía familiar doblada y una fecha escrita a mano. ${companion.name} baja la mirada; una llamada vibra sobre la mesa, sin texto legible.`,
-    `La conversación se vuelve más tensa. ${protagonist.name} respira, mira la Biblia y hace una oración breve en voz baja; ${companion.name} responde con una verdad concreta, sin atribuir palabras inventadas a Dios.`,
+    `${plan.openingActionEn} Keep the action legible and emotionally specific from frame 0; no title, fade, or introductory pause.`,
+    `${companion.name} recognizes the handwriting and admits that he concealed part of the family story for years. A stopped hand and a quick glance show the cost of telling the truth.`,
+    `${protagonist.name} opens the envelope and finds a folded family photograph with a handwritten date. ${companion.name} lowers his eyes; a phone vibrates on the table with its screen turned away.`,
+    `The conversation tightens. ${protagonist.name} glances at the Bible and whispers a short personal prayer; ${companion.name} answers with a concrete truth, without attributing invented words to God.`,
     episodeNumber < totalParts
-      ? `${protagonist.name} decide no destruir la carta. El teléfono vuelve a vibrar y ambos miran hacia la puerta. Cortar justo antes de saber quién llegó, dejando causalmente abierto el capítulo siguiente: ${plan.cliffhanger}.`
-      : `${protagonist.name} y ${companion.name} ponen la carta sobre la mesa y acuerdan hablar con honestidad y buscar ayuda si la necesitan. No todo queda resuelto; el gesto inicia una reparación realista. Cerrar con alivio sobrio y esperanza.`
+      ? `${protagonist.name} decides not to destroy the letter. The phone vibrates again and both look toward the door. Cut before they see who has arrived, opening the next chapter's causal question: ${plan.cliffhanger}.`
+      : `${protagonist.name} and ${companion.name} place the letter on the table and agree to speak honestly and seek help if needed. Nothing is fully resolved; this begins realistic repair. End with restrained relief and hope.`
   ];
   const sceneDialogues = (plan: any, episodeNumber: number) => {
-    const hookWords = spokenWordCount(plan.hook);
-    const openingReply = hookWords >= 12
-      ? 'Respira; no estás sola. Vamos paso a paso.'
-      : hookWords >= 11
-        ? 'Respira; no estás sola, me quedo aquí contigo ahora.'
-        : 'Respira; no tienes que abrir esa carta completamente sola hoy.';
     return [
-      [[protagonist.name, plan.hook], [companion.name, openingReply]],
+      [[protagonist.name, plan.openingLineEs], [companion.name, plan.openingReplyEs]],
       [[companion.name, 'Reconozco esta letra; lleva años escondiendo un secreto de familia.'], [protagonist.name, 'Mira la firma; dime si también recuerdas a quién pertenece.']],
       [[protagonist.name, 'Le pedí a Dios claridad, no que todo cambiara hoy.'], [companion.name, 'La fecha de esta foto cambia todo lo que sabíamos.']],
       [[companion.name, 'Me equivoqué al callar y no voy a justificarlo más.'], [protagonist.name, 'No puedo borrar el pasado, pero hoy sí quiero escucharte.']],
@@ -347,7 +391,7 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         timeWindow: '',
         allocatedSeconds: 0,
         dialogueSpanish,
-        emotionalTone: turnIndex === 0 ? 'urgencia íntima, natural y contenida' : 'respuesta humana, fluida y con subtexto',
+        emotionalTone: turnIndex === 0 ? 'urgent, intimate, natural, and restrained' : 'human, fluid response with subtext',
         voicePresetName: speakerName === protagonist.name ? protagonist.voicePresetName : companion.voicePresetName
       }));
       const dialogueExchange = timeDialogueTurns(rawDialogueExchange);
@@ -361,27 +405,28 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         interactionType: sceneIndex === 0 ? 'reaccion_asombro' : 'dos_personajes_frente_a_frente',
         action,
         environment: location,
-        camera: sceneIndex === 0 ? 'primer plano del objeto que se abre a un primer plano de la reacción, sin corte' : 'plano medio cercano en eje de 180 grados, alternando miradas dentro de la misma toma',
-        lens: '35 mm cinematográfico, perspectiva natural, profundidad de campo moderada',
-        cameraMovement: sceneIndex === 0 ? 'acercamiento lento y motivado hacia la carta' : 'desplazamiento lateral muy leve, físicamente posible y continuo',
-        lighting: 'luz cálida de lámpara doméstica y sombras suaves; mantener la misma dirección de luz entre segmentos',
-        performance: 'microexpresiones, pausas breves y respiración real; lágrimas solo si la emoción las justifica',
+        camera: sceneIndex === 0 ? 'tight close shot on the specific prop and immediate human reaction, one continuous take' : 'close medium shot on a consistent 180-degree axis, alternating eyelines within one continuous take',
+        lens: 'cinematic 35 mm equivalent, natural perspective, moderate depth of field',
+        cameraMovement: sceneIndex === 0 ? 'a brisk, controlled push-in completed within the first 0.5 seconds, then settle without a cut' : 'very subtle, physically plausible continuous lateral move',
+        lighting: 'warm practical household lamp and soft shadows; preserve the same light direction between segments',
+        performance: 'believable micro-expressions, brief pauses, and natural breathing; tears only when justified by the emotion',
         dialogueExchange,
         narration: '',
         subtitleSuggestion: sceneIndex === 0 ? plan.hook : dialogueExchange[0].dialogueSpanish,
         onScreenText: sceneIndex === 0 ? plan.hook : '',
-        sfx: sceneIndex === 0 ? 'papel rozando la mesa, taza que termina de asentarse, ambiente doméstico tenue' : 'ambiente interior realista, respiración y vibración corta del teléfono cuando corresponda',
-        bgMusicMood: `${audioStyle.genre}; ${audioStyle.bpm} BPM; variante de ${uniqueMotif}; intensidad emocional ${['suspenso suave', 'expectativa', 'revelación', 'decisión', 'alivio sobrio'][sceneIndex]}`,
-        negativePrompt: options.noInclude || 'sin violencia gráfica, sin lenguaje vulgar, sin estética de caricatura, sin milagros visuales garantizados ni texto ilegible'
+        sfx: sceneIndex === 0 ? 'paper brushing the table, a ceramic cup settling, soft household ambience' : 'realistic interior ambience, natural breathing, and a brief phone vibration only when the action calls for it',
+        bgMusicMood: `${audioStyle.genre}; ${audioStyle.bpm} BPM; variation on ${uniqueMotif}; emotional intensity ${['soft suspense', 'anticipation', 'reveal', 'decision', 'restrained relief'][sceneIndex]}`,
+        negativePrompt: options.noInclude || 'no graphic violence, profanity, cartoon style, guaranteed visible miracles, or generated unreadable text'
       };
     });
+    const commentQuestion = tidy(options.callToAction, plan.commentQuestion);
     const socialPackage = {
       youtubeTitle: `${plan.title} | Miniserie de fe y oración — Capítulo ${episodeNumber}`,
       facebookTitle: `${plan.title}: una historia de fe, familia y perdón (Capítulo ${episodeNumber})`,
       tiktokTitle: `${plan.title} | Parte ${episodeNumber} de ${totalParts}`,
-      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Una historia original sobre ${topic.toLocaleLowerCase('es')}, oración y esperanza realista. Si conoces a alguien que necesita sentirse acompañado ante una verdad difícil, puedes enviársela como un gesto de apoyo. ${episodeNumber < totalParts ? `El siguiente capítulo continúa: ${plan.cliffhanger}` : 'La reparación comienza con una conversación honesta.'}`,
+      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Una historia original sobre ${topic.toLocaleLowerCase('es')}, oración y esperanza realista. ${episodeNumber < totalParts ? `La verdad aún no está completa: ${plan.cliffhanger}` : 'La reparación comienza con una conversación honesta.'}\n\n${commentQuestion}`,
       hashtags: ['#MiniserieDeFe', '#Oracion', '#HistoriasDeFe', '#Esperanza', `#Capitulo${episodeNumber}`, '#FeEnLaVidaReal'],
-      pinnedComment: '¿Qué paso pequeño te ha ayudado a recuperar la esperanza?',
+      pinnedComment: commentQuestion,
       seoKeywords: ['miniserie cristiana', 'historia de fe y oración', 'esperanza en familia', 'microdrama de fe', plan.title.toLocaleLowerCase('es')],
       searchQueries: [`historia de fe sobre ${topic}`, 'miniserie cristiana de oración y esperanza'],
       thumbnailHook: plan.hook,
@@ -401,8 +446,8 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         hookSentence: plan.hook,
         rapidTransformation: `${protagonist.name} deja de enfrentar sola la incertidumbre y da un primer paso de confianza; el conflicto mayor permanece abierto.`,
         reasonToShare: 'Puede enviarse a alguien que atraviesa una verdad familiar difícil porque ofrece compañía y esperanza realista, no una solución mágica.',
-        metricsToReview: ['retención 0–3 s', 'tiempo promedio', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios'],
-        dataStatus: 'Hipótesis editorial; no equivale a datos medidos de audiencia.'
+        metricsToReview: ['retención 0–1 s y 0–3 s', 'tiempo promedio', 'finalización', 'comentarios', 'compartidos/envíos', 'guardados', 'antigüedad de publicación comparable'],
+        dataStatus: 'Hipótesis editorial; comparar publicaciones con antigüedad similar y no inferir tendencias de muestras pequeñas.'
       },
       lockedEnvironmentId: series.lockedEnvironmentId,
       lockedEnvironmentName: location,
@@ -424,6 +469,9 @@ function buildGenerationPrompt(options: MiniseriesAgentOptions, series: any): st
   const outline = series.seriesBible.episodeOutline.map((episode: any) => ({
     episodeNumber: episode.episodeNumber,
     plannedTitle: episode.title,
+    openingHook: episode.hook,
+    openingVisual: episode.openingActionEn,
+    commentQuestion: episode.commentQuestion,
     objective: episode.objective,
     conflict: episode.conflict,
     reveal: episode.reveal,
@@ -453,13 +501,22 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
         if (typeof candidate[key] === 'string' && candidate[key].trim()) merged[key] = candidate[key].trim();
       }
       merged.age = merged.apparentAge || merged.age;
-      merged.visualIdentity = `${merged.apparentAge}; piel ${merged.skin}; ${merged.face}; ${merged.hair}; ${merged.build}. Apariencia de persona real filmada en live-action.`;
+      merged.promptAgeEn = tidy(candidate.promptAgeEn || candidate.apparentAge, fallbackCharacter.promptAgeEn);
+      merged.promptGenderEn = tidy(candidate.promptGenderEn, fallbackCharacter.promptGenderEn);
+      merged.promptSkinEn = tidy(candidate.promptSkinEn || candidate.skin, fallbackCharacter.promptSkinEn);
+      merged.promptFaceEn = tidy(candidate.promptFaceEn || candidate.face, fallbackCharacter.promptFaceEn);
+      merged.promptHairEn = tidy(candidate.promptHairEn || candidate.hair, fallbackCharacter.promptHairEn);
+      merged.promptBuildEn = tidy(candidate.promptBuildEn || candidate.build, fallbackCharacter.promptBuildEn);
+      merged.promptWardrobeEn = tidy(candidate.promptWardrobeEn || candidate.wardrobe, fallbackCharacter.promptWardrobeEn);
+      merged.promptAccessoriesEn = tidy(candidate.promptAccessoriesEn || candidate.accessories, fallbackCharacter.promptAccessoriesEn);
+      merged.promptVoiceEn = tidy(candidate.promptVoiceEn || candidate.voice, fallbackCharacter.promptVoiceEn);
+      merged.visualIdentity = `${merged.promptAgeEn}; skin: ${merged.promptSkinEn}; facial features: ${merged.promptFaceEn}; hair: ${merged.promptHairEn}; build: ${merged.promptBuildEn}. Photorealistic live-action human.`;
       merged.shortDescription = merged.visualIdentity;
       merged.description = merged.visualIdentity;
       merged.clothingStyle = merged.wardrobe;
       merged.lockedWardrobeDesc = merged.wardrobe;
       merged.fixedIdentityPrompt = `${merged.name}: ${merged.visualIdentity} Vestuario fijo: ${merged.wardrobe}. Accesorios: ${merged.accessories}.`;
-      merged.exactModelSheetLockEn = `${merged.name}, ${merged.visualIdentity} Fixed wardrobe: ${merged.wardrobe}. Fixed accessories: ${merged.accessories}. Preserve exact identity and live-action photorealism in every shot.`;
+      merged.exactModelSheetLockEn = `${merged.name}, ${merged.visualIdentity} Fixed wardrobe: ${merged.promptWardrobeEn}. Fixed accessories: ${merged.promptAccessoriesEn}. Fixed voice: ${merged.promptVoiceEn}. Preserve exact identity and live-action photorealism in every shot.`;
       merged.fixedIdentityPromptEn = merged.exactModelSheetLockEn;
       merged.voiceProfile = { ...fallbackCharacter.voiceProfile, tone: merged.voice };
       return merged;
@@ -480,7 +537,9 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
   for (const episode of series.episodes) {
     const source = sourceEpisodes.find((item: any) => Number(item?.episodeNumber) === episode.episodeNumber);
     if (!source) continue;
-    for (const [key, sourceKey] of [['episodeTitle', 'episodeTitle'], ['hook', 'hook'], ['objective', 'objective'], ['conflict', 'conflict'], ['escalation', 'escalation'], ['twist', 'twist'], ['cliffhanger', 'cliffhanger']]) {
+    const fallbackOpeningHook = episode.hook;
+    if (typeof source.hook === 'string' && source.hook.trim() && spokenWordCount(source.hook) <= 8) episode.hook = source.hook.trim();
+    for (const [key, sourceKey] of [['episodeTitle', 'episodeTitle'], ['objective', 'objective'], ['conflict', 'conflict'], ['escalation', 'escalation'], ['twist', 'twist'], ['cliffhanger', 'cliffhanger']]) {
       if (typeof source[sourceKey] === 'string' && source[sourceKey].trim()) (episode as any)[key] = source[sourceKey].trim();
     }
     const normalizedHook = episode.hook.toLocaleLowerCase('es').replace(/\W+/g, ' ').trim();
@@ -515,12 +574,16 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
         const distinctVoices = new Set(normalizedTurns.map((turn: any) => turn.speakerId));
         const turnWordCounts = normalizedTurns.map((turn: any) => spokenWordCount(turn.dialogueSpanish));
         const spokenWordCountTotal = turnWordCounts.reduce((sum: number, count: number) => sum + count, 0);
+        const normalizeOpeningText = (text: string) => text.toLocaleLowerCase('es').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+        const openingMatchesHook = index !== 0 || normalizeOpeningText(normalizedTurns[0].dialogueSpanish).startsWith(normalizeOpeningText(episode.hook));
         merged.dialogueExchange = timeDialogueTurns(normalizedTurns);
         if (
           distinctVoices.size < 2 ||
           spokenWordCountTotal < 19 || spokenWordCountTotal > 20 ||
-          turnWordCounts.some((count: number) => count < 9 || count > 11)
+          turnWordCounts.some((count: number) => count < 9 || count > 11) ||
+          !openingMatchesHook
         ) merged.dialogueExchange = fallbackScene.dialogueExchange;
+        if (index === 0 && !openingMatchesHook) episode.hook = fallbackOpeningHook;
       }
       merged.timeframe = `00:${String(index * 10).padStart(2, '0')}–00:${String((index + 1) * 10).padStart(2, '0')}`;
       merged.durationSec = 10;
@@ -531,7 +594,15 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
     });
 
     if (source.socialPackage && typeof source.socialPackage === 'object') {
+      const fallbackPinnedComment = episode.socialPackage.pinnedComment;
+      const fallbackCaption = episode.socialPackage.caption;
       episode.socialPackage = { ...episode.socialPackage, ...source.socialPackage };
+      if (!/[?？]/.test(String(episode.socialPackage.pinnedComment || ''))) {
+        episode.socialPackage.pinnedComment = fallbackPinnedComment;
+      }
+      if (!/[?？]/.test(String(episode.socialPackage.caption || ''))) {
+        episode.socialPackage.caption = fallbackCaption;
+      }
     }
   }
   series.seriesBible.characterBible = series.characters.map((character: any) => ({
@@ -550,8 +621,8 @@ function finalizeSeries(series: any) {
       hookSentence: tidy(episode.hook, 'Hook por revisar'),
       rapidTransformation: tidy(episode.reveal || episode.twist || episode.escalation, 'entregar un primer cambio emocional o una decisión observable sin resolver mágicamente todo el arco'),
       reasonToShare: `Hipótesis: alguien que atraviesa «${audienceProblemOrDesire}» podría enviárselo a otra persona en una situación parecida para ofrecerle compañía y una perspectiva útil; validar con datos reales.`,
-      metricsToReview: ['retención 0–3 s', 'tiempo promedio', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios'],
-      dataStatus: 'Hipótesis editorial; usar datos reales cuando estén disponibles y no inventar resultados.'
+      metricsToReview: ['retención 0–1 s y 0–3 s', 'tiempo promedio', 'finalización', 'compartidos/envíos', 'guardados', 'comentarios', 'antigüedad de publicación comparable'],
+      dataStatus: 'Hipótesis editorial; comparar publicaciones con antigüedad similar y no inferir tendencias de muestras pequeñas.'
     };
     episode.scenes = episode.scenes.slice(0, 5);
     episode.scenes.forEach((scene: any, index: number) => {
@@ -584,7 +655,7 @@ export async function generateOpenSourceMiniseries(options: MiniseriesAgentOptio
   const series = createFallbackMiniseries(normalized);
   if (!provider) return { miniseries: series, provider: 'plantilla-local', isFallback: true };
   try {
-    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\n${BIBLICAL_VIDEO_CREATION_RULE}\n\n${SHAREABILITY_RULE}`;
+    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\nREGLAS PRIORITARIAS DE SALIDA: Todas las instrucciones de producción que se incorporan a prompts Flow (acción, identidad, entorno, cámara, luz, actuación, audio y restricciones) deben escribirse en inglés. Conserva en español latinoamericano únicamente los diálogos hablados, títulos/captions SEO y comentarios de audiencia. El hook de cada capítulo tiene máximo ocho palabras, inicia literalmente el primer diálogo y comienza en el cuadro 0; la primera palabra audible debe ocurrir antes de 0,3 s. No abras con saludo, plano de establecimiento, fundido, título, logotipo ni zoom lento. Escribe cada capítulo con una apertura visual distinta y una sola pregunta reflexiva concreta en el copy. Usa las métricas como señales, no como promesas; compara publicaciones de antigüedad semejante y no generalices a partir de muestras pequeñas.\n\n${BIBLICAL_VIDEO_CREATION_RULE}\n\n${SHAREABILITY_RULE}`;
     const output = await provider.completeJSON(systemPrompt, buildGenerationPrompt(normalized, series));
     mergeModelOutput(series, output);
     finalizeSeries(series);

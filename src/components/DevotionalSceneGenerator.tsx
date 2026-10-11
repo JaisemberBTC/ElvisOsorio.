@@ -264,14 +264,14 @@ export const DevotionalSceneGenerator: React.FC = () => {
 
     setRegeneratingScene(sceneNumber);
     try {
-      const result = await imageGenerationService.regenerate(
+      const result = await imageGenerationService.regenerate(targetScene.structuredPrompt, {
         sceneNumber,
-        targetScene.structuredPrompt,
-        productionDoc.masterCharacterDescription,
-        { aspectRatio: productionDoc.aspectRatio, style: 'netflix' }
-      );
+        masterCharacterDescription: productionDoc.masterCharacterDescription,
+        topicContext: userPrompt,
+        excludeImageUrl: targetScene.imageUrl
+      });
 
-      if (result.status === 'completed' && result.imageUrl) {
+      if (result.success && result.status === 'completed' && result.imageUrl) {
         const updatedScenes = productionDoc.scenes.map(sc => 
           sc.sceneNumber === sceneNumber 
             ? { ...sc, imageUrl: result.imageUrl, status: 'completed' as const }
@@ -287,10 +287,10 @@ export const DevotionalSceneGenerator: React.FC = () => {
         devotionalStorageService.saveProject(updatedDoc, userPrompt);
         setSavedProjects(devotionalStorageService.getAllProjects());
       } else {
-        throw new Error(result.errorMessage || "No se recibió imagen válida");
+        throw new Error(result.errorMessage || "No se recibió una imagen válida del catálogo");
       }
     } catch (err: any) {
-      alert(`No se pudo regenerar la Escena ${sceneNumber}: ${err.message}`);
+      alert(`No se pudo cambiar la imagen de catálogo para la Escena ${sceneNumber}: ${err.message}`);
     } finally {
       setRegeneratingScene(null);
     }
@@ -1189,7 +1189,7 @@ ${doc.finalAnimationVideoPrompt}
                           className="w-full py-2 px-3 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 border border-amber-500/30 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
-                          <span>{isRegenerating ? 'Regenerando...' : 'Regenerar esta escena'}</span>
+                          <span>{isRegenerating ? 'Buscando otra imagen...' : 'Elegir otra imagen del catálogo'}</span>
                         </button>
                       </div>
 
@@ -1197,8 +1197,8 @@ ${doc.finalAnimationVideoPrompt}
                       {isRegenerating && (
                         <div className="absolute inset-0 bg-stone-950/85 z-30 flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-8 h-8 text-amber-400 animate-spin" />
-                          <span className="text-xs font-bold text-amber-300">Regenerando {cardName}...</span>
-                          <span className="text-[10px] text-stone-400">Preservando continuidad maestra</span>
+                          <span className="text-xs font-bold text-amber-300">Buscando otra imagen para {cardName}...</span>
+                          <span className="text-[10px] text-stone-400">Selección local; no se crea una imagen nueva con IA</span>
                         </div>
                       )}
                     </div>
@@ -1252,10 +1252,10 @@ ${doc.finalAnimationVideoPrompt}
                           onClick={() => handleRegenerateScene(scene.sceneNumber)}
                           disabled={isRegenerating}
                           className="flex-1 py-1.5 px-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                          title="Regenerar esta escena"
+                          title="Elegir otra imagen del catálogo"
                         >
                           <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-                          <span>Regenerar</span>
+                          <span>Otra imagen</span>
                         </button>
 
                         <button

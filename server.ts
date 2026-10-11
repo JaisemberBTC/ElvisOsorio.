@@ -156,7 +156,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 // Consecutive Sacred Asset List for Guaranteed Matching Downloads per Scene
 const CONSECUTIVE_SCENE_IMAGE_FILES = [
   "jesus_divine_blessing_1787716123982.jpg", // Escena 1: Bendición Divina & Mirada de Amor
-  "jesus_peace_in_storm_1787716138284.jpg",  // Escena 2: Paz en la Tormenta & Calma Sobrenatural
+  "jesus_peace_solace.jpg",                  // Escena 2: Paz y consuelo
   "jesus_healing_light_1787716152719.jpg",   // Escena 3: Luz de Sanidad & Restauración
   "jesus_resurrected_king_1787717534726.jpg",// Escena 4: Rey Resucitado & Victoria Eterna
   "jesus_shepherd_love_1787717500827.jpg",   // Escena 5: Buen Pastor & Refugio
@@ -1466,7 +1466,7 @@ interface GeneratedImageResult {
 }
 
 const SCENE_ROLE_ASSET_MAP: Record<number, string[]> = {
-  1: ["jesus_peace_in_storm_1787716138284.jpg", "celestial_sunrise_dawn_1787717221920.jpg", "jesus-peace.jpg", "celestial-sunrise.jpg"],
+  1: ["jesus_peace_solace.jpg", "celestial_sunrise_dawn_1787717221920.jpg", "jesus-peace.jpg", "celestial-sunrise.jpg"],
   2: ["jesus_teaching_wisdom_1787717523974.jpg", "jesus_sacred_prayer_1787717512349.jpg", "jesus-teaching.jpg", "jesus-night.jpg"],
   3: ["jesus_divine_blessing_1787716123982.jpg", "jesus_healing_light_1787716152719.jpg", "jesus-blessing.jpg", "jesus-healing.jpg"],
   4: ["jesus_resurrected_king_1787717534726.jpg", "cross_sunrise_hope_1787717245799.jpg", "jesus-shepherd.jpg", "cross-sunrise.jpg"]
@@ -2776,7 +2776,7 @@ const SACRED_IMAGE_COLLECTIONS: { [key: string]: string[] } = {
   ],
   peace: [
     "/sacred-assets/jesus-peace.jpg",
-    "/sacred-assets/jesus_peace_in_storm_1787716138284.jpg",
+    "/sacred-assets/jesus_peace_solace.jpg",
     "/sacred-assets/jesus-shepherd.jpg",
     "/sacred-assets/jesus_shepherd_love_1787717500827.jpg",
     "/sacred-assets/olive-garden.jpg",
@@ -3037,11 +3037,14 @@ app.post("/api/gemini/generate-scene-images", async (req: Request, res: Response
   try {
     const { scenes, topicContext, themeContext } = req.body;
     const rawScenes: any[] = Array.isArray(scenes) ? scenes : [];
+    if (rawScenes.length === 0) {
+      return res.status(400).json({ success: false, error: "Envía al menos una escena para seleccionar una imagen del catálogo." });
+    }
     const usedUrls = new Set<string>();
 
     const allSacredImages = [
       "/sacred-assets/jesus_divine_blessing_1787716123982.jpg",
-      "/sacred-assets/jesus_peace_in_storm_1787716138284.jpg",
+      "/sacred-assets/jesus_peace_solace.jpg",
       "/sacred-assets/jesus_healing_light_1787716152719.jpg",
       "/sacred-assets/jesus_resurrected_king_1787717534726.jpg",
       "/sacred-assets/jesus_shepherd_love_1787717500827.jpg",
@@ -3100,14 +3103,15 @@ app.post("/api/gemini/generate-scene-images", async (req: Request, res: Response
         moodLabel = "Presencia Sagrada de Cristo";
       }
 
-      // Pick an image from pool that hasn't been used yet in this batch
-      let selected = candidatePool.find(img => !usedUrls.has(img));
-      if (!selected) {
-        selected = allSacredImages.find(img => !usedUrls.has(img));
-      }
-      if (!selected) {
-        selected = allSacredImages[(randomOffset + idx) % allSacredImages.length];
-      }
+      // Pick a different catalog asset when replacing a scene; keep a random choice among viable matches.
+      const excludedUrl = typeof scene?.excludeImageUrl === 'string' ? scene.excludeImageUrl : '';
+      const pickAvailable = (pool: string[]) => {
+        const available = pool.filter(img => !usedUrls.has(img) && img !== excludedUrl);
+        return available.length ? available[Math.floor(Math.random() * available.length)] : undefined;
+      };
+      let selected = pickAvailable(candidatePool);
+      if (!selected) selected = pickAvailable(allSacredImages);
+      if (!selected) selected = allSacredImages.find(img => img !== excludedUrl) || allSacredImages[(randomOffset + idx) % allSacredImages.length];
 
       usedUrls.add(selected);
       resultImages.push(selected);
@@ -3116,20 +3120,15 @@ app.post("/api/gemini/generate-scene-images", async (req: Request, res: Response
 
     res.json({
       success: true,
+      source: "curated-catalog",
       images: resultImages,
       promptsUsed
     });
   } catch (error: any) {
-    console.warn("Fallback in /api/gemini/generate-scene-images:", error);
-    res.json({
-      success: true,
-      images: [
-        "/sacred-assets/jesus_divine_blessing_1787716123982.jpg",
-        "/sacred-assets/jesus_peace_in_storm_1787716138284.jpg",
-        "/sacred-assets/jesus_healing_light_1787716152719.jpg",
-        "/sacred-assets/jesus_resurrected_king_1787717534726.jpg"
-      ],
-      promptsUsed: ["Bendición", "Paz en la Tormenta", "Sanidad", "Resurrección"]
+    console.warn("No se pudo seleccionar una imagen del catálogo:", error);
+    res.status(500).json({
+      success: false,
+      error: "No se pudo seleccionar una imagen del catálogo. Inténtalo de nuevo."
     });
   }
 });
