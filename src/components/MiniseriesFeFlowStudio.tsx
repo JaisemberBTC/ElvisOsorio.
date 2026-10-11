@@ -134,9 +134,10 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const [selectedAiEngine, setSelectedAiEngine] = useState<'flow' | 'kling' | 'runway' | 'luma' | 'sora'>('flow');
 
   // AI Generator Form State (Impulsado por Prompts 1, 2 y 3 del documento)
-  const [aiTopicInput, setAiTopicInput] = useState<string>('El perdón del padre ausente que volvió a las 3:00 AM');
+  const [aiTopicInput, setAiTopicInput] = useState<string>('Una persona decide decir la verdad aunque pueda perder algo valioso');
   const [aiCategoryInput, setAiCategoryInput] = useState<any>('milagro_familiar');
-  const [aiToneInput, setAiToneInput] = useState<string>('melodrama + misterio + fe profunda');
+  const [aiCreativeApproach, setAiCreativeApproach] = useState<string>('decision');
+  const [aiToneInput, setAiToneInput] = useState<string>('drama humano contemporáneo + tensión emocional auténtica + esperanza bíblica');
   const [aiTotalParts, setAiTotalParts] = useState<number>(3);
   const [aiBibleReference, setAiBibleReference] = useState<string>('');
   const [aiCustomCharacters, setAiCustomCharacters] = useState<string>('');
@@ -257,12 +258,13 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const handleLoadDocSuggestedTest = () => {
     const preset = SKILL_FAST_PROMPT_TEMPLATE.suggestedPresets[0];
     setAiTopicInput(preset.topic);
+    setAiCreativeApproach('decision');
     setAiToneInput(preset.tone);
     setAiCustomCharacters(preset.characters);
     setAiNoInclude(preset.noInclude);
     setAiTotalParts(3);
     setAiCallToAction("¿Qué paso pequeño te devuelve la esperanza?");
-    showNotification("🧪 ¡Prueba sugerida del documento cargada! (Elena y el recibo del futuro)");
+    showNotification('Prueba de dilema cotidiano cargada.');
   };
 
   const handleDownloadWord = async (targetSeries?: MiniserieTemplate) => {
@@ -607,6 +609,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           topic: aiTopicInput.trim(),
           totalParts: aiTotalParts,
           category: aiCategoryInput,
+          creativeApproach: aiCreativeApproach,
           bibleReference: aiBibleReference.trim() || undefined,
           lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined,
           customCharacters: aiCustomCharacters.trim() || undefined,
@@ -3109,7 +3112,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 onClick={handleLoadDocSuggestedTest}
                 className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-md"
               >
-                <span>🧪 Cargar Prueba Sugerida (Frutera y el Recibo del Futuro)</span>
+                <span>🧪 Cargar Prueba Sugerida (Dilema cotidiano)</span>
               </button>
             </div>
 
@@ -3125,9 +3128,27 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                   rows={3}
                   value={aiTopicInput}
                   onChange={(e) => setAiTopicInput(e.target.value)}
-                  placeholder="Ej.: una hija descubre una carta que cambia la historia de su familia y la obliga a decidir si escucha la verdad..."
+                  placeholder="Ej.: una persona debe decir la verdad aunque pueda perder algo importante..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-400 resize-none font-sans leading-relaxed"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-200">Enfoque narrativo:</label>
+                <select
+                  value={aiCreativeApproach}
+                  onChange={(e) => setAiCreativeApproach(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 cursor-pointer"
+                >
+                  <option value="auto">Elegir según mi tema</option>
+                  <option value="decision">La decisión que nadie ve</option>
+                  <option value="companionship">Acompañar el dolor sin promesas fáciles</option>
+                  <option value="daily-faith">La fe en un gesto cotidiano</option>
+                  <option value="biblical-lens">Una mirada menos obvia al texto bíblico</option>
+                </select>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  Son hipótesis para probar, no una afirmación de que todo el nicho esté saturado. La interacción se invita; nunca se exige ni se ata a la fe.
+                </p>
               </div>
 
               {/* 2. Tono y Categoría */}

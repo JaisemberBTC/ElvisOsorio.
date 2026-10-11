@@ -22,13 +22,16 @@ for (const totalParts of [2, 3, 4, 5]) {
     assert.equal(series.episodes.length, totalParts);
     assert.equal(series.totalPartsPlanned, totalParts);
     assert.equal(series.characters.length, 2);
-    assert.equal(series.seriesBible.continuityLock, true);
-    assert.equal(series.seriesBible.biblicalVideoCreationRule, BIBLICAL_VIDEO_CREATION_RULE);
+      assert.equal(series.seriesBible.continuityLock, true);
+      assert.equal(series.creativeApproach, 'decision');
+      assert.ok(series.seriesBible.faithMessage);
+      assert.equal(series.seriesBible.biblicalVideoCreationRule, BIBLICAL_VIDEO_CREATION_RULE);
     assert.equal(series.seriesBible.audienceShareabilityRule, SHAREABILITY_RULE);
     assert.equal(series.seriesBible.prePublishChecklist.length, 2);
     assert.equal(new Set(series.episodes.map((episode: any) => episode.hook)).size, totalParts);
 
     for (const episode of series.episodes) {
+      assert.ok(!/escribe.{0,20}am[eé]n|comenta.{0,20}am[eé]n/i.test(episode.socialPackage.caption));
       assert.equal(episode.scenes.length, 5);
       assert.ok(episode.contentHash);
       for (const [index, scene] of episode.scenes.entries()) {
@@ -72,34 +75,68 @@ for (const totalParts of [2, 3, 4, 5]) {
   });
 }
 
-test('el agente exige problema intenso, transformación, intención de envío y aprendizaje con datos reales', async () => {
+test('el prompt del agente prioriza emoción honesta, aprendizaje medible y participación voluntaria', async () => {
   let capturedSystemPrompt = '';
+  let capturedUserPrompt = '';
   const provider = {
     id: 'prompt-capture',
-    async completeJSON(systemPrompt: string) {
+    async completeJSON(systemPrompt: string, userPrompt: string) {
       capturedSystemPrompt = systemPrompt;
+      capturedUserPrompt = userPrompt;
       return {};
     }
   };
 
   await generateOpenSourceMiniseries({ topic: 'Salmo 27: encontrar valor en medio del miedo', totalParts: 2 }, provider);
 
-  assert.ok(capturedSystemPrompt.includes('problema o deseo intenso'));
-  assert.ok(capturedSystemPrompt.includes('hook debe ser fiel al contenido y tener como máximo ocho palabras'));
-  assert.ok(capturedSystemPrompt.includes('0–1 s acción y frase gancho'));
-  assert.ok(capturedSystemPrompt.includes('primera palabra audible debe ocurrir antes de 0,3 s'));
-  assert.ok(capturedSystemPrompt.includes('instrucciones de producción que se incorporan a prompts Flow'));
-  assert.ok(capturedSystemPrompt.includes('antigüedad semejante'));
-  assert.ok(capturedSystemPrompt.includes('30–40 s significado bíblico'));
-  assert.ok(capturedSystemPrompt.includes('40–50 s transformación'));
+  assert.ok(capturedSystemPrompt.includes('necesidad concreta'));
+  assert.ok(capturedSystemPrompt.includes('máximo ocho palabras'));
   assert.ok(capturedSystemPrompt.includes('cambio visual perceptible cada 2–4 s'));
-  assert.ok(capturedSystemPrompt.includes('FIDELIDAD BÍBLICA'));
-  assert.ok(capturedSystemPrompt.includes('marcar “contenido creado para niños”'));
-  assert.ok(capturedSystemPrompt.includes('imposible de ignorar'));
-  assert.ok(capturedSystemPrompt.includes('transformación rápida'));
-  assert.ok(capturedSystemPrompt.includes('enviarle inmediatamente a otra'));
+  assert.ok(capturedSystemPrompt.includes('Distingue texto bíblico, interpretación y dramatización'));
+  assert.ok(capturedSystemPrompt.includes('no supongas que el nicho cristiano'));
+  assert.ok(capturedSystemPrompt.includes('nunca condicione la fe'));
+  assert.ok(capturedSystemPrompt.includes('No uses vergüenza'));
+  assert.ok(capturedSystemPrompt.includes('una perspectiva bíblica menos obvia'));
+  assert.ok(capturedUserPrompt.includes('creativeApproach'));
+  assert.ok(capturedUserPrompt.includes('faithMessage'));
   assert.ok(capturedSystemPrompt.includes('retención en 0–1 s y 0–3 s'));
-  assert.ok(capturedSystemPrompt.includes('nunca inventes analíticas'));
+  assert.ok(capturedSystemPrompt.includes('Sin datos suficientes, declara hipótesis'));
+});
+
+test('los cuatro enfoques narrativos del fallback son distintos y conservan una aplicación de fe clara', () => {
+  const approaches = [
+    ['decision', 'Una decisión de integridad en el trabajo'],
+    ['companionship', 'Duelo y cansancio después de una pérdida'],
+    ['daily-faith', 'Una práctica sencilla de oración y misericordia'],
+    ['biblical-lens', 'Historia bíblica: revisar el contexto de una decisión']
+  ] as const;
+  const series = approaches.map(([creativeApproach, topic]) => buildLocalMiniseriesForTest({ topic, creativeApproach, totalParts: 5 }));
+  assert.deepEqual(series.map((item: any) => item.creativeApproach), approaches.map(([key]) => key));
+  assert.equal(new Set(series.map((item: any) => item.seriesBible.faithMessage)).size, 4);
+  for (const item of series) {
+    assert.ok(item.seriesBible.faithMessage.length > 40);
+    assert.ok(item.episodes.every((episode: any) => episode.scenes.length === 5));
+    assert.ok(item.episodes.every((episode: any) => !/comenta.{0,20}am[eé]n|escribe.{0,20}am[eé]n/i.test(episode.socialPackage.caption)));
+    for (const episode of item.episodes) {
+      for (const scene of episode.scenes) {
+        const spokenWords = scene.dialogueExchange.reduce((sum: number, turn: any) => sum + turn.dialogueSpanish.trim().split(/\s+/).length, 0);
+        assert.ok(spokenWords >= 19 && spokenWords <= 20, `El enfoque ${item.creativeApproach}, capítulo ${episode.episodeNumber}, escena ${scene.sceneNumber} suma ${spokenWords} palabras.`);
+      }
+    }
+  }
+});
+
+test('el CTA que ata Amén o compartir a la fe se reemplaza por una invitación reflexiva', () => {
+  const series = buildLocalMiniseriesForTest({
+    topic: 'Una persona debe elegir la verdad bajo presión',
+    totalParts: 2,
+    creativeApproach: 'decision',
+    callToAction: 'Comenta Amén si amas a Dios y comparte este video para recibir su bendición'
+  });
+  for (const episode of series.episodes) {
+    assert.doesNotMatch(episode.socialPackage.caption, /comenta.{0,20}am[eé]n|comparte.{0,50}bendici[oó]n/i);
+    assert.match(episode.socialPackage.pinnedComment, /\?/);
+  }
 });
 
 test('cada prompt de Flow limita el reparto a quienes aparecen en el segmento', () => {

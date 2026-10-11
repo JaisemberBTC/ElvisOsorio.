@@ -16,6 +16,32 @@ El enlace compartido abre una página distinta de la cuenta de TikTok: **Fiel a 
 
 Este segundo perfil sirve como referencia tonal, no como evidencia de que los dos perfiles pertenezcan al mismo creador: lenguaje de devoción, esperanza, oración y consuelo. Para el generador, eso se convierte en historias reverentes donde la fe se expresa en decisiones y relaciones, sin fingir que una paráfrasis es una cita bíblica, sin prometer milagros garantizados y sin imponer una identidad confesional única si la persona usuaria no la especifica.
 
+## Qué falta probar en el nicho (hipótesis, no diagnóstico de saturación)
+
+La muestra pública revisada es pequeña y no permite afirmar que las historias bíblicas en español estén saturadas ni estimar el tamaño de su audiencia. Sí permite observar una mecánica de historias serializadas y emoción melodramática en un perfil, y una voz de consuelo/devoción en otra página. Por eso conviene hablar de **formatos repetidos que se observaron**, no de saturación general del nicho.
+
+En una revisión editorial de piezas cristianas cortas también aparecen fórmulas repetibles —versículo sobre imagen genérica o voz en off, y llamados automáticos a comentar «Amén»—. Es una señal cualitativa para experimentar con más especificidad humana; no es un conteo representativo de todos los creadores ni prueba de que esas fórmulas ya no funcionen.
+
+Ángulos que vale la pena poner a prueba, preservando un mensaje claro sobre Dios:
+
+1. **La decisión que nadie ve:** dilema actual, costo real y un principio de verdad, misericordia o justicia puesto en acción.
+2. **Acompañamiento sin promesas fáciles:** duelo, duda, agotamiento o soledad; la fe permite expresar el dolor, pedir compañía y buscar ayuda sin afirmar una cura instantánea.
+3. **Fe en un gesto cotidiano:** una disculpa sin excusas, escuchar antes de responder o ayudar a alguien cuando no hay recompensa asegurada.
+4. **Lectura bíblica desde un detalle menos obvio:** una pregunta, decisión o consecuencia del texto, separando explícitamente pasaje, interpretación y dramatización.
+
+La emoción —tensión moral, empatía, pérdida, alivio, asombro o esperanza— se usa para hacer comprensible la historia, no como promesa de “dopamina” ni mecanismo para obligar a comentar. La invitación a conversar es opcional y nunca se condiciona a la fe, la protección o la bendición de Dios.
+
+## Señales de las publicaciones del proyecto
+
+Los datos compartidos para el análisis indican que el capítulo 1 pierde más audiencia alrededor del segundo 0:01 y promedia cerca de 10 s en un video de ~50 s; no tuvo compartidos ni comentarios. El capítulo 2 promedia cerca de 7 s en ~45,5 s, pero es más reciente y no se debe comparar por reproducciones como si hubiera tenido la misma ventana de distribución. Estas señales apuntan a probar primero el primer cuadro y la primera frase; **no demuestran** que el género bíblico, el mensaje de fe o la duración sean la causa.
+
+### Prueba editorial recomendada
+
+- Mantener constantes duración (50 s), formato (cinco prompts de 10 s), subtítulos, nivel de producción y distribución razonablemente semejante.
+- Cambiar una variable por publicación: por ejemplo, gancho visual/verbal, enfoque de historia o pregunta final.
+- Registrar retención a 1 s y 3 s, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios, junto con fecha de publicación y alcance.
+- Comparar piezas con edad y distribución similares. Con muestras pequeñas, documentar señales y seguir probando; no declarar ganador ni prometer viralidad.
+
 ## Reglas que se incorporan al agente
 
 1. **Hook inmediato:** abrir en medio de un riesgo, una revelación, una pérdida o una decisión; no empezar con saludos ni explicación. La primera frase debe caber en los primeros dos segundos.

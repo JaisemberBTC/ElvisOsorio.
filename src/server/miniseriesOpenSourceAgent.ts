@@ -11,6 +11,7 @@ export interface MiniseriesAgentOptions {
   topic?: string;
   totalParts?: number;
   category?: string;
+  creativeApproach?: CreativeApproach | string;
   bibleReference?: string;
   lockedEnvironmentId?: string;
   customCharacters?: string;
@@ -19,6 +20,16 @@ export interface MiniseriesAgentOptions {
   callToAction?: string;
   noInclude?: string;
 }
+
+export type CreativeApproach = 'auto' | 'decision' | 'companionship' | 'daily-faith' | 'biblical-lens';
+
+export const CREATIVE_APPROACH_OPTIONS = [
+  { id: 'auto', label: 'Elegir según mi tema' },
+  { id: 'decision', label: 'La decisión que nadie ve' },
+  { id: 'companionship', label: 'Acompañar el dolor sin promesas fáciles' },
+  { id: 'daily-faith', label: 'La fe en un gesto cotidiano' },
+  { id: 'biblical-lens', label: 'Una mirada menos obvia al texto bíblico' }
+] as const;
 
 const clampParts = (value: unknown) => Math.max(2, Math.min(5, Math.round(Number(value) || 3)));
 const tidy = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
@@ -117,14 +128,14 @@ export function createConfiguredMiniseriesProvider(env: NodeJS.ProcessEnv = proc
 
 const CHARACTER_BASES = [
   {
-    id: 'protagonista_fe', name: 'Lucía Vega', role: 'Protagonista; busca la verdad y una forma de reparar el daño', apparentAge: '34 años', gender: 'femenino',
+    id: 'protagonista_fe', name: 'Lucía Vega', role: 'Protagonista; enfrenta un dilema humano y decide cómo responder', apparentAge: '34 años', gender: 'femenino',
     skin: 'tono oliva medio con subtono cálido', face: 'rostro ovalado, pecas leves, ojos café oscuro', hair: 'cabello castaño oscuro, ondulado, a la altura de los hombros, raya lateral', build: 'complexión media, postura que pasa de tensa a abierta',
     wardrobe: 'suéter color terracota, camisa marfil y pantalón oscuro, sin cambios entre segmentos', accessories: 'anillo sencillo de plata en la mano derecha y bolso de lona marrón', voice: 'voz femenina adulta, cálida, algo ronca al emocionarse; español latinoamericano neutral',
     promptAgeEn: '34-year-old woman', promptGenderEn: 'female', promptSkinEn: 'medium warm olive skin', promptFaceEn: 'oval face, faint freckles, dark brown eyes', promptHairEn: 'shoulder-length wavy dark brown hair with a side part', promptBuildEn: 'medium build, initially tense posture that gradually opens', promptWardrobeEn: 'terracotta sweater, ivory shirt, and dark trousers; unchanged between segments', promptAccessoriesEn: 'simple silver ring on her right hand and a brown canvas bag', promptVoiceEn: 'adult warm female voice, slightly husky when emotional; neutral Latin American Spanish accent',
     voicePresetName: 'voz femenina cálida y natural'
   },
   {
-    id: 'companero_fe', name: 'Tomás Vega', role: 'Hermano y contraparte; oculta una verdad por miedo a perder a su familia', apparentAge: '38 años', gender: 'masculino',
+    id: 'companero_fe', name: 'Tomás Vega', role: 'Persona cercana que escucha, pregunta y ofrece apoyo sin imponer una solución', apparentAge: '38 años', gender: 'masculino',
     skin: 'tono moreno claro con subtono dorado', face: 'rostro rectangular, nariz recta, ojos café, una pequeña cicatriz en la ceja izquierda', hair: 'cabello negro corto con textura natural, barba de dos días', build: 'complexión delgada, hombros encorvados al inicio',
     wardrobe: 'chaqueta azul marino gastada, camiseta gris y jeans oscuros, sin cambios entre segmentos', accessories: 'reloj analógico negro en la muñeca izquierda', voice: 'voz masculina adulta de registro medio, respiración contenida; español latinoamericano neutral',
     promptAgeEn: '38-year-old man', promptGenderEn: 'male', promptSkinEn: 'light brown skin with a golden undertone', promptFaceEn: 'rectangular face, straight nose, brown eyes, small scar on the left eyebrow', promptHairEn: 'short naturally textured black hair and two-day stubble', promptBuildEn: 'slender build, shoulders initially hunched', promptWardrobeEn: 'worn navy jacket, gray T-shirt, and dark jeans; unchanged between segments', promptAccessoriesEn: 'black analog watch on his left wrist', promptVoiceEn: 'adult male mid-register voice with restrained breathing; neutral Latin American Spanish accent',
@@ -132,71 +143,131 @@ const CHARACTER_BASES = [
   }
 ];
 
-const ARC_BANK: Record<number, any[]> = {
-  2: [
-    { title: 'La carta que llegó mientras oraban', hook: '¿Quién dejó esta carta al lado de la Biblia hoy?', objective: 'mostrar la herida familiar y la decisión pendiente', conflict: 'Lucía encuentra una nota que contradice lo que su familia le contó', reveal: 'la nota prueba que alguien intentó reparar el daño en secreto', cliffhanger: 'un golpe en la puerta anuncia que la persona que falta ha vuelto' },
-    { title: 'La verdad que nadie se atrevía a decir', hook: '¿Quién espera tras la puerta y aún no sabe pedir perdón?', objective: 'enfrentar la verdad y elegir el primer paso hacia la reconciliación', conflict: 'Lucía debe escuchar sin negar el daño ni prometer un final fácil', reveal: 'Tomás confiesa por qué guardó la carta', cliffhanger: 'la familia decide hablar de nuevo, aunque la reparación apenas empieza' }
-  ],
-  3: [
-    { title: 'El nombre que faltaba en la carta', hook: '¿Por qué el nombre de mi padre está escrito aquí?', objective: 'presentar la herida y abrir una pregunta urgente', conflict: 'una carta antigua contradice el relato familiar', reveal: 'la firma coincide con la de alguien que todos creían ausente', cliffhanger: 'una llamada interrumpe la oración' },
-    { title: 'La llamada que nadie quería contestar', hook: 'Ese teléfono no sonaba desde hace siete años; hoy vuelve.', objective: 'aumentar presión y revelar una pieza de la verdad', conflict: 'responder puede reabrir una herida que Lucía no ha sanado', reveal: 'Tomás conoce el origen del mensaje', cliffhanger: 'Lucía escucha una voz conocida al otro lado' },
-    { title: 'La decisión que abre la puerta al perdón', hook: 'No puedo cambiar el pasado; sí decidiré qué hago ahora.', objective: 'dar una resolución emocional honesta y esperanzadora', conflict: 'perdonar no elimina las consecuencias ni garantiza reconciliación inmediata', reveal: 'la oración impulsa una conversación concreta y sincera', cliffhanger: 'la familia acuerda comenzar de nuevo, paso a paso' }
-  ],
-  4: [
-    { title: 'La fotografía detrás de la Biblia', hook: 'Esa foto no debería estar escondida junto a la Biblia.', objective: 'introducir un secreto familiar y una pregunta emocional', conflict: 'Lucía descubre una señal de que alguien le ocultó una verdad', reveal: 'la fecha de la foto cambia lo que ella creía', cliffhanger: 'Tomás reconoce el lugar y se queda sin palabras' },
-    { title: 'Una oración interrumpida por la verdad', hook: 'Tomás, dime por qué apareces en esta foto familiar antigua.', objective: 'poner a prueba la confianza entre hermanos', conflict: 'la respuesta amenaza con separar a la familia', reveal: 'Tomás admite que intentó proteger a alguien, pero empeoró el daño', cliffhanger: 'una llamada anuncia que esa persona está cerca' },
-    { title: 'La puerta que nadie quería abrir', hook: 'Si abres, ya no podrás fingir que no lo sabes.', objective: 'llevar el conflicto a una decisión moral', conflict: 'Lucía puede escuchar la verdad o marcharse para siempre', reveal: 'la persona que regresa trae una disculpa, no una solución mágica', cliffhanger: 'Lucía decide escuchar, pero pone un límite claro' },
-    { title: 'El primer paso después del silencio', hook: 'No te prometo olvidar; sí voy a escucharte esta noche.', objective: 'cerrar el arco con esperanza realista y un acto concreto', conflict: 'la confianza necesita tiempo y reparación', reveal: 'la familia acuerda buscar ayuda y hablar con honestidad', cliffhanger: 'la oración compartida marca el comienzo, no el final' }
-  ],
-  5: [
-    { title: 'La carta que nadie debía encontrar', hook: 'Esta carta tiene una fecha de mañana… y mi nombre.', objective: 'crear una anomalía y presentar la herida central', conflict: 'Lucía sospecha que su familia le oculta algo', reveal: 'el papel fue escrito años atrás, pero alguien lo dejó hoy', cliffhanger: 'la letra al reverso pertenece a Tomás' },
-    { title: 'El secreto que se sentó a la mesa', hook: 'Tomás, ¿por qué guardaste esto tanto tiempo sin decirme nada?', objective: 'confrontar al personaje que conoce parte de la verdad', conflict: 'una confesión puede romper el vínculo entre hermanos', reveal: 'Tomás actuó por miedo, no por maldad', cliffhanger: 'un audio guardado en el teléfono completa la pista' },
-    { title: 'La voz que volvió después de siete años', hook: 'Esa voz no puede ser de quien estoy pensando ahora.', objective: 'revelar una verdad familiar y elevar el costo emocional', conflict: 'Lucía debe decidir si responde la llamada', reveal: 'la persona ausente quiere asumir responsabilidad', cliffhanger: 'anuncia que llegará esa misma noche' },
-    { title: 'Perdonar no borra lo que ocurrió', hook: 'Si vienes a pedirme que olvide, no voy a abrir.', objective: 'poner límites y distinguir perdón de reconciliación automática', conflict: 'el encuentro exige verdad, escucha y responsabilidad', reveal: 'la disculpa incluye una acción concreta para reparar el daño', cliffhanger: 'Lucía acepta hablar, pero no sabe si podrá confiar' },
-    { title: 'Una conversación para empezar de nuevo', hook: 'No todo está resuelto, pero hoy dejamos de escondernos juntos.', objective: 'cerrar con una respuesta espiritual y una esperanza plausible', conflict: 'la familia debe sostener el cambio después de la emoción', reveal: 'la oración se vuelve un compromiso cotidiano de verdad y cuidado', cliffhanger: 'la mesa vuelve a reunirlos, ahora con nuevos límites' }
-  ]
+const APPROACH_CONFIG: Record<Exclude<CreativeApproach, 'auto'>, any> = {
+  decision: {
+    label: 'La decisión que nadie ve',
+    faithMessage: 'Confiar en Dios no siempre elimina el costo de elegir la verdad; puede dar valor para dar ese paso con honestidad.',
+    openingReplyEs: 'Estoy aquí; miremos los hechos y decidamos sin presión hoy.',
+    visuals: [
+      'an unsigned form beside a folded receipt; one hand stops just above the signature line',
+      'a phone with an unread message rests beside a work badge; the protagonist pauses before replying',
+      'a second document reveals who could be affected by the choice; keep all text unreadable',
+      'the protagonist opens a worn Bible beside the unsigned form and takes one steady breath',
+      'the unsigned form remains on the table as the protagonist chooses to speak face to face'
+    ],
+    stages: [
+      { title: 'Lo que no podía firmar', hook: 'Me pidió firmar algo falso.', conflict: 'Una persona de confianza le pide respaldar algo que no coincide con lo ocurrido.', reveal: 'Un detalle concreto muestra que otra persona también podría cargar con las consecuencias.', cliffhanger: 'Ahora debe decidir si habla aunque la relación pueda cambiar.', question: '¿Qué harías si decir la verdad pudiera costarte algo valioso?' },
+      { title: 'El costo de negarse', hook: 'Si digo que no, lo pierdo.', conflict: 'El silencio parece proteger una oportunidad importante, pero deja a alguien expuesto.', reveal: 'La presión no desaparece; ahora el protagonista comprende quién asumiría el costo.', cliffhanger: 'Una respuesta vence hoy y no hay una salida sin consecuencias.', question: '¿Qué te ayudaría a elegir con honestidad bajo presión?' },
+      { title: 'La persona detrás de la decisión', hook: 'Alguien más pagaría por esto.', conflict: 'La decisión afecta a una persona que no tuvo voz en el asunto.', reveal: 'Escuchar a esa persona cambia el problema de una ventaja personal a una cuestión de cuidado.', cliffhanger: 'El protagonista tendrá que explicar su decisión cara a cara.', question: '¿A quién considerarías antes de tomar una decisión difícil?' },
+      { title: 'La verdad dicha en voz alta', hook: 'Hoy no voy a esconderlo.', conflict: 'Decir la verdad puede cerrar una puerta y abrir una conversación incómoda.', reveal: 'La otra persona no resuelve todo, pero reconoce un hecho que antes negaba.', cliffhanger: 'La consecuencia inmediata queda pendiente para el siguiente capítulo.', question: '¿Qué te sostiene cuando hacer lo correcto tiene un costo?' },
+      { title: 'El primer paso después del no', hook: 'Lo correcto también puede doler.', conflict: 'La decisión está tomada, pero sus efectos y la relación siguen sin resolverse.', reveal: 'El protagonista acepta ayuda y propone una forma concreta de reparar el daño.', cliffhanger: 'La historia no promete recompensa fácil; deja un compromiso que habrá que sostener.', question: '¿Qué paso pequeño te ayudaría a vivir tu fe hoy?' }
+    ]
+  },
+  companionship: {
+    label: 'Acompañar el dolor sin promesas fáciles',
+    faithMessage: 'El dolor no demuestra falta de fe; pedir compañía, expresar la duda y buscar ayuda también pueden convivir con confiar en Dios.',
+    openingReplyEs: 'No tienes que resolverlo ahora; puedo quedarme aquí contigo hoy.',
+    visuals: [
+      'a person sits alone in a parked car at dusk, hands still on the steering wheel',
+      'a cold cup and an untouched meal sit on the kitchen table; a friend waits without interrupting',
+      'the protagonist finally looks up and admits the question they have been hiding',
+      'two people sit quietly beside an open Bible; no supernatural light or instant cure',
+      'the protagonist accepts a ride or a practical offer of help as morning light enters'
+    ],
+    stages: [
+      { title: 'El cansancio que no se veía', hook: 'Hoy no pude fingir más.', conflict: 'La persona sostiene su rutina mientras oculta un agotamiento que ya afecta su día.', reveal: 'Alguien nota el silencio y pregunta sin exigir una explicación bonita.', cliffhanger: 'Por primera vez, el protagonista considera responder con sinceridad.', question: '¿Qué te habría gustado escuchar en un día así?' },
+      { title: 'Cuando las frases hechas no ayudan', hook: 'No necesito que lo arregles.', conflict: 'La persona teme que su tristeza o duda sea tratada como falta de fe.', reveal: 'El acompañante deja de ofrecer respuestas rápidas y escucha la historia completa.', cliffhanger: 'La pregunta difícil sigue ahí, incluso después de la conversación.', question: '¿Qué tipo de compañía ayuda cuando no hay una respuesta rápida?' },
+      { title: 'La pregunta que seguía abierta', hook: 'Todavía no entiendo por qué.', conflict: 'La pérdida o la incertidumbre no desaparece después de orar.', reveal: 'El protagonista descubre que puede hablar con Dios sin fingir certeza.', cliffhanger: 'Aceptar compañía será el siguiente paso, no una solución instantánea.', question: '¿Puedes llevar una duda a Dios sin esconderla?' },
+      { title: 'Pedir ayuda también es un paso', hook: 'Necesito que te quedes hoy.', conflict: 'Pedir ayuda se siente vulnerable, aunque la persona ya no quiera cargar sola.', reveal: 'Un amigo ofrece presencia y apoyo concreto; el problema de fondo permanece.', cliffhanger: 'La ayuda deberá continuar mañana, cuando vuelva el silencio.', question: '¿A quién podrías pedir compañía esta semana?' },
+      { title: 'La esperanza sin final perfecto', hook: 'Hoy el dolor sigue aquí.', conflict: 'No hay un cambio mágico; el protagonista debe decidir cómo atravesar el día.', reveal: 'Una pequeña rutina de cuidado hace posible dar el siguiente paso acompañado.', cliffhanger: 'La vida continúa con preguntas, y también con una esperanza compartida.', question: '¿Qué gesto de cuidado puedes ofrecerte hoy?' }
+    ]
+  },
+  'daily-faith': {
+    label: 'La fe en un gesto cotidiano',
+    faithMessage: 'La fe también puede hacerse visible en actos cotidianos de verdad, misericordia, paciencia y cuidado, sin convertirlos en una fórmula para obtener algo.',
+    openingReplyEs: 'A veces un paso pequeño ya expresa fe de verdad.',
+    visuals: [
+      'a thumb hovers above a draft apology on a phone; the screen contains no readable text',
+      'the protagonist notices a neighbor struggling with grocery bags in a stairwell',
+      'a shared bus stop grows quiet as the protagonist chooses to listen instead of rushing away',
+      'the protagonist pauses for a brief prayer before answering a tense message',
+      'two neighbors share a simple meal at a doorway; no grand transformation is implied'
+    ],
+    stages: [
+      { title: 'El gesto que nadie notó', hook: 'Nadie vio lo que elegí.', conflict: 'Una situación cotidiana ofrece una salida cómoda que dejaría a alguien sin apoyo.', reveal: 'Un gesto pequeño cambia cómo la otra persona vive ese momento, aunque no arregla todo.', cliffhanger: 'Mañana la misma decisión volverá a presentarse.', question: '¿Qué gesto pequeño te ha hecho sentir acompañado?' },
+      { title: 'Cinco minutos para escuchar', hook: 'Solo tenía cinco minutos.', conflict: 'La prisa empuja al protagonista a ignorar a alguien que necesita ser escuchado.', reveal: 'Una pregunta sincera revela que la necesidad era distinta de lo que parecía.', cliffhanger: 'Escuchar abre una conversación que no se puede resolver de inmediato.', question: '¿A quién podrías escuchar con más atención hoy?' },
+      { title: 'La respuesta que no envié', hook: 'Casi respondí con rabia.', conflict: 'Un mensaje hiere y el protagonista debe decidir si devuelve el daño.', reveal: 'La pausa y una oración breve cambian la respuesta, no el hecho ocurrido.', cliffhanger: 'La otra persona todavía no responde.', question: '¿Qué te ayuda a pausar antes de responder con enojo?' },
+      { title: 'Una disculpa sin excusas', hook: 'Esta vez sí voy a llamar.', conflict: 'Reconocer el propio error cuesta más que explicar por qué ocurrió.', reveal: 'Una disculpa clara abre la posibilidad de conversar, sin exigir perdón inmediato.', cliffhanger: 'La reparación dependerá de lo que haga después.', question: '¿Qué hace que una disculpa se sienta sincera?' },
+      { title: 'Mañana también cuenta', hook: 'Mañana volveré a intentarlo.', conflict: 'Un solo acto de bondad no elimina el hábito ni la dificultad.', reveal: 'El protagonista elige una práctica pequeña que sí puede repetir.', cliffhanger: 'La fe cotidiana se probará otra vez al día siguiente.', question: '¿Qué práctica sencilla quieres repetir esta semana?' }
+    ]
+  },
+  'biblical-lens': {
+    label: 'Una mirada menos obvia al texto bíblico',
+    faithMessage: 'El texto bíblico conserva su contexto; su principio puede dialogar con la vida presente sin inventar palabras, hechos ni promesas.',
+    openingReplyEs: 'Veamos qué afirma el texto y qué sigue siendo interpretación.',
+    visuals: [
+      'a reader opens a Bible to the requested passage and traces the surrounding verses, not only a single line',
+      'a quiet margin note prompts a question about a character’s choice before the famous outcome',
+      'two readers compare the passage with its surrounding context; no invented quotation is shown',
+      'the reader closes the Bible and considers how the principle applies to a present-day decision',
+      'a small everyday action echoes the passage’s theme without reenacting an unverified event'
+    ],
+    stages: [
+      { title: 'Antes de la escena conocida', hook: 'La historia empieza antes del milagro.', conflict: 'Una escena famosa deja una decisión previa casi fuera de cuadro.', reveal: 'Leer el contexto muestra una tensión humana que el resumen suele saltar.', cliffhanger: 'La decisión inicial cambia cómo entendemos el desenlace conocido.', question: '¿Qué parte del relato sueles pasar por alto?' },
+      { title: 'La pregunta que quedó abierta', hook: 'Casi nadie mira esta decisión.', conflict: 'El personaje enfrenta una elección antes de recibir una respuesta visible.', reveal: 'El pasaje no promete que toda situación termine igual.', cliffhanger: 'La respuesta exige distinguir fe, contexto e interpretación.', question: '¿Qué pregunta te despierta este pasaje?' },
+      { title: 'Lo que el texto sí dice', hook: 'El detalle cambia la lectura.', conflict: 'Una frase fuera de contexto parece decir más de lo que realmente afirma.', reveal: 'Al leer los versículos cercanos, cambia la aplicación fácil.', cliffhanger: 'Todavía queda por preguntar qué significa hoy con honestidad.', question: '¿Lees el contexto completo antes de aplicar un versículo?' },
+      { title: 'La aplicación no es una cita', hook: 'Esto es aplicación, no cita.', conflict: 'Una dramatización puede confundirse con palabras que la Biblia nunca registra.', reveal: 'El narrador separa con claridad el hecho bíblico de la escena imaginada.', cliffhanger: 'La pregunta espiritual queda abierta para la vida presente.', question: '¿Cómo conectas la Biblia con tu vida sin cambiar su sentido?' },
+      { title: 'Una verdad para llevar al día', hook: 'La enseñanza va más allá.', conflict: 'La audiencia necesita una idea clara, no una promesa automática de resultado.', reveal: 'El principio se convierte en una acción cotidiana posible y humilde.', cliffhanger: 'La historia invita a volver al texto y seguir pensando.', question: '¿Qué principio del pasaje quieres practicar esta semana?' }
+    ]
+  }
 };
 
-const OPENING_BEATS = [
-  {
-    hook: 'Esta carta lleva mi nombre.',
-    openingActionEn: 'At frame 0, a cream envelope slips from the open Bible and lands across an old family photograph. Lucía catches it before it falls, turns it toward Tomás, and sees her own name on the envelope; the camera is already close to the action.',
-    openingLineEs: 'Esta carta lleva mi nombre. Alguien la escondió hace años.',
-    openingReplyEs: 'Estoy aquí; la abrimos juntos, sin correr ni esconder nada.',
-    commentQuestion: 'Si encontraras una carta así, ¿a quién le preguntarías primero?'
-  },
-  {
-    hook: 'Ese teléfono volvió a sonar.',
-    openingActionEn: 'At frame 0, a phone vibrates across the wooden table beside the Bible. Lucía reaches for it, stops just before touching it, and looks at Tomás; keep the screen turned away with no readable text.',
-    openingLineEs: 'Ese teléfono volvió a sonar. Después de años, no respondas aún.',
-    openingReplyEs: 'Te acompaño; primero pensemos qué verdad revela esa llamada.',
-    commentQuestion: '¿Responderías esa llamada o pedirías saber quién es antes?'
-  },
-  {
-    hook: 'Esta foto señala el lugar.',
-    openingActionEn: 'At frame 0, a worn photograph slides out from a folded letter and lands between the siblings. Tomás recognizes the place and pulls his hand back; Lucía turns the photograph toward him without leaving the close framing.',
-    openingLineEs: 'Esta foto señala el lugar. Yo también lo recuerdo perfectamente.',
-    openingReplyEs: 'La firma coincide; podemos preguntar sin acusarnos antes de escuchar.',
-    commentQuestion: '¿Qué detalle de una foto te haría preguntar por tu familia?'
-  },
-  {
-    hook: 'Alguien está tras la puerta.',
-    openingActionEn: 'At frame 0, Lucía’s hand is already on the door handle. It turns slightly from the other side; she stops it with her palm and meets Tomás’s eyes, both hearing someone outside without opening the door.',
-    openingLineEs: 'Alguien está tras la puerta. Dime qué ocultaste tantos años.',
-    openingReplyEs: 'No te presiono; decidirás cuándo abrir y qué necesitas saber.',
-    commentQuestion: '¿Abrirías la puerta o pedirías primero escuchar toda la verdad?'
-  },
-  {
-    hook: 'No me pidas que olvide.',
-    openingActionEn: 'At frame 0, Lucía slides the opened letter across the table toward Tomás and keeps two fingers on its edge. He does not take it; both hold eye contact as the paper stops between them.',
-    openingLineEs: 'No me pidas que olvide. Primero demuestra que puedes cambiar.',
-    openingReplyEs: 'Tienes razón; reparar el daño tomará tiempo, escucha y hechos.',
-    commentQuestion: '¿Qué límite ayuda a reconstruir confianza sin fingir que nada pasó?'
-  }
-];
+function resolveCreativeApproach(requested: unknown, topic: string, category?: string): Exclude<CreativeApproach, 'auto'> {
+  const value = String(requested || 'auto').trim().toLowerCase();
+  if (value in APPROACH_CONFIG) return value as Exclude<CreativeApproach, 'auto'>;
+  if (category === 'historia_biblica' || /historia b[ií]blica|personaje b[ií]blico|pasaje b[ií]blico/i.test(topic)) return 'biblical-lens';
+  if (/duelo|p[eé]rdida|cansancio|agotamiento|soledad|duda|ansiedad|luto|tristeza/i.test(topic)) return 'companionship';
+  if (/\b(oraci[oó]n|perdonar|perd[oó]n|ayudar|gesto|h[aá]bito|pr[aá]ctica|misericordia)\b/i.test(topic)) return 'daily-faith';
+  return 'decision';
+}
+
+function selectedStageIndexes(totalParts: number): number[] {
+  return ({ 2: [0, 4], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4] } as Record<number, number[]>)[totalParts] || [0, 2, 4];
+}
+
+function buildEditorialOutline(topic: string, totalParts: number, requestedApproach?: string, category?: string) {
+  const approach = resolveCreativeApproach(requestedApproach, topic, category);
+  const config = APPROACH_CONFIG[approach];
+  return selectedStageIndexes(totalParts).map((stageIndex, episodeIndex) => {
+    const stage = config.stages[stageIndex];
+    const hookWords = stage.hook.trim().split(/\s+/);
+    const openingExtension = ['Y', 'quiero', 'hablarlo', 'contigo', 'hoy', 'mismo'].slice(0, Math.max(0, 10 - hookWords.length));
+    return {
+      episodeNumber: episodeIndex + 1,
+      ...stage,
+      faithMessage: config.faithMessage,
+      objective: `Conectar «${topic}» con la etapa ${episodeIndex + 1} del arco: ${stage.conflict}`,
+      openingActionEn: `At frame 0, ${config.visuals[stageIndex]}. Begin on the visible human choice or reaction; no title card, slow setup, or readable generated text.`,
+      openingLineEs: [...hookWords, ...openingExtension].join(' '),
+      openingReplyEs: config.openingReplyEs,
+      propAction: config.visuals[stageIndex],
+      commentQuestion: stage.question,
+      creativeApproach: approach
+    };
+  });
+}
+
+function makeSoftCTA(candidate: unknown, fallback: string): string {
+  const value = tidy(candidate, fallback);
+  const coercive = /(?:si (?:crees|amas|tienes fe).{0,50}(?:comenta|escribe|comparte)|(?:comenta|escribe).{0,35}(?:am[eé]n|declara|demuestra tu fe)|no (?:pases|deslices)|comparte.{0,35}(?:prueba tu fe|bendici[oó]n)|obligad[oa])/i;
+  return coercive.test(value) ? fallback : value;
+}
 
 function chooseLocation(topic: string, lockedEnvironmentId?: string) {
   if (lockedEnvironmentId) return `User-locked environment (${lockedEnvironmentId}), represented as a real contemporary location`;
+  if (/trabajo|empleo|jefe|oficina|compa[nñ]ero|firma|recibo|decisi[oó]n laboral/i.test(topic)) return 'a modest workplace break room and quiet office corridor in a Latin American city';
+  if (/bus|autob[uú]s|transporte|camino|viaje|calle/i.test(topic)) return 'a city bus stop and a nearby neighborhood sidewalk in a Latin American city';
+  if (/oraci[oó]n|gesto|h[aá]bito|misericordia|perd[oó]n/i.test(topic)) return 'a shared apartment building entrance and small neighborhood kitchen in a Latin American city';
   if (/hospital|enfermedad|sanidad|m[eé]dico|cl[ií]nica/i.test(topic)) return 'a neighborhood hospital waiting room in a Latin American city';
   if (/deuda|desalojo|casa|alquiler|familia|padre|madre/i.test(topic)) return 'the modest kitchen of a family apartment in a Latin American city';
   if (/duelo|p[eé]rdida|cementerio/i.test(topic)) return 'a small neighborhood chapel and its courtyard in a Latin American city';
@@ -280,13 +351,15 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   const topicHash = hashText(topic.toLocaleLowerCase('es'));
   const storySeed = hashText(`${topicHash}:${Date.now()}:${Math.random()}`);
   const totalParts = options.totalParts;
-  const plans = ARC_BANK[totalParts];
+  const plans = buildEditorialOutline(topic, totalParts, options.creativeApproach, options.category);
+  const approach = plans[0]?.creativeApproach || resolveCreativeApproach('auto', topic, options.category);
+  const approachConfig = APPROACH_CONFIG[approach];
   const userNames = (options.customCharacters || '').split(/[;,\n]/).map((part) => part.trim()).filter(Boolean);
   const protagonist = characterRecord(CHARACTER_BASES[0], userNames[0]);
   const companion = characterRecord(CHARACTER_BASES[1], userNames[1]);
   const characters = [protagonist, companion];
   const location = chooseLocation(topic, options.lockedEnvironmentId);
-  const bibleReference = tidy(options.bibleReference, 'Salmo 34:18');
+  const bibleReference = tidy(options.bibleReference, 'Referencia bíblica por definir según el mensaje de fe');
   const musicStyles = [
     { genre: 'intimate piano, low strings, and soft pulses', bpm: 72, key: 'D minor resolving toward F major', motif: 'three ascending notes that return as an emotional answer' },
     { genre: 'nylon-string guitar, warm cello, and original ambient texture', bpm: 78, key: 'A minor with a luminous resolution', motif: 'a brief five-note arpeggio that matures in each chapter' },
@@ -294,12 +367,14 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   ];
   const audioStyle = musicStyles[parseInt(storySeed.slice(0, 2), 16) % musicStyles.length];
   const uniqueMotif = `${audioStyle.motif}; series signature ${storySeed.slice(0, 6)}`;
-  const outline = plans.map((plan, index) => ({ episodeNumber: index + 1, ...plan, ...OPENING_BEATS[index] }));
+  const outline = plans;
   const seriesId = `feflow_${storySeed.slice(0, 12)}_${Date.now().toString(36)}`;
   const series: any = {
     id: seriesId,
     seriesTitle: topic.length > 64 ? `${topic.slice(0, 61).trim()}…` : topic,
-    logline: `Microdrama original sobre ${topic.toLocaleLowerCase('es')}: una familia atraviesa una verdad difícil, la pone en oración y elige un paso concreto hacia la esperanza.`,
+    logline: `Microdrama original sobre ${topic.toLocaleLowerCase('es')}, desde el enfoque «${approachConfig.label}»: tensión humana real, fe aplicada y esperanza sin resultados garantizados.`,
+    creativeApproach: approach,
+    creativeApproachLabel: approachConfig.label,
     category: options.category || 'prueba_fe',
     categoryLabel: 'Fe, oración y esperanza',
     totalPartsPlanned: totalParts,
@@ -315,11 +390,15 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       seriesId,
       version: 1,
       theme: topic,
-      faithApproach: 'La fe se expresa mediante oración, verdad, cuidado y decisiones observables; la esperanza no garantiza una solución milagrosa inmediata.',
+      creativeApproach: approach,
+      creativeApproachLabel: approachConfig.label,
+      editorialHypothesis: 'Probar una tensión humana contemporánea con una aplicación bíblica clara; es una hipótesis editorial, no evidencia de saturación o rendimiento garantizado.',
+      faithMessage: approachConfig.faithMessage,
+      faithApproach: 'La fe se expresa mediante verdad, cuidado, oración y decisiones observables; no se usa como fórmula para obtener un resultado ni se promete una solución milagrosa inmediata.',
       bibleReference,
       bibleUseNote: options.bibleReference
         ? 'Referencia indicada por el usuario. No insertar una cita textual hasta verificar la traducción elegida.'
-        : 'Referencia temática sugerida: Salmo 34:18. Se usa como orientación, sin reproducir el versículo literalmente; verificar la traducción antes de publicar.',
+        : 'No se indicó referencia. Elegir y verificar una que sustente el mensaje de fe antes de publicar; no insertar texto literal sin confirmar traducción.',
       characterBible: characters.map(({ id, name, role, visualIdentity, wardrobe, accessories, voice }: any) => ({ id, name, role, visualIdentity, wardrobe, accessories, voice })),
       worldBible: {
         location,
@@ -329,7 +408,7 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         palette: 'ochre, terracotta, and natural blues; warm practical interior light and neutral shadows, no magical glow',
         cameraLanguage: 'intimate observational camera, 35 mm, subtle action-motivated movement, close reactions',
         lighting: 'available window light and household lamps; natural cinematic contrast',
-        recurringProps: ['worn-cover Bible', 'cream envelope', 'blue ceramic cup', 'mobile phone with no readable screen text'],
+        recurringProps: ['worn-cover Bible when relevant to the story', 'one approach-specific everyday prop', 'mobile phone with no readable screen text'],
         continuityRule: 'Keep the same room, layout, furniture, objects, and camera axis throughout the series.'
       },
       audioBible: {
@@ -359,22 +438,29 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
 
   const sceneActions = (plan: any, episodeNumber: number) => [
     `${plan.openingActionEn} Keep the action legible and emotionally specific from frame 0; no title, fade, or introductory pause.`,
-    `${companion.name} recognizes the handwriting and admits that he concealed part of the family story for years. A stopped hand and a quick glance show the cost of telling the truth.`,
-    `${protagonist.name} opens the envelope and finds a folded family photograph with a handwritten date. ${companion.name} lowers his eyes; a phone vibrates on the table with its screen turned away.`,
-    `The conversation tightens. ${protagonist.name} glances at the Bible and whispers a short personal prayer; ${companion.name} answers with a concrete truth, without attributing invented words to God.`,
+    `${companion.name} listens without interrupting as ${protagonist.name} names the concrete stakes of this chapter. Show the cost through a restrained pause, not melodramatic gestures.`,
+    `${protagonist.name} notices new information that changes the choice at hand. Let a glance, a physical detail, and the companion's response carry the reveal; no exposition montage.`,
+    `${protagonist.name} glances at the Bible and expresses the episode's faith message as a personal reflection, not as a quotation spoken by God or Jesus.`,
     episodeNumber < totalParts
-      ? `${protagonist.name} decides not to destroy the letter. The phone vibrates again and both look toward the door. Cut before they see who has arrived, opening the next chapter's causal question: ${plan.cliffhanger}.`
-      : `${protagonist.name} and ${companion.name} place the letter on the table and agree to speak honestly and seek help if needed. Nothing is fully resolved; this begins realistic repair. End with restrained relief and hope.`
+      ? `${protagonist.name} takes one observable first step. A new consequence interrupts the moment and both characters react; end on a causal question, not a guaranteed miracle.`
+      : `${protagonist.name} and ${companion.name} choose one realistic next action. The underlying difficulty remains; end with honest, restrained hope and no instant cure.`
   ];
   const sceneDialogues = (plan: any, episodeNumber: number) => {
+    const faithDialogue: Record<string, string[]> = {
+      decision: ['Le pedí a Dios valor, no una excusa para mentir.', 'La fe no borra el costo de decir la verdad.'],
+      companionship: ['Dudar no me vuelve menos amado por Dios, aunque duela.', 'Puedo pedir ayuda sin tener todas las respuestas hoy.'],
+      'daily-faith': ['Oré antes de responder; no quiero herir por cansancio.', 'Dios también importa en cómo trato a quien tengo cerca.'],
+      'biblical-lens': ['El texto no dice eso; debo leerlo con cuidado.', 'La aplicación es mía: Dios invita a buscar verdad con humildad.']
+    };
+    const [faithLine, faithReply] = faithDialogue[approach];
     return [
       [[protagonist.name, plan.openingLineEs], [companion.name, plan.openingReplyEs]],
-      [[companion.name, 'Reconozco esta letra; lleva años escondiendo un secreto de familia.'], [protagonist.name, 'Mira la firma; dime si también recuerdas a quién pertenece.']],
-      [[protagonist.name, 'Le pedí a Dios claridad, no que todo cambiara hoy.'], [companion.name, 'La fecha de esta foto cambia todo lo que sabíamos.']],
-      [[companion.name, 'Me equivoqué al callar y no voy a justificarlo más.'], [protagonist.name, 'No puedo borrar el pasado, pero hoy sí quiero escucharte.']],
+      [[protagonist.name, 'Me asusta lo que cambie si digo esto hoy.'], [companion.name, 'No voy a presionarte; podemos pensar el siguiente paso juntos.']],
+      [[protagonist.name, 'Lo que descubrí cambia la decisión, no borra lo ocurrido.'], [companion.name, 'Ahora sé qué debo preguntar antes de contestar o actuar.']],
+      [[protagonist.name, faithLine], [companion.name, faithReply]],
       episodeNumber < totalParts
-        ? [[protagonist.name, 'No sé quién espera detrás de la puerta; tengo miedo.'], [companion.name, 'Quédate conmigo; juntos vamos a escuchar la verdad que llegue.']]
-        : [[protagonist.name, 'No todo sanó hoy, pero ya no cargo esto sola.'], [companion.name, 'Mañana seguimos hablando; hoy elegimos la verdad y la paciencia.']]
+        ? [[protagonist.name, 'No está resuelto, pero hoy puedo dar este primer paso.'], [companion.name, '¿Me acompañas a descubrir qué sucede cuando diga la verdad?']]
+        : [[protagonist.name, 'No todo cambió hoy; sigo confiando en Dios paso a paso.'], [companion.name, 'Mañana vuelvo a intentarlo, sin fingir que ya sané.']]
     ];
   };
 
@@ -419,15 +505,16 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         negativePrompt: options.noInclude || 'no graphic violence, profanity, cartoon style, guaranteed visible miracles, or generated unreadable text'
       };
     });
-    const commentQuestion = tidy(options.callToAction, plan.commentQuestion);
+    const candidateCta = makeSoftCTA(options.callToAction, plan.commentQuestion);
+    const commentQuestion = /[?？]/.test(candidateCta) ? candidateCta : plan.commentQuestion;
     const socialPackage = {
       youtubeTitle: `${plan.title} | Miniserie de fe y oración — Capítulo ${episodeNumber}`,
-      facebookTitle: `${plan.title}: una historia de fe, familia y perdón (Capítulo ${episodeNumber})`,
+      facebookTitle: `${plan.title}: una historia de fe y decisiones reales (Capítulo ${episodeNumber})`,
       tiktokTitle: `${plan.title} | Parte ${episodeNumber} de ${totalParts}`,
-      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Una historia original sobre ${topic.toLocaleLowerCase('es')}, oración y esperanza realista. ${episodeNumber < totalParts ? `La verdad aún no está completa: ${plan.cliffhanger}` : 'La reparación comienza con una conversación honesta.'}\n\n${commentQuestion}`,
+      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Historia original desde el enfoque «${approachConfig.label}», sobre ${topic.toLocaleLowerCase('es')}. Mensaje de fe: ${approachConfig.faithMessage}\n\nSi quieres conversar: ${commentQuestion}`,
       hashtags: ['#MiniserieDeFe', '#Oracion', '#HistoriasDeFe', '#Esperanza', `#Capitulo${episodeNumber}`, '#FeEnLaVidaReal'],
       pinnedComment: commentQuestion,
-      seoKeywords: ['miniserie cristiana', 'historia de fe y oración', 'esperanza en familia', 'microdrama de fe', plan.title.toLocaleLowerCase('es')],
+      seoKeywords: ['miniserie cristiana', 'microdrama de fe', 'historias de fe en la vida real', plan.title.toLocaleLowerCase('es')],
       searchQueries: [`historia de fe sobre ${topic}`, 'miniserie cristiana de oración y esperanza'],
       thumbnailHook: plan.hook,
       suggestedAudio: `${audioStyle.genre}, ${audioStyle.bpm} BPM, motivo original ${storySeed.slice(0, 6)}`
@@ -436,6 +523,8 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       episodeNumber,
       episodeTitle: plan.title,
       hook: plan.hook,
+      creativeApproach: approach,
+      faithMessage: approachConfig.faithMessage,
       objective: plan.objective,
       conflict: plan.conflict,
       escalation: `${plan.reveal}; la presión obliga a cada personaje a elegir cómo responder.`,
@@ -468,6 +557,8 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
 function buildGenerationPrompt(options: MiniseriesAgentOptions, series: any): string {
   const outline = series.seriesBible.episodeOutline.map((episode: any) => ({
     episodeNumber: episode.episodeNumber,
+    creativeApproach: episode.creativeApproach,
+    faithMessage: episode.faithMessage,
     plannedTitle: episode.title,
     openingHook: episode.hook,
     openingVisual: episode.openingActionEn,
@@ -597,12 +688,10 @@ function mergeModelOutput(series: any, rawOutput: unknown) {
       const fallbackPinnedComment = episode.socialPackage.pinnedComment;
       const fallbackCaption = episode.socialPackage.caption;
       episode.socialPackage = { ...episode.socialPackage, ...source.socialPackage };
-      if (!/[?？]/.test(String(episode.socialPackage.pinnedComment || ''))) {
-        episode.socialPackage.pinnedComment = fallbackPinnedComment;
-      }
-      if (!/[?？]/.test(String(episode.socialPackage.caption || ''))) {
-        episode.socialPackage.caption = fallbackCaption;
-      }
+      episode.socialPackage.pinnedComment = makeSoftCTA(episode.socialPackage.pinnedComment, fallbackPinnedComment);
+      episode.socialPackage.caption = makeSoftCTA(episode.socialPackage.caption, fallbackCaption);
+      if (!/[?？]/.test(String(episode.socialPackage.pinnedComment || ''))) episode.socialPackage.pinnedComment = fallbackPinnedComment;
+      if (!/[?？]/.test(String(episode.socialPackage.caption || ''))) episode.socialPackage.caption = fallbackCaption;
     }
   }
   series.seriesBible.characterBible = series.characters.map((character: any) => ({
@@ -650,7 +739,9 @@ export async function generateOpenSourceMiniseries(options: MiniseriesAgentOptio
   const normalized: MiniseriesAgentOptions = {
     ...options,
     topic: tidy(options.topic, 'Una historia de fe y esperanza'),
-    totalParts: clampParts(options.totalParts)
+    totalParts: clampParts(options.totalParts),
+    creativeApproach: options.creativeApproach || 'auto',
+    callToAction: options.callToAction ? makeSoftCTA(options.callToAction, '') : undefined
   };
   const series = createFallbackMiniseries(normalized);
   if (!provider) return { miniseries: series, provider: 'plantilla-local', isFallback: true };

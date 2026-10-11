@@ -14,11 +14,11 @@ Los prompts de segmento bloquean rostro, edad aparente, piel, cabello, complexi�
 
 ## Regla editorial: problema, transformación y compartibilidad
 
-Cada miniserie identifica primero un problema o deseo intenso de una persona concreta; lo expresa en una frase breve e imposible de ignorar y entrega una transformación rápida, honesta y visible. El criterio central es crear una historia que alguien quiera enviarle inmediatamente a otra persona porque le ofrece reconocimiento, esperanza o un paso útil, no por culpa ni presión para compartir.
+Cada miniserie parte de una persona y una tensión reconocibles. La emoción puede ser tensión moral, empatía, pérdida, alivio, asombro o esperanza; su función es aclarar el conflicto y el mensaje sobre Dios, no prometer una reacción psicológica ni una “dopamina” garantizada. La transformación debe ser honesta y observable, no una solución mágica.
 
-El proceso se repite como ciclo de idea → video → medición → aprendizaje. Cuando haya datos reales, se revisan retención inicial, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios para entender qué quiere compartir la audiencia y ajustar una variable creativa por vez. Sin datos, el agente debe marcar hipótesis y señales por observar; no puede inventar métricas ni prometer viralidad.
+El formulario ofrece cuatro hipótesis creativas: **La decisión que nadie ve**, **Acompañar el dolor sin promesas fáciles**, **La fe en un gesto cotidiano** y, cuando se solicita, **Una mirada menos obvia al texto bíblico**. La revisión pública fue limitada: no demuestra que las historias bíblicas en español estén saturadas. Se busca contrastar formatos comunes con escenas de vida presente conectadas a un principio bíblico explícito.
 
-> Regla del creador: “Encuentra un problema o deseo intenso, exprésalo en una frase imposible de ignorar, entrega una transformación rápida y repite el proceso hasta que los datos te revelen qué quiere compartir tu audiencia. Persigue crear un video que una persona quiera enviarle inmediatamente a otra. Haz eso miles de veces y la viralidad se vuelve una consecuencia.”
+La pregunta de conversación es opcional. Nunca se condiciona la fe, una bendición o la protección de Dios a comentar «Amén», compartir o guardar. El proceso es idea → video → medición → aprendizaje: revisar retención inicial, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios reales; comparar publicaciones con antigüedad y distribución semejantes; variar una variable por prueba. Sin datos suficientes, registrar hipótesis, no resultados ni promesas de viralidad.
 
 ## Parámetros de video del documento de canal
 
@@ -66,7 +66,7 @@ Para una API autenticada, guarda `MINISERIES_LLM_API_KEY` únicamente en `.env` 
 
 ## Ruta HTTP
 
-La interfaz usa `POST /api/agent/generate-miniseries`. El contrato acepta `topic`, `totalParts` (2–5), `bibleReference`, `customCharacters`, `tone`, `audiencePlatform`, `callToAction` y `noInclude`. La ruta antigua `/api/gemini/generate-miniseries` queda como alias temporal, pero la generación de miniseries ya no depende de Gemini.
+La interfaz usa `POST /api/agent/generate-miniseries`. El contrato acepta `topic`, `totalParts` (2–5), `creativeApproach` (`auto`, `decision`, `companionship`, `daily-faith` o `biblical-lens`), `bibleReference`, `customCharacters`, `tone`, `audiencePlatform`, `callToAction` y `noInclude`. La ruta antigua `/api/gemini/generate-miniseries` queda como alias temporal, pero la generación de miniseries ya no depende de Gemini.
 
 La respuesta contiene `miniseries`, `provider` e `isFallback`. Si el modelo local falla, el agente devuelve una plantilla local y la interfaz lo indica; la plantilla es un respaldo de continuidad, no debe confundirse con una generación LLM completa.
 
