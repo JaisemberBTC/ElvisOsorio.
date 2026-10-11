@@ -55,7 +55,7 @@ export interface DialogueTurn {
   role?: string;
   wordCount?: number;
   wordsPerSecond?: number;
-  pacingStatus?: 'perfecto' | 'óptimo' | 'ajustado';
+  pacingStatus?: 'perfecto' | 'óptimo' | 'ajustado' | 'corto';
 }
 
 export interface MiniserieEpisodeScene {
@@ -90,6 +90,15 @@ export interface MiniserieEpisodeScene {
     purpose: string;  // e.g. "Corte de retención inicial"
   }[];
   bgMusicMood: string;
+  environment?: string;
+  camera?: string;
+  lens?: string;
+  cameraMovement?: string;
+  lighting?: string;
+  performance?: string;
+  subtitleSuggestion?: string;
+  negativePrompt?: string;
+  flowPrompt?: string;
   imageUrl?: string;
 }
 
@@ -156,6 +165,8 @@ export interface MiniserieEpisode {
   episodeNumber: number;
   episodeTitle: string;
   hook: string;
+  videoFormat?: string;
+  videoFormatLabel?: string;
   conflict: string;
   escalation: string;
   cliffhanger: string;
@@ -170,12 +181,20 @@ export interface MiniserieEpisode {
   };
   scenes: MiniserieEpisodeScene[];
   socialPackage: EpisodeSEO;
+  objective?: string;
+  twist?: string;
+  status?: 'planned' | 'generating' | 'ready' | 'failed' | 'regenerable';
+  contentHash?: string;
+  previousStateHash?: string | null;
+  nextEpisodeSeed?: string;
 }
 
 export interface MiniserieTemplate {
   id: string;
   seriesTitle: string;
   logline: string;
+  videoFormat?: string;
+  videoFormatLabel?: string;
   category: 'milagro_familiar' | 'prueba_fe' | 'historia_biblica' | 'sanidad_imposible' | 'misterio_3am';
   categoryLabel: string;
   totalPartsPlanned: number;
@@ -187,6 +206,8 @@ export interface MiniserieTemplate {
   lockedEnvironmentName?: string;
   lockedEnvironmentPromptEn?: string;
   scenographyDirection?: ScenographyDirection;
+  bibleReference?: string;
+  seriesBible?: any;
   episodes: MiniserieEpisode[];
 }
 

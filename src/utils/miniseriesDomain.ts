@@ -1484,11 +1484,9 @@ export function generateUniqueScenographyForTopic(
 }
 
 /**
- * Generates bespoke, topic-specific dialogue and narrative arcs for all 5 scenes of an episode.
- * Strictly enforces Prompt 2:
- * 1. Hook <3s stating who wants what and what they can lose.
- * 2. Oral cadence of 2.0 to 2.5 words/sec (max 18-22 words per 10s shot).
- * 3. Never repeating generic lines like "¡Señor Jesús, no doy más!".
+ * LEGACY generator; the active Flow agent is src/server/miniseriesOpenSourceAgent.ts.
+ * Active Flow dialogue targets 19–20 words per ten-second segment and approximately 9.2 seconds of speech.
+ * Do not use this legacy function as the source of the new Flow dialogue contract.
  */
 export function generateContextualSceneDialogueArc(
   topic: string,
@@ -2009,8 +2007,9 @@ export function generateContextualSceneDialogueArc(
  */
 export const MAX_WORDS_PER_SECOND = 2.2;
 export const OPTIMAL_WORDS_PER_SECOND = 2.0;
-export const MAX_WORDS_PER_10S_SCENE = 22;
-export const MIN_WORDS_PER_10S_SCENE = 14;
+export const MIN_WORDS_PER_SECOND = 1.9;
+export const MAX_WORDS_PER_10S_SCENE = 20;
+export const MIN_WORDS_PER_10S_SCENE = 19;
 
 export function countWordsSpanish(text: string): number {
   if (!text) return 0;
@@ -2095,7 +2094,7 @@ export function calibrateAndPaceDialogue(
     const endSec = Math.min(sceneDurationSec, startSec + allocatedSec);
     currentSec = endSec;
 
-    const pad = (n: number) => String(n).padStart(2, '0');
+    const pad = (n: number) => Number.isInteger(n) ? String(n).padStart(2, '0') : n.toFixed(1).padStart(4, '0');
     const timeWindow = `00:${pad(startSec)} - 00:${pad(endSec)}`;
 
     const maxWordsAllowed = Math.round(allocatedSec * MAX_WORDS_PER_SECOND);
@@ -2103,12 +2102,15 @@ export function calibrateAndPaceDialogue(
     const originalWordCount = countWordsSpanish(originalText);
 
     let pacedText = originalText;
-    let pacingStatus: 'perfecto' | 'óptimo' | 'ajustado' = 'perfecto';
+    let pacingStatus: 'perfecto' | 'óptimo' | 'ajustado' | 'corto' = 'perfecto';
+    const minWordsRecommended = Math.ceil(allocatedSec * MIN_WORDS_PER_SECOND);
 
     if (originalWordCount > maxWordsAllowed) {
       pacedText = condenseDialogueToWordBudget(originalText, maxWordsAllowed);
       pacingStatus = 'ajustado';
-    } else if (originalWordCount >= Math.round(allocatedSec * 1.5)) {
+    } else if (originalWordCount < minWordsRecommended) {
+      pacingStatus = 'corto';
+    } else if (originalWordCount >= Math.round(allocatedSec * OPTIMAL_WORDS_PER_SECOND)) {
       pacingStatus = 'óptimo';
     }
 
@@ -2133,15 +2135,19 @@ export function getSceneSpeechMetrics(turns: any[], sceneDurationSec: number = 1
   const avgWps = Math.round((totalWords / sceneDurationSec) * 10) / 10;
   const isOptimal = totalWords >= MIN_WORDS_PER_10S_SCENE && totalWords <= MAX_WORDS_PER_10S_SCENE;
   const isOverBudget = totalWords > MAX_WORDS_PER_10S_SCENE;
+  const isUnderBudget = totalWords < MIN_WORDS_PER_10S_SCENE;
 
   return {
     totalWords,
     avgWps,
     isOptimal,
     isOverBudget,
-    targetRange: '18 - 22 palabras',
+    isUnderBudget,
+    targetRange: '19 - 20 palabras',
     statusLabel: isOverBudget 
       ? `Excedido (${totalWords} palabras para ${sceneDurationSec}s - se pronunciará apresurado)` 
+      : isUnderBudget
+        ? `Diálogo corto (${totalWords} palabras); meta 19–20 para cubrir aproximadamente el 90% del segmento.`
       : isOptimal 
         ? `Excelente (${totalWords} palabras para ${sceneDurationSec}s · ${avgWps} pal/s)` 
         : `Aceptable (${totalWords} palabras para ${sceneDurationSec}s)`
@@ -2553,4 +2559,3 @@ export function ensureMultiCharacterDialogueExchange(
 
   return calibrateAndPaceDialogue(turns, scene.durationSec || 10);
 }
-
