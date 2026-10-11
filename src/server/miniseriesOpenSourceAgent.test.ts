@@ -96,6 +96,8 @@ test('el prompt del agente prioriza emoción honesta, aprendizaje medible y part
   assert.ok(capturedSystemPrompt.includes('no supongas que el nicho cristiano'));
   assert.ok(capturedSystemPrompt.includes('nunca condicione la fe'));
   assert.ok(capturedSystemPrompt.includes('No uses vergüenza'));
+  assert.ok(capturedSystemPrompt.includes('FORMATO SELECCIONADO'));
+  assert.ok(capturedSystemPrompt.includes('21 días'));
   assert.ok(capturedSystemPrompt.includes('una perspectiva bíblica menos obvia'));
   assert.ok(capturedUserPrompt.includes('creativeApproach'));
   assert.ok(capturedUserPrompt.includes('faithMessage'));
@@ -136,6 +138,80 @@ test('el CTA que ata Amén o compartir a la fe se reemplaza por una invitación 
   for (const episode of series.episodes) {
     assert.doesNotMatch(episode.socialPackage.caption, /comenta.{0,20}am[eé]n|comparte.{0,50}bendici[oó]n/i);
     assert.match(episode.socialPackage.pinnedComment, /\?/);
+  }
+});
+
+test('los cuatro formatos se conservan en la biblia, en cada episodio y en los prompts de Flow', () => {
+  const formats = [
+    { videoFormat: 'first-person-prayer', topic: 'Oración para pedir ayuda durante una crisis familiar' },
+    { videoFormat: 'cinematic-bible', topic: 'Pedro y la tormenta en el mar de Galilea', category: 'historia_biblica' },
+    { videoFormat: 'modern-verse-story', topic: 'Una mujer elige la honestidad en su trabajo, Proverbios 12:22' },
+    { videoFormat: 'hard-faith-question', topic: '¿Por qué Dios parece callar cuando el dolor no termina?' }
+  ] as const;
+
+  for (const input of formats) {
+    const series = buildLocalMiniseriesForTest({ ...input, totalParts: 2 });
+    assert.equal(series.videoFormat, input.videoFormat);
+    assert.equal(series.seriesBible.videoFormat, input.videoFormat);
+    assert.ok(series.videoFormatLabel);
+    assert.ok(series.seriesBible.videoFormatGuidance);
+    assert.ok(series.seriesBible.videoFormatFlowDirectionEn);
+    assert.ok(series.seriesBible.experimentNote.includes('21 días'));
+    assert.ok(series.episodes.every((episode: any) => episode.videoFormat === input.videoFormat));
+
+    for (const episode of series.episodes) {
+      for (const scene of episode.scenes) {
+        const counts = scene.dialogueExchange.map((turn: any) => turn.dialogueSpanish.trim().split(/\s+/).filter(Boolean).length);
+        assert.ok(counts.every((count: number) => count >= 9 && count <= 11));
+        assert.ok(counts.reduce((sum: number, count: number) => sum + count, 0) >= 19);
+        assert.ok(counts.reduce((sum: number, count: number) => sum + count, 0) <= 20);
+        assert.ok(scene.englishPromptWithSpanishDialogue.includes(`Selected video format: ${series.videoFormatLabel}`));
+        assert.ok(scene.englishPromptWithSpanishDialogue.includes('Format direction:'));
+      }
+    }
+
+    if (input.videoFormat === 'first-person-prayer') {
+      assert.ok(series.episodes[0].scenes[0].englishPromptWithSpanishDialogue.includes('never God or Jesus'));
+      assert.ok(series.episodes[0].scenes[0].dialogueExchange[0].dialogueSpanish.startsWith('Señor'));
+    }
+    if (input.videoFormat === 'cinematic-bible') {
+      assert.match(series.lockedEnvironmentPromptEn, /historical biblical setting/i);
+      assert.match(series.seriesBible.bibleUseNote, /dramatizaci[oó]n/);
+      assert.ok(series.episodes[0].scenes[0].englishPromptWithSpanishDialogue.includes('CINEMATIC BIBLICAL MINISERIES'));
+    }
+    if (input.videoFormat === 'modern-verse-story') {
+      assert.ok(series.episodes[0].scenes[0].englishPromptWithSpanishDialogue.includes('verifying the selected translation'));
+    }
+    if (input.videoFormat === 'hard-faith-question') {
+      assert.ok(series.episodes[0].scenes[0].englishPromptWithSpanishDialogue.includes('DIFFICULT QUESTION OF FAITH'));
+      assert.ok(series.episodes[0].scenes[0].englishPromptWithSpanishDialogue.includes('Do not diagnose'));
+    }
+  }
+});
+
+test('el agente sustituye CTAs que piden compartir solo para ganar alcance', () => {
+  const series = buildLocalMiniseriesForTest({
+    topic: 'Una persona busca esperanza en una semana difícil',
+    totalParts: 2,
+    callToAction: 'Comparte para que el algoritmo aumente el alcance y las vistas'
+  });
+  for (const episode of series.episodes) {
+    assert.doesNotMatch(episode.socialPackage.caption, /algoritmo|aumente el alcance/i);
+    assert.match(episode.socialPackage.pinnedComment, /\?/);
+  }
+});
+
+test('el modo automático recomienda un formato coherente con la idea sin predecir resultados', () => {
+  const cases = [
+    { topic: 'Oración para pedir ayuda durante una crisis familiar', videoFormat: 'first-person-prayer' },
+    { topic: 'Pedro y la tormenta en el mar de Galilea', category: 'historia_biblica', videoFormat: 'cinematic-bible' },
+    { topic: 'Una mujer decide ser honesta en su trabajo, Proverbios 12:22', videoFormat: 'modern-verse-story' },
+    { topic: '¿Por qué Dios parece callar cuando el dolor no termina?', videoFormat: 'hard-faith-question' }
+  ];
+  for (const input of cases) {
+    const series = buildLocalMiniseriesForTest({ ...input, videoFormat: 'auto', totalParts: 2 });
+    assert.equal(series.videoFormat, input.videoFormat);
+    assert.ok(series.seriesBible.editorialHypothesis.includes('no como evidencia'));
   }
 });
 
@@ -229,6 +305,8 @@ test('el documento Word reúne prompts Flow y metadatos SEO', async () => {
     assert.ok(documentXml?.includes('CHECKLIST MANUAL DE PUBLICACIÓN'));
     assert.ok(documentXml?.includes('PLAN DE COMPARTIBILIDAD Y APRENDIZAJE'));
     assert.ok(documentXml?.includes('Motivo para enviarlo'));
+    assert.ok(documentXml?.includes('Formato de video'));
+    assert.ok(documentXml?.includes('Nota de frecuencia experimental'));
     assert.ok(documentXml && /SEO/i.test(documentXml));
     assert.ok(documentXml?.includes('TikTok'));
     assert.ok(documentXml?.includes('EXACT SPOKEN DIALOGUE'));

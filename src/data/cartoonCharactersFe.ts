@@ -165,6 +165,8 @@ export interface MiniserieEpisode {
   episodeNumber: number;
   episodeTitle: string;
   hook: string;
+  videoFormat?: string;
+  videoFormatLabel?: string;
   conflict: string;
   escalation: string;
   cliffhanger: string;
@@ -191,6 +193,8 @@ export interface MiniserieTemplate {
   id: string;
   seriesTitle: string;
   logline: string;
+  videoFormat?: string;
+  videoFormatLabel?: string;
   category: 'milagro_familiar' | 'prueba_fe' | 'historia_biblica' | 'sanidad_imposible' | 'misterio_3am';
   categoryLabel: string;
   totalPartsPlanned: number;

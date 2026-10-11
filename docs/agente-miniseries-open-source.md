@@ -18,7 +18,11 @@ Cada miniserie parte de una persona y una tensión reconocibles. La emoción pue
 
 El formulario ofrece cuatro hipótesis creativas: **La decisión que nadie ve**, **Acompañar el dolor sin promesas fáciles**, **La fe en un gesto cotidiano** y, cuando se solicita, **Una mirada menos obvia al texto bíblico**. La revisión pública fue limitada: no demuestra que las historias bíblicas en español estén saturadas. Se busca contrastar formatos comunes con escenas de vida presente conectadas a un principio bíblico explícito.
 
+El **enfoque narrativo** anterior es distinto del **formato de video**, que ahora puede seleccionarse explícitamente: (1) oración en primera persona —la voz de Dios nunca se suplanta y no se promete respuesta—; (2) miniserie bíblica cinematográfica —contexto histórico, con dramatización identificada y sin citas inventadas—; (3) microhistoria actual conectada a un versículo —referencia agregada en edición y cita literal solo tras verificar traducción—; (4) pregunta difícil de fe —empatía, contexto bíblico y sin respuestas simplistas—. «Recomendar según la idea» elige uno de los cuatro; es una sugerencia creativa, no una predicción de alcance. El formato seleccionado se incorpora a la continuidad y a cada prompt Flow.
+
 La pregunta de conversación es opcional. Nunca se condiciona la fe, una bendición o la protección de Dios a comentar «Amén», compartir o guardar. El proceso es idea → video → medición → aprendizaje: revisar retención inicial, tiempo promedio, finalización, compartidos/envíos, guardados y comentarios reales; comparar publicaciones con antigüedad y distribución semejantes; variar una variable por prueba. Sin datos suficientes, registrar hipótesis, no resultados ni promesas de viralidad.
+
+Evitar pedir likes, comentarios o compartidos solo para intentar aumentar la distribución. No se adopta «1–2 videos al día durante 60 días» como regla de ranking: esa afirmación no quedó verificada. Si la capacidad del creador lo permite, **un video diario durante 21 días** puede servir como sprint experimental opcional, no como atajo algorítmico ni garantía; medir con datos propios y comparar publicaciones con antigüedad semejante.
 
 ## Parámetros de video del documento de canal
 
@@ -26,9 +30,9 @@ El creador compartió pautas para historias bíblicas, YouTube y Facebook. El ag
 
 El posicionamiento es contar luchas, miedo, fe y transformación bíblicas para ayudar a comprender cómo Dios obra en momentos difíciles. Los pilares sugeridos son personajes y detalles poco explicados, lo que ocurre antes de un milagro, errores con consecuencias, historias para quien atraviesa una situación presente y preguntas que Dios o Jesús hacen. Las palabras clave se usan con naturalidad, no como relleno.
 
-Cada clip conserva continuidad pero evita verse inmóvil: incorpora una variación visual perceptible cada 2–4 s en una toma continua. Se priorizan encuadre vertical 9:16, subtítulos completos en español revisados durante edición, una frase breve de texto por escena, cámara motivada, paleta cálida (dorado, arena, azul oscuro y rojo tierra) y música por debajo de la voz.
+Cada clip conserva continuidad pero evita verse inmóvil: incorpora una variación visual perceptible cada 2–4 s en una toma continua. Se priorizan encuadre vertical 9:16, voz cálida y orgánica con articulación clara y pausas motivadas, subtítulos completos en español legibles y revisados durante edición, una frase breve de texto por escena, cámara motivada, paleta acorde al formato y música original por debajo de la voz. El generador visual no debe renderizar versículos: el editor añade la referencia y solo incorpora una cita literal después de verificar la traducción elegida.
 
-La historia debe conectar el pasaje bíblico con una situación presente sin inventar citas, hechos, milagros ni promesas. Toda dramatización o diálogo imaginado debe distinguirse del relato bíblico. Los títulos y miniaturas deben describir fielmente el video. Antes de publicar, el creador puede revisar el idioma, los subtítulos, el público y los comentarios según las reglas de cada plataforma; el agente solo entrega recordatorios y no cambia cuentas, programa publicaciones ni sube videos.
+La historia debe conectar el pasaje bíblico con una situación presente sin inventar citas, hechos, milagros ni promesas. Toda dramatización o diálogo imaginado debe distinguirse del relato bíblico. Los títulos y miniaturas deben describir fielmente el video. Antes de publicar, el creador puede revisar el idioma, los subtítulos, el público y los comentarios según las reglas de cada plataforma; el agente solo entrega recordatorios y no cambia cuentas, programa publicaciones ni sube videos. No se adopta como hecho la cifra de que el 70 % ve videos en silencio: los subtítulos se recomiendan por accesibilidad y claridad, sin atribuirles un porcentaje no verificado.
 
 ## Activar un modelo local con Ollama
 
@@ -66,7 +70,7 @@ Para una API autenticada, guarda `MINISERIES_LLM_API_KEY` únicamente en `.env` 
 
 ## Ruta HTTP
 
-La interfaz usa `POST /api/agent/generate-miniseries`. El contrato acepta `topic`, `totalParts` (2–5), `creativeApproach` (`auto`, `decision`, `companionship`, `daily-faith` o `biblical-lens`), `bibleReference`, `customCharacters`, `tone`, `audiencePlatform`, `callToAction` y `noInclude`. La ruta antigua `/api/gemini/generate-miniseries` queda como alias temporal, pero la generación de miniseries ya no depende de Gemini.
+La interfaz usa `POST /api/agent/generate-miniseries`. El contrato acepta `topic`, `totalParts` (2–5), `creativeApproach` (`auto`, `decision`, `companionship`, `daily-faith` o `biblical-lens`), `videoFormat` (`auto`, `first-person-prayer`, `cinematic-bible`, `modern-verse-story` o `hard-faith-question`), `bibleReference`, `customCharacters`, `tone`, `audiencePlatform`, `callToAction` y `noInclude`. La ruta antigua `/api/gemini/generate-miniseries` queda como alias temporal, pero la generación de miniseries ya no depende de Gemini.
 
 La respuesta contiene `miniseries`, `provider` e `isFallback`. Si el modelo local falla, el agente devuelve una plantilla local y la interfaz lo indica; la plantilla es un respaldo de continuidad, no debe confundirse con una generación LLM completa.
 
@@ -77,7 +81,7 @@ npm run test:agent
 npm run build
 ```
 
-Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, música y continuidad visual mediante prompts textuales, la regla de compartibilidad y aprendizaje por datos, el reparto visible por segmento, y la selección de proveedores sin hacer llamadas de red.
+Las pruebas verifican los cuatro tamaños permitidos, los cinco segmentos exactos, la duración, la presencia de voz, diálogo de 19–20 palabras y ventanas de 9,2 segundos, los cuatro formatos, música y continuidad visual mediante prompts textuales, CTA voluntarios sin engagement bait, la regla de compartibilidad y aprendizaje por datos, el reparto visible por segmento, y la selección de proveedores sin hacer llamadas de red.
 
 ## Notas de uso y licencia
 

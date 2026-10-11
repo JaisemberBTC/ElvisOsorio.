@@ -52,6 +52,7 @@ import {
   SKILL_PRODUCTION_ARCHITECTURE,
   SKILL_MICROFICTION_SCRIPT_ENGINE,
   SKILL_FAST_PROMPT_TEMPLATE,
+  FAITH_VIDEO_FORMAT_OPTIONS,
   buildQualityChecklist,
   type MicrofictionQualityChecklist
 } from '../skills/verticalMicrofictionSkill';
@@ -137,6 +138,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
   const [aiTopicInput, setAiTopicInput] = useState<string>('Una persona decide decir la verdad aunque pueda perder algo valioso');
   const [aiCategoryInput, setAiCategoryInput] = useState<any>('milagro_familiar');
   const [aiCreativeApproach, setAiCreativeApproach] = useState<string>('decision');
+  const [aiVideoFormat, setAiVideoFormat] = useState<string>('auto');
   const [aiToneInput, setAiToneInput] = useState<string>('drama humano contemporáneo + tensión emocional auténtica + esperanza bíblica');
   const [aiTotalParts, setAiTotalParts] = useState<number>(3);
   const [aiBibleReference, setAiBibleReference] = useState<string>('');
@@ -259,6 +261,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
     const preset = SKILL_FAST_PROMPT_TEMPLATE.suggestedPresets[0];
     setAiTopicInput(preset.topic);
     setAiCreativeApproach('decision');
+    setAiVideoFormat('modern-verse-story');
     setAiToneInput(preset.tone);
     setAiCustomCharacters(preset.characters);
     setAiNoInclude(preset.noInclude);
@@ -610,6 +613,7 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
           totalParts: aiTotalParts,
           category: aiCategoryInput,
           creativeApproach: aiCreativeApproach,
+          videoFormat: aiVideoFormat,
           bibleReference: aiBibleReference.trim() || undefined,
           lockedEnvironmentId: aiEnvironmentInput !== 'auto' ? aiEnvironmentInput : undefined,
           customCharacters: aiCustomCharacters.trim() || undefined,
@@ -1155,6 +1159,11 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                 <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-bold">
                   {currentSeries.episodes.reduce((acc, ep) => acc + (ep.scenes?.length || 0), 0)} Escenas con Interacción
                 </span>
+                {currentSeries.videoFormatLabel && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 text-[11px] font-bold">
+                    Formato: {currentSeries.videoFormatLabel}
+                  </span>
+                )}
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white font-cinzel">
                 {currentSeries.seriesTitle}
@@ -3131,6 +3140,22 @@ export const MiniseriesFeFlowStudio: React.FC<MiniseriesFeFlowStudioProps> = ({
                   placeholder="Ej.: una persona debe decir la verdad aunque pueda perder algo importante..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-400 resize-none font-sans leading-relaxed"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-200">Formato de video:</label>
+                <select
+                  value={aiVideoFormat}
+                  onChange={(e) => setAiVideoFormat(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-sky-500/30 text-white text-xs focus:outline-none focus:border-sky-400 cursor-pointer"
+                >
+                  {FAITH_VIDEO_FORMAT_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  {FAITH_VIDEO_FORMAT_OPTIONS.find((option) => option.id === aiVideoFormat)?.description} La frecuencia no es una regla algorítmica; un video diario por 21 días es solo una prueba opcional.
+                </p>
               </div>
 
               <div className="space-y-1.5">

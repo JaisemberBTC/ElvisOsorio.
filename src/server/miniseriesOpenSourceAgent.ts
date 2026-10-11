@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto';
 import { buildFlowPrompt } from '../utils/flowPromptBuilder.ts';
-import { BIBLICAL_VIDEO_CREATION_RULE, SHAREABILITY_RULE } from '../skills/verticalMicrofictionSkill.ts';
+import {
+  BIBLICAL_VIDEO_CREATION_RULE,
+  FAITH_VIDEO_EXPERIMENT_NOTE,
+  FAITH_VIDEO_FORMAT_FLOW_DIRECTIONS_EN,
+  FAITH_VIDEO_FORMAT_GUIDANCE,
+  FAITH_VIDEO_FORMAT_OPTIONS,
+  SHAREABILITY_RULE,
+  type FaithVideoFormat
+} from '../skills/verticalMicrofictionSkill.ts';
 
 export interface LLMProvider {
   readonly id: string;
@@ -12,6 +20,7 @@ export interface MiniseriesAgentOptions {
   totalParts?: number;
   category?: string;
   creativeApproach?: CreativeApproach | string;
+  videoFormat?: FaithVideoFormat | string;
   bibleReference?: string;
   lockedEnvironmentId?: string;
   customCharacters?: string;
@@ -22,6 +31,7 @@ export interface MiniseriesAgentOptions {
 }
 
 export type CreativeApproach = 'auto' | 'decision' | 'companionship' | 'daily-faith' | 'biblical-lens';
+export type VideoFormat = FaithVideoFormat;
 
 export const CREATIVE_APPROACH_OPTIONS = [
   { id: 'auto', label: 'Elegir según mi tema' },
@@ -143,6 +153,21 @@ const CHARACTER_BASES = [
   }
 ];
 
+const BIBLICAL_CHARACTER_BASES = [
+  {
+    id: 'biblical_protagonist', name: 'Protagonista bíblico', role: 'Figura humana del pasaje; representar el texto con reverencia y sin añadir citas inventadas', apparentAge: 'adulto de unos 34 años', gender: 'masculino',
+    skin: 'tono oliva medio, curtido por el sol', face: 'rostro ovalado, nariz recta, ojos café oscuro', hair: 'cabello oscuro ondulado hasta la nuca, barba corta natural', build: 'complexión media, postura cansada pero firme',
+    wardrobe: 'túnica sencilla de lino color arena, manto de lana marrón y sandalias de cuero, constantes entre segmentos', accessories: 'cordón de tela sencillo, sin objetos modernos', voice: 'voz masculina adulta, cálida y natural; español latinoamericano neutral',
+    promptAgeEn: 'adult man in his mid-thirties', promptGenderEn: 'male', promptSkinEn: 'sun-weathered medium olive skin', promptFaceEn: 'oval face, straight nose, dark brown eyes', promptHairEn: 'dark wavy hair to the nape and a short natural beard', promptBuildEn: 'medium build, tired but steady posture', promptWardrobeEn: 'simple sand-colored linen tunic, brown wool mantle, and leather sandals; unchanged between segments', promptAccessoriesEn: 'simple fabric cord, no modern objects', promptVoiceEn: 'adult warm natural male voice; neutral Latin American Spanish accent', voicePresetName: 'voz masculina histórica, cálida y natural'
+  },
+  {
+    id: 'biblical_witness', name: 'Testigo del relato', role: 'Acompañante humano del pasaje; si no se identifica en la Escritura, dejarlo sin nombre', apparentAge: 'adulta de unos 32 años', gender: 'femenino',
+    skin: 'tono oliva cálido', face: 'rostro redondeado, pómulos suaves, ojos marrones', hair: 'cabello oscuro recogido bajo un velo de lino sencillo', build: 'complexión media, movimientos atentos y sobrios',
+    wardrobe: 'túnica de lino crudo y manto azul apagado, sin cambios entre segmentos', accessories: 'velo de lino sin adornos, sin objetos modernos', voice: 'voz femenina adulta, serena y articulada; español latinoamericano neutral',
+    promptAgeEn: 'adult woman in her early thirties', promptGenderEn: 'female', promptSkinEn: 'warm olive skin', promptFaceEn: 'rounded face, soft cheekbones, brown eyes', promptHairEn: 'dark hair tied back beneath a simple linen veil', promptBuildEn: 'medium build, attentive restrained movement', promptWardrobeEn: 'undyed linen tunic and muted blue mantle; unchanged between segments', promptAccessoriesEn: 'plain linen veil, no ornament, no modern objects', promptVoiceEn: 'adult calm, clearly articulated female voice; neutral Latin American Spanish accent', voicePresetName: 'voz femenina serena y natural'
+  }
+];
+
 const APPROACH_CONFIG: Record<Exclude<CreativeApproach, 'auto'>, any> = {
   decision: {
     label: 'La decisión que nadie ve',
@@ -222,9 +247,36 @@ const APPROACH_CONFIG: Record<Exclude<CreativeApproach, 'auto'>, any> = {
   }
 };
 
-function resolveCreativeApproach(requested: unknown, topic: string, category?: string): Exclude<CreativeApproach, 'auto'> {
+function resolveVideoFormat(requested: unknown, topic: string, category?: string): Exclude<VideoFormat, 'auto'> {
+  const value = String(requested || 'auto').trim().toLowerCase();
+  if (value !== 'auto' && FAITH_VIDEO_FORMAT_OPTIONS.some((option) => option.id === value)) {
+    return value as Exclude<VideoFormat, 'auto'>;
+  }
+  if (category === 'historia_biblica' || /historia b[ií]blica|personaje b[ií]blico|pasaje b[ií]blico|pedro|job|daniel/i.test(topic)) return 'cinematic-bible';
+  if (/pregunta|por qu[eé].{0,24}dios|dios.{0,24}calla|ansiedad.{0,24}fe|duda.{0,24}fe/i.test(topic)) return 'hard-faith-question';
+  if (/oraci[oó]n|orar|oremos|hablar con dios/i.test(topic)) return 'first-person-prayer';
+  return 'modern-verse-story';
+}
+
+function getVideoFormatLabel(videoFormat: Exclude<VideoFormat, 'auto'>): string {
+  return FAITH_VIDEO_FORMAT_OPTIONS.find((option) => option.id === videoFormat)?.label || 'Microhistoria actual conectada a un versículo';
+}
+
+function getFormatFaithMessage(videoFormat: VideoFormat): string {
+  const messages: Record<Exclude<VideoFormat, 'auto'>, string> = {
+    'first-person-prayer': 'La oración permite hablar honestamente con Dios; no es una fórmula para controlar la respuesta ni garantizar un resultado.',
+    'cinematic-bible': 'El relato bíblico se entiende en su contexto; su desenlace no se presenta como una garantía individual para quien mira.',
+    'modern-verse-story': 'Un principio bíblico contextualizado puede orientar una decisión presente, sin asegurar que desaparezcan sus consecuencias.',
+    'hard-faith-question': 'La Biblia contiene lamento y preguntas honestas; leerla en contexto evita culpar a quien sufre o simplificar a Dios.'
+  };
+  return messages[videoFormat === 'auto' ? 'modern-verse-story' : videoFormat];
+}
+
+function resolveCreativeApproach(requested: unknown, topic: string, category?: string, videoFormat?: VideoFormat): Exclude<CreativeApproach, 'auto'> {
   const value = String(requested || 'auto').trim().toLowerCase();
   if (value in APPROACH_CONFIG) return value as Exclude<CreativeApproach, 'auto'>;
+  if (videoFormat === 'cinematic-bible') return 'biblical-lens';
+  if (videoFormat === 'first-person-prayer' || videoFormat === 'hard-faith-question') return 'companionship';
   if (category === 'historia_biblica' || /historia b[ií]blica|personaje b[ií]blico|pasaje b[ií]blico/i.test(topic)) return 'biblical-lens';
   if (/duelo|p[eé]rdida|cansancio|agotamiento|soledad|duda|ansiedad|luto|tristeza/i.test(topic)) return 'companionship';
   if (/\b(oraci[oó]n|perdonar|perd[oó]n|ayudar|gesto|h[aá]bito|pr[aá]ctica|misericordia)\b/i.test(topic)) return 'daily-faith';
@@ -235,20 +287,75 @@ function selectedStageIndexes(totalParts: number): number[] {
   return ({ 2: [0, 4], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4] } as Record<number, number[]>)[totalParts] || [0, 2, 4];
 }
 
-function buildEditorialOutline(topic: string, totalParts: number, requestedApproach?: string, category?: string) {
-  const approach = resolveCreativeApproach(requestedApproach, topic, category);
+function buildEditorialOutline(topic: string, totalParts: number, requestedApproach?: string, category?: string, videoFormat: VideoFormat = 'modern-verse-story') {
+  const approach = resolveCreativeApproach(requestedApproach, topic, category, videoFormat);
   const config = APPROACH_CONFIG[approach];
+  const faithMessage = config.faithMessage;
+  const formatHooks: Partial<Record<Exclude<VideoFormat, 'auto'>, string[]>> = {
+    'first-person-prayer': [
+      'Señor, necesito hablarte con honestidad.',
+      'Dios, tengo miedo de esconderme.',
+      'Señor, ayúdame a pedir ayuda.',
+      'Señor, el problema sigue aquí.',
+      'Gracias, Dios; no quiero caminar sola.'
+    ],
+    'hard-faith-question': [
+      '¿Por qué Dios parece guardar silencio?',
+      '¿Dudar significa que perdí la fe?',
+      '¿Y si la respuesta todavía no llega?',
+      '¿Orar sirve cuando nada cambia?',
+      '¿Puedo creer mientras sigo preguntando?'
+    ],
+    'cinematic-bible': [
+      'Lo que pasó antes del milagro importa.',
+      'Esta decisión ocurrió antes del desenlace.',
+      'El contexto cambia lo que creemos leer.',
+      'El texto no dice todo lo que imaginamos.',
+      'Esta escena exige contexto, no certezas rápidas.'
+    ]
+  };
+  const formatOpeningLines: Partial<Record<Exclude<VideoFormat, 'auto'>, string[]>> = {
+    'first-person-prayer': [
+      'Señor, necesito hablarte con honestidad; hoy ya no quiero esconderme.',
+      'Dios, tengo miedo de esconderme; no quiero ocultarte nada hoy.',
+      'Señor, ayúdame a pedir ayuda; hoy no puedo hacerlo sola.',
+      'Señor, el problema sigue aquí; acompáñame en este primer paso.',
+      'Gracias, Dios; no quiero caminar sola hoy, aunque sigo cansada.'
+    ],
+    'hard-faith-question': [
+      '¿Por qué Dios parece guardar silencio justo cuando más lo necesito?',
+      '¿Dudar significa que perdí la fe para siempre, de verdad?',
+      '¿Y si la respuesta todavía no llega, aunque la espero?',
+      '¿Orar sirve cuando nada cambia en mi vida hoy?',
+      '¿Puedo creer mientras sigo preguntando y siento que Dios calla?'
+    ],
+    'cinematic-bible': [
+      'Lo que pasó antes del milagro importa; cambia la historia.',
+      'Esta decisión ocurrió antes del desenlace y cambió la historia.',
+      'El contexto cambia lo que creemos leer en el pasaje.',
+      'El texto no dice todo lo que imaginamos; revisemos su contexto.',
+      'Esta escena exige contexto, no certezas rápidas ni atajos.'
+    ]
+  };
   return selectedStageIndexes(totalParts).map((stageIndex, episodeIndex) => {
     const stage = config.stages[stageIndex];
-    const hookWords = stage.hook.trim().split(/\s+/);
+    const hook = formatHooks[videoFormat]?.[stageIndex] || stage.hook;
+    const hookWords = hook.trim().split(/\s+/);
     const openingExtension = ['Y', 'quiero', 'hablarlo', 'contigo', 'hoy', 'mismo'].slice(0, Math.max(0, 10 - hookWords.length));
     return {
       episodeNumber: episodeIndex + 1,
       ...stage,
-      faithMessage: config.faithMessage,
+      hook,
+      faithMessage,
       objective: `Conectar «${topic}» con la etapa ${episodeIndex + 1} del arco: ${stage.conflict}`,
-      openingActionEn: `At frame 0, ${config.visuals[stageIndex]}. Begin on the visible human choice or reaction; no title card, slow setup, or readable generated text.`,
-      openingLineEs: [...hookWords, ...openingExtension].join(' '),
+      openingActionEn: `At frame 0, ${videoFormat === 'cinematic-bible'
+        ? 'a historically grounded live-action reenactment of the requested biblical passage, beginning on a human choice or reaction'
+        : videoFormat === 'first-person-prayer'
+          ? 'a recognizable contemporary person beginning a first-person prayer during a real human difficulty; no supernatural presence'
+          : videoFormat === 'hard-faith-question'
+            ? 'a close, human reaction to the difficult question, with a second person listening without judgment'
+            : config.visuals[stageIndex]}. Begin on a visible human choice or reaction; no title card, slow setup, or readable generated text.`,
+      openingLineEs: formatOpeningLines[videoFormat]?.[stageIndex] || [...hookWords, ...openingExtension].join(' '),
       openingReplyEs: config.openingReplyEs,
       propAction: config.visuals[stageIndex],
       commentQuestion: stage.question,
@@ -260,11 +367,18 @@ function buildEditorialOutline(topic: string, totalParts: number, requestedAppro
 function makeSoftCTA(candidate: unknown, fallback: string): string {
   const value = tidy(candidate, fallback);
   const coercive = /(?:si (?:crees|amas|tienes fe).{0,50}(?:comenta|escribe|comparte)|(?:comenta|escribe).{0,35}(?:am[eé]n|declara|demuestra tu fe)|no (?:pases|deslices)|comparte.{0,35}(?:prueba tu fe|bendici[oó]n)|obligad[oa])/i;
-  return coercive.test(value) ? fallback : value;
+  const engagementBait = /(?:para (?:que|as[ií]).{0,35}(?:algoritmo|viral|alcance|vistas|distribuci[oó]n)|(?:dale|deja tu|reg[aá]lame un) like|comenta y comparte|comparte y comenta|comenta.{0,30}para (?:subir|viralizar|aumentar las vistas))/i;
+  return coercive.test(value) || engagementBait.test(value) ? fallback : value;
 }
 
-function chooseLocation(topic: string, lockedEnvironmentId?: string) {
+function chooseLocation(topic: string, lockedEnvironmentId?: string, videoFormat: VideoFormat = 'modern-verse-story') {
   if (lockedEnvironmentId) return `User-locked environment (${lockedEnvironmentId}), represented as a real contemporary location`;
+  if (videoFormat === 'cinematic-bible') {
+    if (/pedro|barca|mar|tormenta|viento|olas/i.test(topic)) return 'a first-century Galilean lakeshore and a small wooden fishing boat, grounded in the referenced Gospel passage';
+    if (/daniel|le[oó]n|babilonia|foso/i.test(topic)) return 'an ancient Babylonian stone courtyard and restrained lion enclosure, grounded in the referenced biblical passage';
+    if (/job|ceniza|desierto|sufrimiento/i.test(topic)) return 'a modest ancient Near Eastern stone courtyard with earth and ash, grounded in the referenced biblical passage';
+    return 'a historically grounded first-century Judean or Galilean village, with period-appropriate stone, linen, wood, and natural light';
+  }
   if (/trabajo|empleo|jefe|oficina|compa[nñ]ero|firma|recibo|decisi[oó]n laboral/i.test(topic)) return 'a modest workplace break room and quiet office corridor in a Latin American city';
   if (/bus|autob[uú]s|transporte|camino|viaje|calle/i.test(topic)) return 'a city bus stop and a nearby neighborhood sidewalk in a Latin American city';
   if (/oraci[oó]n|gesto|h[aá]bito|misericordia|perd[oó]n/i.test(topic)) return 'a shared apartment building entrance and small neighborhood kitchen in a Latin American city';
@@ -348,17 +462,26 @@ function timeDialogueTurns(turns: any[], targetSeconds = 9.2): any[] {
 function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   const options = { ...rawOptions, totalParts: clampParts(rawOptions.totalParts) };
   const topic = tidy(options.topic, 'Una familia aprende a orar en medio de una crisis');
+  const videoFormat = resolveVideoFormat(options.videoFormat, topic, options.category);
+  const videoFormatLabel = getVideoFormatLabel(videoFormat);
   const topicHash = hashText(topic.toLocaleLowerCase('es'));
   const storySeed = hashText(`${topicHash}:${Date.now()}:${Math.random()}`);
   const totalParts = options.totalParts;
-  const plans = buildEditorialOutline(topic, totalParts, options.creativeApproach, options.category);
-  const approach = plans[0]?.creativeApproach || resolveCreativeApproach('auto', topic, options.category);
+  const plans = buildEditorialOutline(topic, totalParts, options.creativeApproach, options.category, videoFormat);
+  const approach = plans[0]?.creativeApproach || resolveCreativeApproach('auto', topic, options.category, videoFormat);
   const approachConfig = APPROACH_CONFIG[approach];
+  const formatExplicit = Boolean(options.videoFormat && options.videoFormat !== 'auto');
+  const faithMessage = formatExplicit ? getFormatFaithMessage(videoFormat) : approachConfig.faithMessage;
+  plans.forEach((plan: any) => { plan.faithMessage = faithMessage; });
   const userNames = (options.customCharacters || '').split(/[;,\n]/).map((part) => part.trim()).filter(Boolean);
-  const protagonist = characterRecord(CHARACTER_BASES[0], userNames[0]);
-  const companion = characterRecord(CHARACTER_BASES[1], userNames[1]);
+  const historical = videoFormat === 'cinematic-bible';
+  const namedBiblicalFigure = historical ? topic.match(/Jes[uú]s|Pedro|Job|Daniel|Mois[eé]s|David|Ester|Rut|Marta|Mar[ií]a/i)?.[0] : undefined;
+  const characterBases = historical ? BIBLICAL_CHARACTER_BASES : CHARACTER_BASES;
+  const protagonistBase = historical && namedBiblicalFigure ? { ...characterBases[0], name: namedBiblicalFigure } : characterBases[0];
+  const protagonist = characterRecord(protagonistBase, userNames[0]);
+  const companion = characterRecord(characterBases[1], userNames[1]);
   const characters = [protagonist, companion];
-  const location = chooseLocation(topic, options.lockedEnvironmentId);
+  const location = chooseLocation(topic, options.lockedEnvironmentId, videoFormat);
   const bibleReference = tidy(options.bibleReference, 'Referencia bíblica por definir según el mensaje de fe');
   const musicStyles = [
     { genre: 'intimate piano, low strings, and soft pulses', bpm: 72, key: 'D minor resolving toward F major', motif: 'three ascending notes that return as an emotional answer' },
@@ -372,7 +495,9 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
   const series: any = {
     id: seriesId,
     seriesTitle: topic.length > 64 ? `${topic.slice(0, 61).trim()}…` : topic,
-    logline: `Microdrama original sobre ${topic.toLocaleLowerCase('es')}, desde el enfoque «${approachConfig.label}»: tensión humana real, fe aplicada y esperanza sin resultados garantizados.`,
+    logline: `Pieza desde el formato «${videoFormatLabel}» y el enfoque «${approachConfig.label}», sobre ${topic.toLocaleLowerCase('es')}: fe y humanidad sin resultados garantizados.`,
+    videoFormat,
+    videoFormatLabel,
     creativeApproach: approach,
     creativeApproachLabel: approachConfig.label,
     category: options.category || 'prueba_fe',
@@ -382,34 +507,54 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
     primaryCharacterIds: characters.map((character) => character.id),
     characters,
     castCount: characters.length,
-    lockedEnvironmentId: options.lockedEnvironmentId || 'world_latin_family_home',
+    lockedEnvironmentId: options.lockedEnvironmentId || (historical ? 'world_biblical_period' : 'world_latin_family_home'),
     lockedEnvironmentName: location,
-    lockedEnvironmentPromptEn: `Photorealistic live-action contemporary Latin American family setting: ${location}.`,
+    lockedEnvironmentPromptEn: historical
+      ? `Photorealistic live-action historical biblical setting, period-appropriate materials and wardrobe, no modern objects: ${location}.`
+      : `Photorealistic live-action contemporary Latin American setting: ${location}.`,
     bibleReference,
     seriesBible: {
       seriesId,
       version: 1,
       theme: topic,
+      videoFormat,
+      videoFormatLabel,
+      videoFormatGuidance: FAITH_VIDEO_FORMAT_GUIDANCE[videoFormat],
+      videoFormatFlowDirectionEn: FAITH_VIDEO_FORMAT_FLOW_DIRECTIONS_EN[videoFormat],
       creativeApproach: approach,
       creativeApproachLabel: approachConfig.label,
-      editorialHypothesis: 'Probar una tensión humana contemporánea con una aplicación bíblica clara; es una hipótesis editorial, no evidencia de saturación o rendimiento garantizado.',
-      faithMessage: approachConfig.faithMessage,
+      editorialHypothesis: `Probar el formato «${videoFormatLabel}» como hipótesis creativa, no como evidencia de demanda, saturación o rendimiento garantizado.`,
+      faithMessage,
       faithApproach: 'La fe se expresa mediante verdad, cuidado, oración y decisiones observables; no se usa como fórmula para obtener un resultado ni se promete una solución milagrosa inmediata.',
       bibleReference,
-      bibleUseNote: options.bibleReference
-        ? 'Referencia indicada por el usuario. No insertar una cita textual hasta verificar la traducción elegida.'
-        : 'No se indicó referencia. Elegir y verificar una que sustente el mensaje de fe antes de publicar; no insertar texto literal sin confirmar traducción.',
+      bibleUseNote: historical
+        ? 'Toda interacción o diálogo no registrado de forma explícita en el pasaje es dramatización, no cita bíblica. Separar hechos del texto, interpretación y ficción; verificar la referencia y la traducción antes de mostrar una cita literal.'
+        : options.bibleReference
+          ? 'Referencia indicada por el usuario. No insertar una cita textual hasta verificar la traducción elegida.'
+          : 'No se indicó referencia. Elegir y verificar una que sustente el mensaje de fe antes de publicar; no insertar texto literal sin confirmar traducción.',
       characterBible: characters.map(({ id, name, role, visualIdentity, wardrobe, accessories, voice }: any) => ({ id, name, role, visualIdentity, wardrobe, accessories, voice })),
       worldBible: {
         location,
-        eraAndArchitecture: 'Contemporary era; realistic working- or middle-class home, everyday materials and props, no fantasy set dressing.',
-        timeOfDay: 'Afternoon gradually moves toward evening across the story; keep time consistent within each chapter.',
+        eraAndArchitecture: historical
+          ? 'Historically grounded ancient Near Eastern or first-century Judean/Galilean architecture and materials; no modern objects or fantasy set dressing.'
+          : 'Contemporary era; realistic working- or middle-class home, everyday materials and props, no fantasy set dressing.',
+        timeOfDay: historical
+          ? 'Natural daylight or lamplight appropriate to the passage; keep time consistent within each chapter.'
+          : 'Afternoon gradually moves toward evening across the story; keep time consistent within each chapter.',
         weather: 'Mild weather, with no unjustified continuity changes.',
-        palette: 'ochre, terracotta, and natural blues; warm practical interior light and neutral shadows, no magical glow',
-        cameraLanguage: 'intimate observational camera, 35 mm, subtle action-motivated movement, close reactions',
-        lighting: 'available window light and household lamps; natural cinematic contrast',
-        recurringProps: ['worn-cover Bible when relevant to the story', 'one approach-specific everyday prop', 'mobile phone with no readable screen text'],
-        continuityRule: 'Keep the same room, layout, furniture, objects, and camera axis throughout the series.'
+        palette: historical
+          ? 'natural sand, earth, muted indigo and linen; historically plausible daylight or firelight, no magical glow'
+          : 'ochre, terracotta, and natural blues; warm practical interior light and neutral shadows, no magical glow',
+        cameraLanguage: historical
+          ? 'intimate cinematic live-action reenactment, 35 mm, physically plausible movement, human reactions, period-appropriate framing'
+          : 'intimate observational camera, 35 mm, subtle action-motivated movement, close reactions',
+        lighting: historical ? 'natural sunlight, shade, or historically plausible firelight' : 'available window light and household lamps; natural cinematic contrast',
+        recurringProps: historical
+          ? ['only objects supported by the passage or its historical setting', 'period-appropriate linen, wood, clay, and stone']
+          : ['worn-cover Bible when relevant to the story', 'one approach-specific everyday prop', 'mobile phone with no readable screen text'],
+        continuityRule: historical
+          ? 'Keep the same passage-appropriate location, architecture, wardrobe, props, light direction, and camera axis throughout the series.'
+          : 'Keep the same room, layout, furniture, objects, and camera axis throughout the series.'
       },
       audioBible: {
         originalScore: `Original score identity ${storySeed.slice(0, 6)}: ${audioStyle.genre}; ${audioStyle.bpm} BPM; ${audioStyle.key}; signature motif ${uniqueMotif}.`,
@@ -421,9 +566,10 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         episodeVariations: outline.map((plan, index) => `Capítulo ${index + 1}: variar intensidad y registro según el giro de «${plan.title}», manteniendo el mismo motivo musical.`)
       },
       episodeOutline: outline,
+      experimentNote: FAITH_VIDEO_EXPERIMENT_NOTE,
       generatedEpisodeIds: [],
       lastEpisodeNumber: totalParts,
-      nextEpisodeSeed: `Coda posterior a ${outline[totalParts - 1].title}: una decisión cotidiana que sostiene la esperanza`,
+      nextEpisodeSeed: `Continuación causal posterior a ${outline[totalParts - 1].title}: ${outline[totalParts - 1].cliffhanger}`,
       usedHooks: outline.map((plan) => plan.hook),
       biblicalVideoCreationRule: BIBLICAL_VIDEO_CREATION_RULE,
       audienceShareabilityRule: SHAREABILITY_RULE,
@@ -436,7 +582,7 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
     episodes: [] as any[]
   };
 
-  const sceneActions = (plan: any, episodeNumber: number) => [
+  const standardSceneActions = (plan: any, episodeNumber: number) => [
     `${plan.openingActionEn} Keep the action legible and emotionally specific from frame 0; no title, fade, or introductory pause.`,
     `${companion.name} listens without interrupting as ${protagonist.name} names the concrete stakes of this chapter. Show the cost through a restrained pause, not melodramatic gestures.`,
     `${protagonist.name} notices new information that changes the choice at hand. Let a glance, a physical detail, and the companion's response carry the reveal; no exposition montage.`,
@@ -445,7 +591,63 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       ? `${protagonist.name} takes one observable first step. A new consequence interrupts the moment and both characters react; end on a causal question, not a guaranteed miracle.`
       : `${protagonist.name} and ${companion.name} choose one realistic next action. The underlying difficulty remains; end with honest, restrained hope and no instant cure.`
   ];
+  const sceneActions = (plan: any, episodeNumber: number) => {
+    if (videoFormat === 'first-person-prayer') return [
+      `${plan.openingActionEn} Show a real human difficulty and a person beginning an honest first-person prayer; no supernatural presence, glowing hand, or instant relief.`,
+      `${protagonist.name} continues praying in their own words while ${companion.name} listens as a clearly human friend; do not imply the friend speaks for God.`,
+      `${protagonist.name} admits a specific fear or need. Use natural breathing, a grounded gesture, and an unchanged everyday setting; no guaranteed answer appears.`,
+      `${protagonist.name} asks for strength to take one realistic next step; ${companion.name} offers practical human support without resolving the whole problem.`,
+      episodeNumber < totalParts
+        ? `${protagonist.name} finishes this prayer with one observable next step. A new practical obstacle remains and creates a truthful cliffhanger.`
+        : `${protagonist.name} and ${companion.name} remain present together. End with honest hope while the underlying difficulty remains unresolved.`
+    ];
+    if (videoFormat === 'hard-faith-question') return [
+      `${plan.openingActionEn} Show the difficult question through a human reaction, not a sensational image; no title card or instant answer.`,
+      `${companion.name} listens without correcting or diagnosing ${protagonist.name}; keep the question emotionally specific and the performance compassionate.`,
+      `The two characters examine the surrounding biblical context together; avoid a proof-text montage, invented quotation, or simplistic theological certainty.`,
+      `${protagonist.name} names what the passage can and cannot establish. Keep any application distinct from Scripture and leave room for honest doubt.`,
+      episodeNumber < totalParts
+        ? `The conversation remains open; ${protagonist.name} chooses one careful next step and a new question leads into the next chapter.`
+        : `End with companionship and a clear, modest reflection; do not claim the question is solved or that doubt proves a lack of faith.`
+    ];
+    if (videoFormat === 'cinematic-bible') return [
+      `${plan.openingActionEn} Recreate only passage-supported historical details; any added action is restrained dramatization, never a fabricated biblical quotation.`,
+      `${protagonist.name} reacts to the immediate human stakes of the passage while ${companion.name} remains a historically plausible witness; do not add unverified named characters.`,
+      `Reveal a passage-grounded detail or consequence with a close human reaction. Keep objects, architecture, clothing, and light period-appropriate; no modern props.`,
+      `Show the passage's meaning through action and historically plausible dialogue; separate biblical events from interpretation, and never put invented words in God's or Jesus's mouth.`,
+      episodeNumber < totalParts
+        ? `End on a consequence supported by the passage or clearly marked dramatization, creating a causal cliffhanger without inventing a miracle.`
+        : `End reverently on the passage's verified outcome or a clearly labeled application; do not promise the audience an identical result.`
+    ];
+    return standardSceneActions(plan, episodeNumber);
+  };
   const sceneDialogues = (plan: any, episodeNumber: number) => {
+    if (videoFormat === 'first-person-prayer') return [
+      [[protagonist.name, plan.openingLineEs], [companion.name, 'Te escucho; no tienes que resolverlo todo esta noche.']],
+      [[protagonist.name, 'Dios, tengo miedo y no quiero esconderme más de ti.'], [companion.name, 'Puedes hablar con honestidad; me quedo aquí contigo hoy.']],
+      [[protagonist.name, 'Señor, ayúdame a pedir ayuda; hoy ya no puedo sola.'], [companion.name, 'Pedir ayuda también es un paso valiente y concreto.']],
+      [[protagonist.name, 'Señor, el problema sigue aquí; acompáñame en este primer paso.'], [companion.name, 'No estás sola; mañana podemos buscar apoyo concreto juntos.']],
+      [[protagonist.name, 'Gracias, Dios; sigo cansada, pero hoy no quiero caminar sola.'], [companion.name, 'Aquí seguimos, paso a paso, sin fingir que ya pasó.']]
+    ];
+    if (videoFormat === 'hard-faith-question') return [
+      [[protagonist.name, plan.openingLineEs], [companion.name, 'Tu pregunta merece espacio; no daré respuestas fáciles ahora.']],
+      [[protagonist.name, '¿Dudar significa que perdí la fe para siempre, de verdad?'], [companion.name, 'La Biblia muestra personas que preguntan desde el dolor también.']],
+      [[protagonist.name, '¿Y si la respuesta que espero todavía no llega hoy?'], [companion.name, 'Leo el salmo completo, no solo la frase que recuerdo.']],
+      [[protagonist.name, '¿Orar sirve cuando nada parece cambiar a mi alrededor?'], [companion.name, 'No encontré una respuesta sencilla, pero puedo orar sin fingir.']],
+      [[protagonist.name, '¿Puedo creer mientras sigo preguntando y siento que Dios calla?'], [companion.name, 'No todo se resuelve hoy; podemos acompañarnos mientras seguimos.']]
+    ];
+    if (videoFormat === 'cinematic-bible') {
+      const firstReply = spokenWordCount(plan.openingLineEs) > 10
+        ? 'No sé qué vendrá, pero no quiero apartarme hoy.'
+        : 'No sé qué vendrá, pero no quiero apartarme de ti.';
+      return [
+      [[protagonist.name, plan.openingLineEs], [companion.name, firstReply]],
+      [[protagonist.name, 'No sé qué sintió; el pasaje no cuenta ese detalle.'], [companion.name, 'Representemos la escena con respeto, sin afirmar pensamientos ajenos.']],
+      [[protagonist.name, 'El texto conserva su contexto; no prometamos el mismo desenlace.'], [companion.name, 'Cada historia merece una lectura atenta y humilde hoy.']],
+      [[protagonist.name, 'Tengo miedo de lo que ocurra si doy este paso.'], [companion.name, 'No estás solo; demos el paso con cuidado hoy.']],
+      [[protagonist.name, 'No todo terminó como esperaba, pero sigo confiando en Dios.'], [companion.name, 'Lo que ocurrió merece ser contado con respeto hoy.']]
+      ];
+    }
     const faithDialogue: Record<string, string[]> = {
       decision: ['Le pedí a Dios valor, no una excusa para mentir.', 'La fe no borra el costo de decir la verdad.'],
       companionship: ['Dudar no me vuelve menos amado por Dios, aunque duela.', 'Puedo pedir ayuda sin tener todas las respuestas hoy.'],
@@ -494,13 +696,15 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
         camera: sceneIndex === 0 ? 'tight close shot on the specific prop and immediate human reaction, one continuous take' : 'close medium shot on a consistent 180-degree axis, alternating eyelines within one continuous take',
         lens: 'cinematic 35 mm equivalent, natural perspective, moderate depth of field',
         cameraMovement: sceneIndex === 0 ? 'a brisk, controlled push-in completed within the first 0.5 seconds, then settle without a cut' : 'very subtle, physically plausible continuous lateral move',
-        lighting: 'warm practical household lamp and soft shadows; preserve the same light direction between segments',
-        performance: 'believable micro-expressions, brief pauses, and natural breathing; tears only when justified by the emotion',
+        lighting: historical ? 'natural daylight, shade, or period-appropriate firelight; preserve the same light direction between segments' : 'warm practical light and soft shadows; preserve the same light direction between segments',
+        performance: 'believable micro-expressions, human Latin American Spanish delivery, clear articulation, natural breathing and warmth; pauses only when they serve the meaning, never a robotic cadence or artificial rush',
         dialogueExchange,
         narration: '',
         subtitleSuggestion: sceneIndex === 0 ? plan.hook : dialogueExchange[0].dialogueSpanish,
         onScreenText: sceneIndex === 0 ? plan.hook : '',
-        sfx: sceneIndex === 0 ? 'paper brushing the table, a ceramic cup settling, soft household ambience' : 'realistic interior ambience, natural breathing, and a brief phone vibration only when the action calls for it',
+        sfx: historical
+          ? 'period-appropriate wind, footsteps, cloth, water, or fire ambience only when supported by the visible action and passage'
+          : sceneIndex === 0 ? 'paper brushing the table, a ceramic cup settling, soft household ambience' : 'realistic interior ambience, natural breathing, and a brief phone vibration only when the action calls for it',
         bgMusicMood: `${audioStyle.genre}; ${audioStyle.bpm} BPM; variation on ${uniqueMotif}; emotional intensity ${['soft suspense', 'anticipation', 'reveal', 'decision', 'restrained relief'][sceneIndex]}`,
         negativePrompt: options.noInclude || 'no graphic violence, profanity, cartoon style, guaranteed visible miracles, or generated unreadable text'
       };
@@ -511,7 +715,7 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       youtubeTitle: `${plan.title} | Miniserie de fe y oración — Capítulo ${episodeNumber}`,
       facebookTitle: `${plan.title}: una historia de fe y decisiones reales (Capítulo ${episodeNumber})`,
       tiktokTitle: `${plan.title} | Parte ${episodeNumber} de ${totalParts}`,
-      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Historia original desde el enfoque «${approachConfig.label}», sobre ${topic.toLocaleLowerCase('es')}. Mensaje de fe: ${approachConfig.faithMessage}\n\nSi quieres conversar: ${commentQuestion}`,
+      caption: `${plan.hook}\n\nCapítulo ${episodeNumber} de ${totalParts}. Formato: ${videoFormatLabel}. Enfoque: ${approachConfig.label}. Sobre ${topic.toLocaleLowerCase('es')}. Mensaje de fe: ${faithMessage}\n\nSi quieres conversar: ${commentQuestion}`,
       hashtags: ['#MiniserieDeFe', '#Oracion', '#HistoriasDeFe', '#Esperanza', `#Capitulo${episodeNumber}`, '#FeEnLaVidaReal'],
       pinnedComment: commentQuestion,
       seoKeywords: ['miniserie cristiana', 'microdrama de fe', 'historias de fe en la vida real', plan.title.toLocaleLowerCase('es')],
@@ -523,8 +727,10 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
       episodeNumber,
       episodeTitle: plan.title,
       hook: plan.hook,
+      videoFormat,
+      videoFormatLabel,
       creativeApproach: approach,
-      faithMessage: approachConfig.faithMessage,
+      faithMessage,
       objective: plan.objective,
       conflict: plan.conflict,
       escalation: `${plan.reveal}; la presión obliga a cada personaje a elegir cómo responder.`,
@@ -555,8 +761,10 @@ function createFallbackMiniseries(rawOptions: MiniseriesAgentOptions) {
 }
 
 function buildGenerationPrompt(options: MiniseriesAgentOptions, series: any): string {
+  const formatBrief = `Formato de video seleccionado: ${series.videoFormatLabel} (${series.videoFormat}).\nGuía editorial obligatoria: ${series.seriesBible.videoFormatGuidance}\nNota de experimentación: ${FAITH_VIDEO_EXPERIMENT_NOTE}\n\n`;
   const outline = series.seriesBible.episodeOutline.map((episode: any) => ({
     episodeNumber: episode.episodeNumber,
+    videoFormat: series.videoFormat,
     creativeApproach: episode.creativeApproach,
     faithMessage: episode.faithMessage,
     plannedTitle: episode.title,
@@ -568,7 +776,7 @@ function buildGenerationPrompt(options: MiniseriesAgentOptions, series: any): st
     reveal: episode.reveal,
     cliffhanger: episode.cliffhanger
   }));
-  return `Tema del usuario: ${tidy(options.topic, 'fe, oración y esperanza')}\nNúmero exacto de capítulos: ${series.totalPartsPlanned} (permitido únicamente 2–5).\nBase bíblica solicitada: ${tidy(options.bibleReference, 'proponer una referencia temática, sin citar texto literal')}\nTono: ${tidy(options.tone, 'humano, reverente, cinematográfico, emocional sin manipulación')}\nCTA: ${tidy(options.callToAction, 'pregunta reflexiva suave, opcional y al final del copy SEO')}\nNo incluir: ${tidy(options.noInclude, 'violencia gráfica, lenguaje vulgar, promesas de milagros garantizados, logos, marcas de agua, caricatura')}\nPlataforma: ${tidy(options.audiencePlatform, 'TikTok/Reels/Shorts verticales')}\n\nBiblia de continuidad y plan completo previo:\n${JSON.stringify({ seriesTitle: series.seriesTitle, logline: series.logline, characters: series.characters.map((character: any) => ({ name: character.name, role: character.role, visualIdentity: character.visualIdentity, wardrobe: character.wardrobe, accessories: character.accessories, voice: character.voice })), worldBible: series.seriesBible.worldBible, audioBible: series.seriesBible.audioBible, episodeOutline: outline }, null, 2)}\n\nDevuelve únicamente un objeto JSON, sin Markdown, con esta forma:\n{\n  "seriesTitle": "...", "logline": "...", "bannerHook": "...", "bibleReference": "...", "bibleUseNote": "...",\n  "characters": [{"id":"protagonista_fe","name":"...","role":"...","apparentAge":"...","skin":"...","face":"...","hair":"...","build":"...","wardrobe":"...","accessories":"...","voice":"..."}],\n  "worldBible": {"location":"...","eraAndArchitecture":"...","timeOfDay":"...","weather":"...","palette":"...","cameraLanguage":"...","lighting":"...","recurringProps":["..."]},\n  "audioBible": {"originalScore":"...","genre":"...","bpm":72,"key":"...","signatureMotif":"...","mixNotes":"...","episodeVariations":["..."]},\n  "episodeOutline": [{"episodeNumber":1,"title":"...","objective":"...","conflict":"...","reveal":"...","cliffhanger":"..."}],\n  "episodes": [{"episodeNumber":1,"episodeTitle":"...","hook":"...","objective":"...","conflict":"...","escalation":"...","twist":"...","cliffhanger":"...",\n    "scenes": [{"sceneNumber":1,"action":"...","environment":"...","camera":"...","lens":"...","cameraMovement":"...","lighting":"...","performance":"...","dialogueExchange":[{"speakerName":"...","dialogueSpanish":"...","timeWindow":"00:00.0–00:04.6","emotionalTone":"..."},{"speakerName":"...","dialogueSpanish":"...","timeWindow":"00:04.6–00:09.2","emotionalTone":"..."}],"narration":"","sfx":"...","bgMusicMood":"...","subtitleSuggestion":"..."}],\n    "socialPackage": {"youtubeTitle":"...","facebookTitle":"...","tiktokTitle":"...","caption":"...","hashtags":["..."],"pinnedComment":"...","seoKeywords":["..."],"searchQueries":["..."],"thumbnailHook":"...","suggestedAudio":"..."}}]\n}\n\nReglas obligatorias:\n- Devuelve exactamente ${series.totalPartsPlanned} capítulos y exactamente cinco escenas por capítulo; cada escena dura 10 s, para 50 s por capítulo. No cambies el plan general de continuidad ni el orden causal.\n- Cada escena debe incluir exactamente dos turnos conversacionales, uno por cada personaje visible, con 19–20 palabras habladas en total y 9–11 por turno. Usa español latinoamericano natural a unas 2,1 palabras por segundo: el diálogo debe ocupar aproximadamente 9,2 de los 10 segundos (92%), sin silencios largos ni velocidad artificial. El servidor ajustará las ventanas proporcionalmente. La primera frase del primer segmento debe ser un hook inmediato.\n- Cada capítulo tiene objetivo, conflicto, escalada, giro y cierre/cliffhanger causalmente distintos. No repitas hook, revelación, escenario de apertura ni acción clave.\n- Mantén los mismos actores humanos hiperrealistas, rostros, edades aparentes, piel, cabello, complexión, vestuario, accesorios y voces en los cinco segmentos y en todos los capítulos. Máximo tres personajes principales por escena.\n- Mantén el mismo entorno, luz, paleta, utilería y eje de cámara; cambia solo lo exigido por la acción. Movimiento físicamente posible, cámara cinematográfica y actuación contenida.\n- Música original única de esta serie, con género, BPM, instrumentos, motivo y cambios de intensidad por escena; SFX y ambiente también deben quedar especificados en cada segmento. No usar canciones comerciales, marcas ni imitar artistas.\n- El nicho es fe, oración y versículos. La fe debe expresarse mediante decisiones y vida cotidiana; no prometas resultados milagrosos. No atribuyas ficción como cita textual a Dios, Jesús o la Biblia. Si parafraseas, indícalo y no inventes referencias.\n- No copies personajes, tramas, frases, música, imágenes, marcas ni estilo visual de cuentas existentes. Usa solo recursos narrativos generales: problema inmediato, curiosidad dosificada, escalada, revelación y continuidad entre partes.\n- Cada capítulo necesita SEO propio para TikTok, Facebook y YouTube: títulos, descripción/caption, palabras clave, hashtags, hook de miniatura y comentario fijado. Sin clickbait engañoso ni CTA insistente.\n- Los prompts se completarán con una plantilla Flow autosuficiente; describe acción, cámara, luz, actuación y audio en los campos anteriores.`;
+  return `${formatBrief}Tema del usuario: ${tidy(options.topic, 'fe, oración y esperanza')}\nNúmero exacto de capítulos: ${series.totalPartsPlanned} (permitido únicamente 2–5).\nBase bíblica solicitada: ${tidy(options.bibleReference, 'proponer una referencia temática, sin citar texto literal')}\nTono: ${tidy(options.tone, 'humano, reverente, cinematográfico, emocional sin manipulación')}\nCTA: ${tidy(options.callToAction, 'pregunta reflexiva suave, opcional y al final del copy SEO')}\nNo incluir: ${tidy(options.noInclude, 'violencia gráfica, lenguaje vulgar, promesas de milagros garantizados, logos, marcas de agua, caricatura')}\nPlataforma: ${tidy(options.audiencePlatform, 'TikTok/Reels/Shorts verticales')}\n\nBiblia de continuidad y plan completo previo:\n${JSON.stringify({ seriesTitle: series.seriesTitle, logline: series.logline, characters: series.characters.map((character: any) => ({ name: character.name, role: character.role, visualIdentity: character.visualIdentity, wardrobe: character.wardrobe, accessories: character.accessories, voice: character.voice })), worldBible: series.seriesBible.worldBible, audioBible: series.seriesBible.audioBible, episodeOutline: outline }, null, 2)}\n\nDevuelve únicamente un objeto JSON, sin Markdown, con esta forma:\n{\n  "seriesTitle": "...", "logline": "...", "bannerHook": "...", "bibleReference": "...", "bibleUseNote": "...",\n  "characters": [{"id":"protagonista_fe","name":"...","role":"...","apparentAge":"...","skin":"...","face":"...","hair":"...","build":"...","wardrobe":"...","accessories":"...","voice":"..."}],\n  "worldBible": {"location":"...","eraAndArchitecture":"...","timeOfDay":"...","weather":"...","palette":"...","cameraLanguage":"...","lighting":"...","recurringProps":["..."]},\n  "audioBible": {"originalScore":"...","genre":"...","bpm":72,"key":"...","signatureMotif":"...","mixNotes":"...","episodeVariations":["..."]},\n  "episodeOutline": [{"episodeNumber":1,"title":"...","objective":"...","conflict":"...","reveal":"...","cliffhanger":"..."}],\n  "episodes": [{"episodeNumber":1,"episodeTitle":"...","hook":"...","objective":"...","conflict":"...","escalation":"...","twist":"...","cliffhanger":"...",\n    "scenes": [{"sceneNumber":1,"action":"...","environment":"...","camera":"...","lens":"...","cameraMovement":"...","lighting":"...","performance":"...","dialogueExchange":[{"speakerName":"...","dialogueSpanish":"...","timeWindow":"00:00.0–00:04.6","emotionalTone":"..."},{"speakerName":"...","dialogueSpanish":"...","timeWindow":"00:04.6–00:09.2","emotionalTone":"..."}],"narration":"","sfx":"...","bgMusicMood":"...","subtitleSuggestion":"..."}],\n    "socialPackage": {"youtubeTitle":"...","facebookTitle":"...","tiktokTitle":"...","caption":"...","hashtags":["..."],"pinnedComment":"...","seoKeywords":["..."],"searchQueries":["..."],"thumbnailHook":"...","suggestedAudio":"..."}}]\n}\n\nReglas obligatorias:\n- Respeta el formato de video elegido en todas las escenas y metadatos; escribe instrucciones técnicas de Flow en inglés y diálogos, títulos, captions y SEO en español latinoamericano.\n- Devuelve exactamente ${series.totalPartsPlanned} capítulos y exactamente cinco escenas por capítulo; cada escena dura 10 s, para 50 s por capítulo. No cambies el plan general de continuidad ni el orden causal.\n- Cada escena debe incluir exactamente dos turnos conversacionales, uno por cada personaje visible, con 19–20 palabras habladas en total y 9–11 por turno. Usa español latinoamericano natural a unas 2,1 palabras por segundo: el diálogo debe ocupar aproximadamente 9,2 de los 10 segundos (92%), sin silencios largos ni velocidad artificial. El servidor ajustará las ventanas proporcionalmente. La primera frase del primer segmento debe ser un hook inmediato.\n- Cada capítulo tiene objetivo, conflicto, escalada, giro y cierre/cliffhanger causalmente distintos. No repitas hook, revelación, escenario de apertura ni acción clave.\n- Mantén los mismos actores humanos hiperrealistas, rostros, edades aparentes, piel, cabello, complexión, vestuario, accesorios y voces en los cinco segmentos y en todos los capítulos. Máximo tres personajes principales por escena.\n- Mantén el mismo entorno, luz, paleta, utilería y eje de cámara; cambia solo lo exigido por la acción. Movimiento físicamente posible, cámara cinematográfica y actuación contenida.\n- Música original única de esta serie, con género, BPM, instrumentos, motivo y cambios de intensidad por escena; SFX y ambiente también deben quedar especificados en cada segmento. No usar canciones comerciales, marcas ni imitar artistas.\n- Evita pedir likes, comentarios o compartidos solo para obtener distribución. No presentes la frecuencia como regla: 1–2 videos diarios por 60 días no es una fórmula demostrada; si se propone 1 video diario por 21 días, es un sprint experimental sin garantía.\n- El nicho es fe, oración y versículos. La fe debe expresarse mediante decisiones y vida cotidiana; no prometas resultados milagrosos. No atribuyas ficción como cita textual a Dios, Jesús o la Biblia. Si parafraseas, indícalo y no inventes referencias.\n- No copies personajes, tramas, frases, música, imágenes, marcas ni estilo visual de cuentas existentes. Usa solo recursos narrativos generales: problema inmediato, curiosidad dosificada, escalada, revelación y continuidad entre partes.\n- Cada capítulo necesita SEO propio para TikTok, Facebook y YouTube: títulos, descripción/caption, palabras clave, hashtags, hook de miniatura y comentario fijado. Sin clickbait engañoso ni CTA insistente.\n- Los prompts se completarán con una plantilla Flow autosuficiente; describe acción, cámara, luz, actuación y audio en los campos anteriores.`;
 }
 
 function mergeModelOutput(series: any, rawOutput: unknown) {
@@ -741,12 +949,13 @@ export async function generateOpenSourceMiniseries(options: MiniseriesAgentOptio
     topic: tidy(options.topic, 'Una historia de fe y esperanza'),
     totalParts: clampParts(options.totalParts),
     creativeApproach: options.creativeApproach || 'auto',
+    videoFormat: options.videoFormat || 'auto',
     callToAction: options.callToAction ? makeSoftCTA(options.callToAction, '') : undefined
   };
   const series = createFallbackMiniseries(normalized);
   if (!provider) return { miniseries: series, provider: 'plantilla-local', isFallback: true };
   try {
-    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\nREGLAS PRIORITARIAS DE SALIDA: Todas las instrucciones de producción que se incorporan a prompts Flow (acción, identidad, entorno, cámara, luz, actuación, audio y restricciones) deben escribirse en inglés. Conserva en español latinoamericano únicamente los diálogos hablados, títulos/captions SEO y comentarios de audiencia. El hook de cada capítulo tiene máximo ocho palabras, inicia literalmente el primer diálogo y comienza en el cuadro 0; la primera palabra audible debe ocurrir antes de 0,3 s. No abras con saludo, plano de establecimiento, fundido, título, logotipo ni zoom lento. Escribe cada capítulo con una apertura visual distinta y una sola pregunta reflexiva concreta en el copy. Usa las métricas como señales, no como promesas; compara publicaciones de antigüedad semejante y no generalices a partir de muestras pequeñas.\n\n${BIBLICAL_VIDEO_CREATION_RULE}\n\n${SHAREABILITY_RULE}`;
+    const systemPrompt = `Eres un agente de escritura y continuidad para microseries originales de fe, oración y esperanza. Sigue cada restricción del usuario. No imites obras, canales ni marcas. Devuelve solo JSON válido y nunca inventes una cita bíblica textual.\n\nFORMATO SELECCIONADO: ${series.videoFormatLabel}. ${series.seriesBible.videoFormatGuidance}\n\nREGLAS PRIORITARIAS DE SALIDA: Todas las instrucciones de producción que se incorporan a prompts Flow (acción, identidad, entorno, cámara, luz, actuación, audio y restricciones) deben escribirse en inglés. Conserva en español latinoamericano únicamente los diálogos hablados, títulos/captions SEO y comentarios de audiencia. El hook de cada capítulo tiene máximo ocho palabras, inicia literalmente el primer diálogo y comienza en el cuadro 0; la primera palabra audible debe ocurrir antes de 0,3 s. No abras con saludo, plano de establecimiento, fundido, título, logotipo ni zoom lento. Escribe cada capítulo con una apertura visual distinta y una sola pregunta reflexiva concreta en el copy. Usa las métricas como señales, no como promesas; compara publicaciones de antigüedad semejante y no generalices a partir de muestras pequeñas. ${FAITH_VIDEO_EXPERIMENT_NOTE}\n\n${BIBLICAL_VIDEO_CREATION_RULE}\n\n${SHAREABILITY_RULE}`;
     const output = await provider.completeJSON(systemPrompt, buildGenerationPrompt(normalized, series));
     mergeModelOutput(series, output);
     finalizeSeries(series);
